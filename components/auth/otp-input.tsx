@@ -118,7 +118,7 @@ export function OtpInput({
             aria-label={`Chiffre ${index + 1} du code`}
             className={cn(
               'w-11 h-[52px] text-center text-[22px] font-semibold rounded-lg border outline-none transition-all duration-200',
-              'bg-[#0d1322] text-white caret-transparent',
+              'bg-neutral-900 text-white caret-transparent',
               // Normal
               !error && !success && 'border-slate-700/80 focus:border-[#3758f9] focus:ring-2 focus:ring-[#3758f9]/20',
               // Erreur

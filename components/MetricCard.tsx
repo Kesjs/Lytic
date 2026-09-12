@@ -23,10 +23,10 @@ export function MetricCard({
   sparklinePoints,
 }: MetricCardProps) {
   return (
-    <div className="p-5 rounded-xl bg-[#0d1322] border border-[#1e293b] hover:border-[#3758f9]/50 transition-all space-y-4">
+    <div className="p-5 rounded-xl bg-[#0a0a0a] border border-white/[0.07] hover:border-white/20 transition-all space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-[#151f32] text-[#5e84fc] border border-[#1e293b]">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-neutral-900 text-neutral-200 border border-white/[0.08]">
             <Icon className="size-4" />
           </div>
           <span className="text-xs font-medium text-gray-400">{title}</span>

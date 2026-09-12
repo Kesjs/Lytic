@@ -43,7 +43,7 @@ const recentUsers = [
 
 export function RecentUsers() {
   return (
-    <div className="p-6 rounded-xl bg-[#0d1322] border border-[#1e293b] space-y-4">
+    <div className="p-6 rounded-xl bg-[#0a0a0a] border border-white/[0.07] space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-white tracking-tight">
@@ -62,7 +62,7 @@ export function RecentUsers() {
         {recentUsers.map((user) => (
           <div
             key={user.email}
-            className="flex items-center justify-between p-3 rounded-lg bg-[#151f32]/60 border border-[#1e293b]/60 hover:border-[#1e293b] transition-all"
+            className="flex items-center justify-between p-3 rounded-lg bg-neutral-900/50 border border-white/[0.05] hover:border-white/15 transition-all"
           >
             <div className="flex items-center gap-3">
               <div className="size-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0">

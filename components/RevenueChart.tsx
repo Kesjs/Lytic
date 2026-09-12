@@ -7,7 +7,7 @@ export function RevenueChart() {
   const [selectedRange, setSelectedRange] = useState<'7D' | '1M' | '1Y'>('1M')
 
   return (
-    <div className="p-6 rounded-xl bg-[#0d1322] border border-[#1e293b] space-y-5">
+    <div className="p-6 rounded-xl bg-[#0a0a0a] border border-white/[0.07] space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -25,7 +25,7 @@ export function RevenueChart() {
         </div>
 
         {/* Period Switcher */}
-        <div className="flex items-center p-1 rounded-lg bg-[#151f32] border border-[#1e293b] text-xs font-mono">
+        <div className="flex items-center p-1 rounded-lg bg-neutral-900/80 border border-white/[0.06] text-xs font-mono">
           {(['7D', '1M', '1Y'] as const).map((range) => (
             <button
               key={range}
@@ -58,10 +58,10 @@ export function RevenueChart() {
           </defs>
 
           {/* Horizontal Grid lines */}
-          <line x1="0" y1="30" x2="700" y2="30" stroke="#1e293b" strokeDasharray="4 4" />
-          <line x1="0" y1="80" x2="700" y2="80" stroke="#1e293b" strokeDasharray="4 4" />
-          <line x1="0" y1="130" x2="700" y2="130" stroke="#1e293b" strokeDasharray="4 4" />
-          <line x1="0" y1="180" x2="700" y2="180" stroke="#1e293b" strokeDasharray="4 4" />
+          <line x1="0" y1="30" x2="700" y2="30" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+          <line x1="0" y1="80" x2="700" y2="80" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+          <line x1="0" y1="130" x2="700" y2="130" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+          <line x1="0" y1="180" x2="700" y2="180" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
 
           {/* Area 2: Forecast baseline */}
           <polygon
@@ -98,7 +98,7 @@ export function RevenueChart() {
       </div>
 
       {/* Footer Stats & Legend */}
-      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#1e293b] text-xs">
+      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/[0.06] text-xs">
         <div>
           <span className="text-gray-400 block font-medium">Actual Revenue</span>
           <span className="text-sm font-bold font-mono text-white mt-0.5 block">

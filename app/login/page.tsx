@@ -147,7 +147,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-[440px] rounded-2xl border border-slate-800/80 bg-[#0d1322]/90 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-blue-950/20"
+        className="relative z-10 w-full max-w-[440px] rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/90 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/60"
       >
         {/* Brand Header */}
         <div className="text-center mb-8">

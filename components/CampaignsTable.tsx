@@ -54,7 +54,7 @@ const campaignsData: Campaign[] = [
 
 export function CampaignsTable() {
   return (
-    <div className="p-6 rounded-xl bg-[#0d1322] border border-[#1e293b] space-y-4">
+    <div className="p-6 rounded-xl bg-[#0a0a0a] border border-white/[0.07] space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-white tracking-tight">
@@ -75,7 +75,7 @@ export function CampaignsTable() {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-[#1e293b] text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+            <tr className="border-b border-white/[0.06] text-gray-400 font-mono text-[11px] uppercase tracking-wider">
               <th className="pb-3 pr-4 font-semibold">Campaign Name</th>
               <th className="pb-3 px-3 font-semibold">Status</th>
               <th className="pb-3 px-3 text-right font-semibold">Ad Spend</th>
@@ -83,9 +83,9 @@ export function CampaignsTable() {
               <th className="pb-3 pl-3 text-right font-semibold">Net ROI</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1e293b]/60">
+          <tbody className="divide-y divide-white/[0.05]">
             {campaignsData.map((c) => (
-              <tr key={c.id} className="hover:bg-[#151f32]/50 transition-colors">
+              <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
                 <td className="py-3.5 pr-4">
                   <div className="font-semibold text-white">{c.name}</div>
                   <div className="text-[11px] text-gray-400 mt-0.5">{c.channel}</div>

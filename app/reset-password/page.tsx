@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-[420px] rounded-2xl border border-slate-800/80 bg-[#0d1322]/90 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-blue-950/20"
+        className="relative z-10 w-full max-w-[420px] rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/90 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/60"
       >
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#3758f9] to-blue-700 text-white font-black text-xl mb-4 shadow-lg shadow-blue-600/30">

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import {
   DollarSign,
   TrendingUp,
@@ -19,15 +19,21 @@ import { CampaignsTable } from '@/components/CampaignsTable'
 import { RecentUsers } from '@/components/RecentUsers'
 
 export default function LyticDashboard() {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
   return (
-    <div className="min-h-screen bg-[#090e1a] text-gray-100 flex">
+    <div className="min-h-screen bg-black text-gray-100 flex">
       {/* 1. Left Sidebar */}
-      <Sidebar />
+      <Sidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
 
       {/* 2. Main Content Container */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'ml-20' : 'ml-64'
+        }`}
+      >
         {/* Top Header */}
-        <Header />
+        <Header isCollapsed={isCollapsed} onToggleSidebar={() => setIsCollapsed(!isCollapsed)} />
 
         {/* Dashboard Body */}
         <main className="p-8 space-y-8 flex-1">
@@ -112,7 +118,7 @@ export default function LyticDashboard() {
         </main>
 
         {/* Minimal Footer */}
-        <footer className="h-14 border-t border-[#1e293b] px-8 flex items-center justify-between text-xs text-gray-400 bg-[#0d1322]">
+        <footer className="h-14 border-t border-white/[0.06] px-8 flex items-center justify-between text-xs text-neutral-400 bg-black">
           <span>Lytic React SaaS Template © 2026 TailGrids</span>
           <div className="flex items-center gap-4">
             <span className="hover:text-gray-300 cursor-pointer">Documentation</span>

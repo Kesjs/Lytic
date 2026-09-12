@@ -11,7 +11,7 @@ const sources = [
 
 export function TrafficSourceCard() {
   return (
-    <div className="p-6 rounded-xl bg-[#0d1322] border border-[#1e293b] flex flex-col justify-between space-y-6">
+    <div className="p-6 rounded-xl bg-[#0a0a0a] border border-white/[0.07] flex flex-col justify-between space-y-6">
       <div>
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-white tracking-tight">
@@ -34,7 +34,7 @@ export function TrafficSourceCard() {
               cy="50"
               r="40"
               fill="transparent"
-              stroke="#1e293b"
+              stroke="#171717"
               strokeWidth="12"
             />
             {/* Segment 1: Direct (45%) */}
@@ -71,7 +71,7 @@ export function TrafficSourceCard() {
       </div>
 
       {/* Breakdown list */}
-      <div className="space-y-2.5 pt-2 border-t border-[#1e293b]">
+      <div className="space-y-2.5 pt-2 border-t border-white/[0.06]">
         {sources.map((s) => (
           <div key={s.name} className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
