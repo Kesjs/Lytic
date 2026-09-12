@@ -12,7 +12,6 @@ import {
   Settings,
   CreditCard,
   Layers,
-  ChevronRight,
   ChevronLeft,
   LogOut,
   Sparkles,
@@ -47,22 +46,6 @@ export function Sidebar({ isCollapsed = false, onToggle }: SidebarProps) {
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
-      {/* Floating Toggle Button on Border */}
-      {onToggle && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="absolute -right-3 top-20 z-50 size-6 rounded-full bg-neutral-900 border border-white/20 text-neutral-400 hover:text-white hover:scale-110 flex items-center justify-center shadow-lg cursor-pointer transition-all"
-          title={isCollapsed ? 'Agrandir le menu' : 'Réduire le menu'}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="size-3.5" />
-          ) : (
-            <ChevronLeft className="size-3.5" />
-          )}
-        </button>
-      )}
-
       <div>
         {/* Brand Header */}
         <div
@@ -71,9 +54,14 @@ export function Sidebar({ isCollapsed = false, onToggle }: SidebarProps) {
           }`}
         >
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-[#3758f9] to-[#5e84fc] text-white font-black text-lg shadow-md shadow-[#3758f9]/25">
+            <button
+              type="button"
+              onClick={onToggle}
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-[#3758f9] to-[#5e84fc] text-white font-black text-lg shadow-md shadow-[#3758f9]/25 cursor-pointer hover:opacity-90 transition-opacity"
+              title={isCollapsed ? 'Déplier la sidebar' : undefined}
+            >
               L
-            </div>
+            </button>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0 transition-opacity duration-200">
                 <div className="flex items-center gap-1.5">
