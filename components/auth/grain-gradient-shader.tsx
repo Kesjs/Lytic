@@ -7,6 +7,7 @@ interface GrainGradientShaderProps {
 }
 
 // Wrapper client-only pour @paper-design/shaders-react
+// Le shader WebGL ne peut pas s'exécuter côté serveur
 export function GrainGradientShader({ className }: GrainGradientShaderProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -15,33 +16,25 @@ export function GrainGradientShader({ className }: GrainGradientShaderProps) {
   }, [])
 
   if (!mounted) {
-    return <div className={`absolute inset-0 bg-[#090e1a] ${className ?? ''}`} />
+    // Fallback SSR : fond noir simple
+    return <div className={`absolute inset-0 bg-black ${className ?? ''}`} />
   }
 
   return <GrainGradientClient className={className} />
 }
 
+// Chargement dynamique du shader uniquement côté client
 function GrainGradientClient({ className }: GrainGradientShaderProps) {
   const [ShaderComponent, setShaderComponent] = useState<React.ComponentType<any> | null>(null)
 
   useEffect(() => {
-    import('@paper-design/shaders-react')
-      .then((mod) => {
-        if (mod && mod.GrainGradient) {
-          setShaderComponent(() => mod.GrainGradient)
-        }
-      })
-      .catch(() => {})
+    import('@paper-design/shaders-react').then((mod) => {
+      setShaderComponent(() => mod.GrainGradient)
+    })
   }, [])
 
   if (!ShaderComponent) {
-    return (
-      <div className={`absolute inset-0 bg-[#090e1a] overflow-hidden ${className ?? ''}`}>
-        <div className="absolute -top-[30%] -left-[20%] w-[80%] h-[80%] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-[#3758f9]/25 blur-[130px] pointer-events-none" />
-        <div className="absolute top-[40%] left-[30%] w-[50%] h-[50%] rounded-full bg-indigo-500/15 blur-[100px] pointer-events-none" />
-      </div>
-    )
+    return <div className={`absolute inset-0 bg-black ${className ?? ''}`} />
   }
 
   return (
@@ -55,7 +48,7 @@ function GrainGradientClient({ className }: GrainGradientShaderProps) {
       intensity={0.5}
       noise={0.22}
       shape="corners"
-      colors={['#090e1a', '#111827', '#3758f9', '#0d1322']}
+      colors={['#0b0b0b', '#2a2a2a', '#c9ab1e', '#0b0b0b']}
       colorBack="#00000000"
       className={`absolute inset-0 ${className ?? ''}`}
       style={{ width: '100%', height: '100%' }}
