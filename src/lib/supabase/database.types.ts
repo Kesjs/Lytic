@@ -1,0 +1,297 @@
+// Généré à partir du schéma réel du projet Supabase "Reflet" (nmzpskxclwcqnkmkpqkh).
+// Régénère avec `npx supabase gen types typescript --project-id nmzpskxclwcqnkmkpqkh`
+// dès que le schéma évolue.
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+      }
+      brands: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          website_url: string | null
+          plan: 'trial' | 'active' | 'past_due' | 'canceled'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          name: string
+          website_url?: string | null
+          plan?: 'trial' | 'active' | 'past_due' | 'canceled'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['brands']['Insert']>
+      }
+      questions: {
+        Row: {
+          id: string
+          brand_id: string
+          text: string
+          active: boolean
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          text: string
+          active?: boolean
+          position?: number
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['questions']['Insert']>
+      }
+      measurement_runs: {
+        Row: {
+          id: string
+          brand_id: string
+          status: 'pending' | 'measuring' | 'partial' | 'success' | 'failed'
+          started_at: string
+          completed_at: string | null
+          questions_total: number
+          questions_completed: number
+          score: number | null
+          score_delta: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          status?: 'pending' | 'measuring' | 'partial' | 'success' | 'failed'
+          started_at?: string
+          completed_at?: string | null
+          questions_total?: number
+          questions_completed?: number
+          score?: number | null
+          score_delta?: number | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['measurement_runs']['Insert']>
+      }
+      observations: {
+        Row: {
+          id: string
+          run_id: string
+          question_id: string
+          engine: string
+          brand_mentioned: boolean
+          brand_recommended: boolean
+          brand_position: number | null
+          raw_answer: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          question_id: string
+          engine?: string
+          brand_mentioned?: boolean
+          brand_recommended?: boolean
+          brand_position?: number | null
+          raw_answer?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['observations']['Insert']>
+      }
+      competitors: {
+        Row: {
+          id: string
+          brand_id: string
+          name: string
+          hidden: boolean
+          first_seen_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          name: string
+          hidden?: boolean
+          first_seen_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['competitors']['Insert']>
+      }
+      observation_competitors: {
+        Row: {
+          id: string
+          observation_id: string
+          competitor_id: string
+          mentioned: boolean
+          recommended: boolean
+          position: number | null
+          context_excerpt: string | null
+        }
+        Insert: {
+          id?: string
+          observation_id: string
+          competitor_id: string
+          mentioned?: boolean
+          recommended?: boolean
+          position?: number | null
+          context_excerpt?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['observation_competitors']['Insert']>
+      }
+      opportunities: {
+        Row: {
+          id: string
+          brand_id: string
+          title: string
+          priority: 'low' | 'medium' | 'high'
+          confidence: number
+          status: 'open' | 'resolved' | 'dismissed' | 'no_longer_observed'
+          observations_count: number
+          reason: string
+          current_site_content: string | null
+          proposed_direction: string
+          created_at: string
+          updated_at: string
+          resolved_at: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          title: string
+          priority: 'low' | 'medium' | 'high'
+          confidence?: number
+          status?: 'open' | 'resolved' | 'dismissed' | 'no_longer_observed'
+          observations_count?: number
+          reason: string
+          current_site_content?: string | null
+          proposed_direction: string
+          created_at?: string
+          updated_at?: string
+          resolved_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['opportunities']['Insert']>
+      }
+      opportunity_questions: {
+        Row: { opportunity_id: string; question_id: string }
+        Insert: { opportunity_id: string; question_id: string }
+        Update: Partial<Database['public']['Tables']['opportunity_questions']['Insert']>
+      }
+      opportunity_evidence: {
+        Row: {
+          id: string
+          opportunity_id: string
+          step_order: number
+          step_type: 'question' | 'response' | 'observation' | 'competitor' | 'site' | 'gap' | 'recommendation'
+          label: string
+          content: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          opportunity_id: string
+          step_order: number
+          step_type: 'question' | 'response' | 'observation' | 'competitor' | 'site' | 'gap' | 'recommendation'
+          label: string
+          content?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['opportunity_evidence']['Insert']>
+      }
+      site_pages: {
+        Row: {
+          id: string
+          brand_id: string
+          url: string
+          status: 'unchecked' | 'ok' | 'stale' | 'unavailable'
+          last_checked_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          url: string
+          status?: 'unchecked' | 'ok' | 'stale' | 'unavailable'
+          last_checked_at?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['site_pages']['Insert']>
+      }
+      site_changes: {
+        Row: {
+          id: string
+          brand_id: string
+          page_id: string
+          detected_at: string
+          change_type: string
+          importance: 'low' | 'medium' | 'high'
+          confidence: number
+          detection_method: string
+          before_snippet: string | null
+          after_snippet: string | null
+          linked_run_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          page_id: string
+          detected_at?: string
+          change_type: string
+          importance: 'low' | 'medium' | 'high'
+          confidence?: number
+          detection_method: string
+          before_snippet?: string | null
+          after_snippet?: string | null
+          linked_run_id?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['site_changes']['Insert']>
+      }
+      events: {
+        Row: {
+          id: string
+          brand_id: string
+          type: 'success' | 'info' | 'warning' | 'error'
+          title: string
+          message: string | null
+          source_type: 'measurement_run' | 'site_change' | 'opportunity' | 'system' | 'billing'
+          source_id: string | null
+          show_toast: boolean
+          show_notification: boolean
+          show_history: boolean
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          type: 'success' | 'info' | 'warning' | 'error'
+          title: string
+          message?: string | null
+          source_type: 'measurement_run' | 'site_change' | 'opportunity' | 'system' | 'billing'
+          source_id?: string | null
+          show_toast?: boolean
+          show_notification?: boolean
+          show_history?: boolean
+          read?: boolean
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['events']['Insert']>
+      }
+    }
+  }
+}
