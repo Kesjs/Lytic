@@ -10,6 +10,8 @@ import { OtpInput } from '@/components/auth/otp-input'
 import { Toaster, toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
+import { supabase } from '@/lib/supabase'
+
 type AuthMode = 'otp-email' | 'otp-code' | 'password' | 'register' | 'forgot'
 
 export default function LoginPage() {
@@ -38,12 +40,16 @@ export default function LoginPage() {
     }
     setIsLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      })
+      if (error) throw error
       setMode('otp-code')
-      setResendTimer(30)
+      setResendTimer(60)
       toast.success(`Code envoyé à ${email}`)
-    } catch {
-      toast.error("Erreur lors de l'envoi du code")
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'envoi du code")
     } finally {
       setIsLoading(false)
     }
@@ -53,16 +59,21 @@ export default function LoginPage() {
     setIsLoading(true)
     setOtpError(false)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email',
+      })
+      if (error) throw error
       setOtpSuccess(true)
-      toast.success('Connexion réussie ! Redirection vers le tableau de bord...')
+      toast.success('Connexion réussie ! Redirection...')
       setTimeout(() => {
         router.push('/dashboard')
       }, 700)
-    } catch {
+    } catch (err: any) {
       setOtpError(true)
       setTimeout(() => setOtpError(false), 1000)
-      toast.error('Code incorrect')
+      toast.error(err?.message || 'Code incorrect')
     } finally {
       setIsLoading(false)
     }
@@ -76,11 +87,15 @@ export default function LoginPage() {
     }
     setIsLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
       toast.success('Connexion réussie !')
       router.push('/dashboard')
-    } catch {
-      toast.error('Email ou mot de passe incorrect')
+    } catch (err: any) {
+      toast.error(err?.message || 'Email ou mot de passe incorrect')
     } finally {
       setIsLoading(false)
     }
@@ -88,18 +103,23 @@ export default function LoginPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) {
-      toast.error('Veuillez renseigner votre email')
+    if (!email || !password) {
+      toast.error('Veuillez renseigner votre email et mot de passe')
       return
     }
     setIsLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
-      setMode('otp-code')
-      setResendTimer(30)
-      toast.success('Code de vérification envoyé à votre email')
-    } catch {
-      toast.error("Erreur lors de l'inscription")
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+        },
+      })
+      if (error) throw error
+      toast.success('Compte créé ! Vérifiez votre boîte mail pour confirmer votre inscription.')
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'inscription")
     } finally {
       setIsLoading(false)
     }
@@ -113,11 +133,14 @@ export default function LoginPage() {
     }
     setIsLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) throw error
       toast.success('Un lien de réinitialisation vous a été envoyé par email')
       setMode('password')
-    } catch {
-      toast.error("Erreur lors de l'envoi de la réinitialisation")
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'envoi de la réinitialisation")
     } finally {
       setIsLoading(false)
     }

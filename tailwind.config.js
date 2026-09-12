@@ -5,16 +5,17 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       colors: {
-        canvas: '#0a0a0a',
-        surface: '#131313',
+        canvas: '#0f0f0f',
+        surface: '#141414',
         elevated: '#1a1a1a',
         border: { DEFAULT: '#262626', strong: '#333333' },
         ink: { primary: '#f5f5f5', secondary: '#a3a3a3', muted: '#6b6b6b' },
-        brand: { DEFAULT: '#F5C518', hover: '#D9AC0E' },
+        brand: { DEFAULT: '#F5C518', hover: '#D9AC0E', text: '#f2d94e' },
         success: '#22c55e',
         danger: '#ef4444',
         info: '#3b82f6',
