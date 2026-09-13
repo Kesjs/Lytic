@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { GrainGradientShader } from '~/components/auth/grain-gradient-shader'
 import { OtpInput } from '~/components/auth/otp-input'
-import { Toaster, toast } from 'sonner'
+import { toast } from 'sonner'
 import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/login')({
@@ -183,8 +183,6 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Toaster theme="dark" position="top-center" />
-
       {/* Layout split-screen */}
       <div className="grid lg:grid-cols-[1.02fr_0.98fr] min-h-screen">
 

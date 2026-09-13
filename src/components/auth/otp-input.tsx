@@ -117,9 +117,9 @@ export function OtpInput({
             aria-label={`Chiffre ${index + 1} du code`}
             className={cn(
               'w-11 h-[52px] text-center text-[22px] font-semibold rounded-lg border-[1.5px] outline-none transition-all duration-200',
-              'bg-zinc-900 text-white caret-transparent',
+              'bg-zinc-900 text-white caret-[#c9ab1e]',
               // État normal
-              !error && !success && 'border-white/10 focus:border-white/30',
+              !error && !success && 'border-white/10 focus:border-[#c9ab1e] focus:ring-2 focus:ring-[#c9ab1e]/30 focus:bg-zinc-800/80',
               // Erreur
               error && 'border-danger/60 bg-danger/5',
               // Succès — vert séquentiel
