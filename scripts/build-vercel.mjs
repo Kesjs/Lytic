@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { cpSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import * as esbuild from 'esbuild';
 
 const root = process.cwd();
 const outputDir = join(root, '.vercel', 'output');
@@ -87,6 +88,21 @@ export default async function handler(req, res) {
 `;
 
 writeFileSync(join(outputDir, 'functions', '__server.func', 'index.mjs'), serverHandler, 'utf8');
+
+console.log('⚡ [3.5/4] Bundling serverless function into a standalone executable...');
+await esbuild.build({
+  entryPoints: [join(outputDir, 'functions', '__server.func', 'index.mjs')],
+  bundle: true,
+  platform: 'node',
+  target: 'node20',
+  format: 'esm',
+  outfile: join(outputDir, 'functions', '__server.func', 'index.mjs'),
+  allowOverwrite: true,
+  banner: {
+    js: `import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);`,
+  },
+  external: ['node:*'],
+});
 
 // Function config for Vercel
 const vcConfig = {
