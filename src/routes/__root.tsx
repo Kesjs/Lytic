@@ -12,12 +12,16 @@ const queryClient = new QueryClient()
 // Une seule vérification de session à la racine, partagée par toutes les
 // routes enfants via le contexte du router — pas un fetch par route.
 const fetchSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const supabase = getSupabaseServerClient()
-  const { data } = await supabase.auth.getUser()
+  try {
+    const supabase = getSupabaseServerClient()
+    const { data } = await supabase.auth.getUser()
 
-  if (!data.user) return null
+    if (!data.user) return null
 
-  return { id: data.user.id, email: data.user.email ?? null }
+    return { id: data.user.id, email: data.user.email ?? null }
+  } catch {
+    return null
+  }
 })
 
 export const Route = createRootRoute({
