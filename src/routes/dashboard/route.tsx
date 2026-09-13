@@ -1,9 +1,23 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { Sidebar } from '~/components/dashboard/Sidebar'
+import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: ({ context }) => {
-    if (!context.user) throw redirect({ to: '/login' })
+  beforeLoad: async ({ context }) => {
+    if (!context.user) {
+      if (typeof window !== 'undefined') {
+        try {
+          const supabase = getSupabaseBrowserClient()
+          const { data } = await supabase.auth.getUser()
+          if (data?.user) {
+            return { user: { id: data.user.id, email: data.user.email ?? null } }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      throw redirect({ to: '/login' })
+    }
   },
   component: DashboardLayout,
 })

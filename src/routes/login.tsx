@@ -80,8 +80,10 @@ function LoginPage() {
       })
       if (error) throw error
       setOtpSuccess(true)
-      toast.success('Connexion réussie !')
-      setTimeout(() => navigate({ to: '/dashboard' }), 800)
+      toast.success('Connexion réussie ! Redirection...')
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 500)
     } catch (err: any) {
       setOtpError(true)
       setTimeout(() => setOtpError(false), 1000)
@@ -101,8 +103,10 @@ function LoginPage() {
       const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      toast.success('Connexion réussie !')
-      navigate({ to: '/dashboard' })
+      toast.success('Connexion réussie ! Redirection...')
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 300)
     } catch (err: any) {
       toast.error(err?.message || 'Email ou mot de passe incorrect')
     } finally {
