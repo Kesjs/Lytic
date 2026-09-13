@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { getCookies, setCookie } from '@tanstack/react-start/server'
 import type { Database } from './database.types'
 
@@ -51,10 +52,10 @@ export function getSupabaseAdminClient() {
     )
   }
 
-  // Import dynamique pour être certain que ce chemin n'est jamais tiré
-  // dans un bundle client.
-  const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js')
-
+  // createClient est importé statiquement au lieu d'un require() dynamique :
+  // dans TanStack Start / Nitro, les server functions sont déjà isolées du
+  // bundle client à la compilation — le require() était un pattern Next.js
+  // qui casse l'inférence de type TypeScript ici.
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })

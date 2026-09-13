@@ -6,6 +6,7 @@
 // JAMAIS d'import depuis un composant client ou une route — clé API serveur uniquement.
 
 import OpenAI from 'openai'
+import type { ResponseOutputText } from 'openai/resources/responses/responses'
 
 const MODEL = 'gpt-5.6-luna'
 const TIMEOUT_MS = 90_000 // 90s — appels web_search peuvent prendre 10–60s
@@ -29,10 +30,10 @@ function extractCitations(response: OpenAI.Responses.Response): string[] {
   for (const item of response.output ?? []) {
     if (item.type === 'message') {
       for (const part of item.content ?? []) {
-        if (part.type === 'text') {
-          for (const annotation of (part as any).annotations ?? []) {
-            if (annotation.type === 'url_citation' && annotation.url) {
-              urls.push(annotation.url as string)
+        if (part.type === 'output_text') {
+          for (const annotation of (part as ResponseOutputText).annotations ?? []) {
+            if (annotation.type === 'url_citation') {
+              urls.push(annotation.url)
             }
           }
         }
@@ -47,8 +48,8 @@ function extractText(response: OpenAI.Responses.Response): string {
   for (const item of response.output ?? []) {
     if (item.type === 'message') {
       for (const part of item.content ?? []) {
-        if (part.type === 'text') {
-          return (part as any).text ?? ''
+        if (part.type === 'output_text') {
+          return (part as ResponseOutputText).text ?? ''
         }
       }
     }

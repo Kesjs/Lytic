@@ -4,7 +4,7 @@
 // Flash stable la plus récente — pas Flash-Lite.
 // JAMAIS d'import depuis un composant client — clé API serveur uniquement.
 
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
+import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai'
 
 const MODEL = 'gemini-3.7-flash'
 const MAX_RETRIES = 2
@@ -32,7 +32,7 @@ export interface ParsedCompetitor {
 }
 
 // Schéma JSON strict transmis à Gemini pour forcer une réponse structurée
-const RESPONSE_SCHEMA = {
+const RESPONSE_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
   properties: {
     brand_mentioned: { type: SchemaType.BOOLEAN, description: 'La marque est-elle explicitement mentionnée dans la réponse ?' },
