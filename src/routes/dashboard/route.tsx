@@ -1,28 +1,43 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: async ({ context }) => {
-    if (!context.user) {
-      if (typeof window !== 'undefined') {
-        try {
-          const supabase = getSupabaseBrowserClient()
-          const { data } = await supabase.auth.getUser()
-          if (data?.user) {
-            return { user: { id: data.user.id, email: data.user.email ?? null } }
-          }
-        } catch {
-          // ignore
-        }
-      }
-      throw redirect({ to: '/login' })
-    }
-  },
   component: DashboardLayout,
 })
 
 function DashboardLayout() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+        window.location.href = '/login'
+      }
+    }).catch(() => {
+      setIsAuthenticated(false)
+      window.location.href = '/login'
+    })
+  }, [])
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <p className="text-xs text-ink-muted">Chargement de votre espace...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) return null
+
   return (
     <div className="min-h-screen bg-canvas">
       <Sidebar />

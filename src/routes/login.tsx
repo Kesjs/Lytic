@@ -12,9 +12,6 @@ export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>): { mode?: AuthMode; tab?: AuthMode } => ({
     mode: (search.mode || search.tab) as AuthMode | undefined,
   }),
-  beforeLoad: ({ context }) => {
-    if (context.user) throw redirect({ to: '/dashboard' })
-  },
   component: LoginPage,
 })
 
@@ -30,6 +27,16 @@ function LoginPage() {
   useEffect(() => {
     if (search.mode) setMode(search.mode)
   }, [search.mode])
+
+  // Si l'utilisateur est déjà connecté dans ce navigateur, aller directement au dashboard
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        window.location.href = '/dashboard'
+      }
+    }).catch(() => {})
+  }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [otpError, setOtpError] = useState(false)
