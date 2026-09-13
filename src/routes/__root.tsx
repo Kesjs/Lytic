@@ -45,7 +45,15 @@ function RootComponent() {
     <RootDocument>
       <QueryClientProvider client={queryClient}>
         <Outlet />
-        <Toaster theme="dark" position="top-center" richColors />
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
+            },
+          }}
+        />
       </QueryClientProvider>
     </RootDocument>
   )

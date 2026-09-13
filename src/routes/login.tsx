@@ -29,13 +29,18 @@ function LoginPage() {
   }, [search.mode])
 
   // Si l'utilisateur est déjà connecté dans ce navigateur, aller directement au dashboard
+  const [checkingSession, setCheckingSession] = useState(true)
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) {
         window.location.href = '/dashboard'
+      } else {
+        setCheckingSession(false)
       }
-    }).catch(() => {})
+    }).catch(() => {
+      setCheckingSession(false)
+    })
   }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -87,7 +92,7 @@ function LoginPage() {
       })
       if (error) throw error
       setOtpSuccess(true)
-      toast.success('Connexion réussie ! Redirection...')
+      toast.success('Connexion réussie')
       setTimeout(() => {
         window.location.href = '/dashboard'
       }, 500)
@@ -110,7 +115,7 @@ function LoginPage() {
       const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      toast.success('Connexion réussie ! Redirection...')
+      toast.success('Connexion réussie')
       setTimeout(() => {
         window.location.href = '/dashboard'
       }, 300)
@@ -179,6 +184,17 @@ function LoginPage() {
   const handleResend = () => {
     if (resendTimer > 0) return
     handleSendOtp()
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-7 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <p className="text-xs text-ink-muted">Accès à votre espace...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

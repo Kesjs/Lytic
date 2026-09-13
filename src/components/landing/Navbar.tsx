@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import { ChevronDown, Menu, X, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 const productLinks = [
   { label: 'Vue d’ensemble', href: '/#produit' },
@@ -68,6 +69,7 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
   useEffect(() => {
     function onScroll() {
@@ -76,6 +78,23 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll)
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) {
+        setIsAuthenticated(true)
+      }
+    }).catch(() => {})
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user)
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [])
 
   return (
@@ -105,15 +124,27 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link to="/login" className="px-3 py-2 text-sm text-ink-secondary transition-colors hover:text-ink-primary">
-            Connexion
-          </Link>
-          <Link
-            to="/login"
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-brand-hover"
-          >
-            Commencer
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
+            >
+              Dashboard
+              <ArrowRight className="size-3.5" />
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="px-3 py-2 text-sm text-ink-secondary transition-colors hover:text-ink-primary">
+                Connexion
+              </Link>
+              <Link
+                to="/login"
+                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-brand-hover"
+              >
+                Commencer
+              </Link>
+            </>
+          )}
         </div>
 
         <button type="button" onClick={() => setMobileOpen((v) => !v)} className="text-ink-primary md:hidden" aria-label="Menu">
@@ -143,12 +174,24 @@ export function Navbar() {
                 Dashboard
               </Link>
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
-                <Link to="/login" className="text-sm text-ink-secondary hover:text-ink-primary">
-                  Connexion
-                </Link>
-                <Link to="/login" className="rounded-md bg-brand px-4 py-2 text-center text-sm font-medium text-black">
-                  Commencer
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-center text-sm font-semibold text-black"
+                  >
+                    Accéder au Dashboard
+                    <ArrowRight className="size-4" />
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/login" className="text-sm text-ink-secondary hover:text-ink-primary">
+                      Connexion
+                    </Link>
+                    <Link to="/login" className="rounded-md bg-brand px-4 py-2 text-center text-sm font-medium text-black">
+                      Commencer
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
