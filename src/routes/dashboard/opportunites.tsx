@@ -12,6 +12,7 @@ import {
   type OpportunityPriority,
   type EvidenceStepType,
 } from '~/lib/queries/opportunities'
+import { DashboardStateView } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/opportunites')({
   component: OpportunitesPage,
@@ -66,27 +67,17 @@ function OpportunitesPage() {
   })
 
   if (isLoading) {
-    return <StateMessage title="Chargement…" description="Récupération de vos données Reflet." />
+    return <DashboardStateView state="loading" />
   }
 
   if (!data?.brand) {
-    return (
-      <StateMessage
-        title="Aucune marque configurée"
-        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
-      />
-    )
+    return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
   const opportunities = data.opportunities
 
   if (opportunities.length === 0) {
-    return (
-      <StateMessage
-        title="Aucune opportunité pour l'instant"
-        description="Les opportunités sont générées à partir des observations de vos mesures. Elles apparaîtront ici après votre première mesure."
-      />
-    )
+    return <DashboardStateView state="no_opportunity" />
   }
 
   const filtered =
@@ -129,10 +120,7 @@ function OpportunitesPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <StateMessage
-          title="Aucune opportunité dans ce statut"
-          description="Changez de filtre pour voir les autres opportunités."
-        />
+        <DashboardStateView state="no_opportunity" title="Aucune opportunité dans ce statut" description="Changez de filtre pour voir les autres opportunités." />
       ) : (
         <div className="space-y-3">
           {filtered.map((o) => (
@@ -309,11 +297,4 @@ function OpportunityCard({
   )
 }
 
-function StateMessage({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-    </div>
-  )
-}
+

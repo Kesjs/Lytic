@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Activity, FileEdit, Bell } from 'lucide-react'
 import { fetchHistory, type TimelineEntry } from '~/lib/queries/history'
+import { DashboardStateView } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/historique')({
   component: HistoriquePage,
@@ -52,27 +53,17 @@ function HistoriquePage() {
   })
 
   if (isLoading) {
-    return <StateMessage title="Chargement…" description="Récupération de vos données Reflet." />
+    return <DashboardStateView state="loading" />
   }
 
   if (!data?.brand) {
-    return (
-      <StateMessage
-        title="Aucune marque configurée"
-        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
-      />
-    )
+    return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
   const entries = data.entries
 
   if (entries.length === 0) {
-    return (
-      <StateMessage
-        title="Aucun historique pour l'instant"
-        description="Les mesures et les modifications de site détectées apparaîtront ici au fil du temps."
-      />
-    )
+    return <DashboardStateView state="no_data" title="Aucun historique pour l'instant" description="Les mesures et les modifications de site détectées apparaîtront ici au fil du temps." />
   }
 
   const filtered = entries.filter((e) => {
@@ -101,7 +92,8 @@ function HistoriquePage() {
       </div>
 
       {filtered.length === 0 ? (
-        <StateMessage
+        <DashboardStateView
+          state="no_data"
           title="Aucune entrée dans ce filtre"
           description="Changez de filtre pour voir les autres entrées de l'historique."
         />
@@ -262,11 +254,4 @@ function EventEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'e
   )
 }
 
-function StateMessage({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-    </div>
-  )
-}
+

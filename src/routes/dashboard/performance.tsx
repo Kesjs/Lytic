@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchPerformanceOverview, type PerformanceQuestionRow } from '~/lib/queries/performance'
 import { PerformanceChart } from '~/components/dashboard/PerformanceChart'
 import { QuestionDrawer } from '~/components/dashboard/QuestionDrawer'
+import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/performance')({
   component: PerformancePage,
@@ -18,28 +19,37 @@ function PerformancePage() {
   })
 
   if (isLoading) {
-    return <StateMessage title="Chargement…" description="Récupération de vos données Reflet." />
+    return <DashboardStateView state="loading" />
   }
 
   if (!data?.brand) {
-    return (
-      <StateMessage
-        title="Aucune marque configurée"
-        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
-      />
-    )
+    return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
   const { latestRun, questions } = data
   const hasAnyRun = !!latestRun
 
+  if (!latestRun) {
+    return <DashboardStateView state="no_data" />
+  }
+
+  if (latestRun.status === 'failed') {
+    return <DashboardStateView state="failed" />
+  }
+
+  if (latestRun.status === 'measuring') {
+    return <DashboardStateView state="measuring" description={`${latestRun.questions_completed}/${latestRun.questions_total} questions mesurées…`} />
+  }
+
+  if (latestRun.status === 'pending') {
+    return <DashboardStateView state="measuring" title="Mesure en attente…" />
+  }
+
   return (
     <div className="space-y-6">
       <header className="rounded-lg border border-border bg-surface p-5">
         <p className="text-xs font-medium text-ink-muted">Visibilité IA</p>
-        {!latestRun ? (
-          <p className="mt-1 text-sm text-ink-secondary">Aucune mesure effectuée pour le moment.</p>
-        ) : latestRun.status === 'success' && latestRun.score !== null ? (
+        {latestRun.status === 'success' && latestRun.score !== null ? (
           <>
             <div className="mt-1 font-display text-3xl font-bold tabular-nums text-brand-text">
               {Math.round(latestRun.score)} <span className="text-base text-ink-muted">/ 100</span>
@@ -54,7 +64,10 @@ function PerformancePage() {
             )}
           </>
         ) : (
-          <RunStatusBadge status={latestRun.status} run={latestRun} />
+          <DashboardStateView state={latestRun.status === 'partial' ? 'partial' : 'stale'} compact className="mt-2" />
+        )}
+        {latestRun.status === 'success' && deriveRunFreshness(latestRun.completed_at) === 'stale' && (
+          <DashboardStateView state="stale" compact className="mt-2 !py-0" />
         )}
       </header>
 
@@ -144,27 +157,4 @@ function BoolDot({ value }: { value: boolean }) {
   )
 }
 
-function StateMessage({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-    </div>
-  )
-}
 
-function RunStatusBadge({
-  status,
-  run,
-}: {
-  status: 'pending' | 'measuring' | 'partial' | 'failed'
-  run: { questions_total: number; questions_completed: number }
-}) {
-  const labels: Record<typeof status, string> = {
-    pending: 'Mesure en attente',
-    measuring: `Mesure en cours (${run.questions_completed}/${run.questions_total})`,
-    partial: `Mesure partielle (${run.questions_completed}/${run.questions_total} questions)`,
-    failed: 'La dernière mesure a échoué',
-  }
-  return <p className="mt-1 text-sm text-ink-secondary">{labels[status]}</p>
-}

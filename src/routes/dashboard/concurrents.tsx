@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { ChevronDown, EyeOff } from 'lucide-react'
 import { fetchCompetitorsOverview, hideCompetitor, type CompetitorRow } from '~/lib/queries/competitors'
 import { CompetitorsChart } from '~/components/dashboard/CompetitorsChart'
+import { DashboardStateView } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/concurrents')({
   component: ConcurrentsPage,
@@ -21,16 +22,11 @@ function ConcurrentsPage() {
   })
 
   if (isLoading) {
-    return <StateMessage title="Chargement…" description="Récupération de vos données Reflet." />
+    return <DashboardStateView state="loading" />
   }
 
   if (!data?.brand) {
-    return (
-      <StateMessage
-        title="Aucune marque configurée"
-        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
-      />
-    )
+    return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
   const { brand, latestRun, ownStats, competitors } = data
@@ -49,12 +45,7 @@ function ConcurrentsPage() {
   }
 
   if (!latestRun) {
-    return (
-      <StateMessage
-        title="Aucune mesure effectuée"
-        description="Les concurrents détectés dans les réponses observées apparaîtront ici après votre première mesure."
-      />
-    )
+    return <DashboardStateView state="no_data" />
   }
 
   return (
@@ -181,11 +172,4 @@ function CompetitorRowLine({
   )
 }
 
-function StateMessage({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-    </div>
-  )
-}
+

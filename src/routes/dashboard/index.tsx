@@ -235,7 +235,7 @@ function AccueilPage() {
               : 'aucune mesure effectuée'}
           </span>
         </p>
-        <ManualMeasureButton lastCompletedAt={latestRun?.completed_at ?? null} hasBrand />
+        <ManualMeasureButton lastCompletedAt={latestRun?.completed_at ?? null} hasBrand brandId={brand.id} />
       </section>
     </div>
   )
