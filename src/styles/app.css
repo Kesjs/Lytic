@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,13 +7,23 @@
 :root {
   --background: #000000;
   --foreground: #f3f4f6;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: 'Space Grotesk', var(--font-sans);
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'tnum' 1, 'cv05' 1;
+}
+
+/* Chiffres tabulaires partout où des valeurs numériques sont comparées
+   en colonne (scores, pourcentages, tableaux Performance/Concurrents) */
+.tabular-nums,
+table {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Custom scrollbars */

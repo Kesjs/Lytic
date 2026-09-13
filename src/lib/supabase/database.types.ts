@@ -292,6 +292,31 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['events']['Insert']>
       }
+      notification_preferences: {
+        Row: {
+          id: string
+          brand_id: string
+          email_enabled: boolean
+          notify_measurement_run: boolean
+          notify_site_change: boolean
+          notify_opportunity: boolean
+          notify_billing: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          email_enabled?: boolean
+          notify_measurement_run?: boolean
+          notify_site_change?: boolean
+          notify_opportunity?: boolean
+          notify_billing?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['notification_preferences']['Insert']>
+      }
     }
   }
 }

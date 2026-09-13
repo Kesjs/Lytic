@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Menu, PanelLeft } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
+import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 export const Route = createFileRoute('/dashboard')({
@@ -105,18 +106,17 @@ function DashboardLayout() {
 
             {/* Séparateur & Fil d'Ariane dynamique */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="font-semibold text-ink-primary">Reflet</span>
+              <span className="font-display font-semibold text-ink-primary">Reflet</span>
               <span className="text-border-strong">/</span>
               <span className="text-ink-secondary font-medium">{currentTitle}</span>
             </div>
           </div>
 
-          {/* Section droite du Header */}
+          {/* Section droite du Header — centre de notifications (§36D.8),
+              remplace l'ancien badge "En ligne" qui n'était adossé à
+              aucune donnée réelle. */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-surface px-2.5 py-1 text-xs text-ink-muted">
-              <span className="size-2 rounded-full bg-success" />
-              <span className="text-[11px] font-medium text-ink-secondary hidden sm:inline">En ligne</span>
-            </div>
+            <NotificationCenter />
           </div>
         </header>
 

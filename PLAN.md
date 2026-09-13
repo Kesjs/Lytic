@@ -42,18 +42,47 @@
 13. Pages Performance / Concurrents / Opportunités / Historique / Paramètres :
     squelettes de routes créés (pour que la nav ne casse pas), contenu réel à faire
 
+## ✅ Déjà fait (suite — session Claude du 2026-09-13)
+14. Page Accueil complétée : 4 KPI réels calculés depuis `observations`/
+    `observation_competitors` (jamais inventés, `null` → "—" si pas de donnée),
+    graphique d'évolution (`ScoreChart.tsx`, recharts, sélecteur 7j/30j/3mois),
+    blocs "Performance des questions" et "Concurrents" ajoutés (manquaient du
+    spec §4), footer "Dernière mesure / prochaine mesure" (prochaine mesure
+    volontairement affichée "non planifiée" — pas de scheduler dans le schéma,
+    donc pas de date inventée)
+15. `src/lib/queries/metrics.ts` — fonction serveur partagée `fetchMetricsHistory`
+    (score/mentions/reco/position par run sur une période), utilisée par
+    l'Accueil et par Performance
+16. Page Performance (§5) connectée : rappel score, `PerformanceChart.tsx`
+    (sélecteur d'indicateur Score/Mentions/Reco/Position + période), tableau
+    complet des questions actives, `QuestionDrawer.tsx` au clic (réponses
+    observées, concurrents détectés, historique, preuves) — **écart assumé** :
+    le spec mentionne un 4ᵉ indicateur "citation" qui n'existe pas dans le
+    schéma (`observations` n'a que mention/reco/position) ; pas inventé, à
+    ajouter au schéma si besoin
+17. Page Concurrents (§6) connectée : `CompetitorsChart.tsx` (barres Mentions/
+    Recommandations, marque vs jusqu'à 6 concurrents), tableau avec lignes
+    dépliables (extraits de contexte réels), formulation exacte du spec
+    respectée ("apparaît plus fréquemment que vous", jamais de classement
+    marché), action "masquer" (`hideCompetitor`, première écriture en base de
+    l'app — **à vérifier** : policy RLS `UPDATE` sur `competitors` pas
+    confirmée, seul `SELECT` l'était)
+18. Améliorations indépendantes apportées en parallèle (à conserver, non
+    touchées par Claude) : sidebar rétractable + fil d'Ariane dans le header
+    du dashboard (`route.tsx`, `Sidebar.tsx`), session Supabase 30 jours
+    (`client.ts`), affichage conditionnel connecté/déconnecté sur la landing
+    (`Navbar.tsx`), écran de garde anti-flash sur `/login`
+
 ## 🔜 Prochaine étape (une seule à la fois)
 - [ ] `npm install` + `npm run dev` chez toi → retour d'erreurs si besoin
 - [ ] Créer un compte via `/signup`, vérifier qu'une ligne `profiles` apparaît bien automatiquement
 - [ ] Insérer un jeu de données de test (1 brand liée à ton compte, questions,
-      1 run, observations) pour valider visuellement l'Accueil avec de vraies données
-- [ ] Page Performance (§5 du prompt dashboard) — graphique + tableau des questions + drawer
-- [ ] Page Concurrents (§6)
+      1 run, observations) pour valider visuellement Accueil/Performance/Concurrents
+- [ ] Vérifier la policy RLS `UPDATE` sur `competitors` (nécessaire pour "masquer")
 - [ ] Page Opportunités (§7) — Evidence Chain
 - [ ] Page Historique (§8) — timeline mesures + modifications + événements
 - [ ] Page Paramètres (§9) — sous-sections Compte/Site/Questions/Notifications/Abonnement/Sécurité
 - [ ] Système de toasts/notifications transversal (§10) — événements → toast/notification/historique
-- [ ] Graphique d'évolution du score sur l'Accueil (recharts, actuellement un placeholder)
 
 ## ⏳ Pas encore fait (plus tard)
 - Moteur de mesure réel (appel API OpenAI par question → remplissage observations/competitors/score)

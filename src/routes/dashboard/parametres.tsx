@@ -1,16 +1,624 @@
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { Pencil, Plus, Check, X as XIcon } from 'lucide-react'
+import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
+import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import {
+  fetchSettings,
+  updateProfileName,
+  updatePassword,
+  updateBrandSite,
+  addQuestion,
+  updateQuestionText,
+  toggleQuestionActive,
+  updateNotificationPreferences,
+  type SettingsData,
+} from '~/lib/queries/settings'
 
 export const Route = createFileRoute('/dashboard/parametres')({
-  component: Page,
+  component: ParametresPage,
 })
 
-function Page() {
+const PLAN_LABEL: Record<string, string> = {
+  trial: 'Essai',
+  active: 'Actif',
+  past_due: 'Paiement en retard',
+  canceled: 'Résilié',
+}
+
+const PLAN_CLASS: Record<string, string> = {
+  trial: 'bg-info/10 text-info border-info/30',
+  active: 'bg-success/10 text-success border-success/30',
+  past_due: 'bg-warning/10 text-warning border-warning/30',
+  canceled: 'bg-danger/10 text-danger border-danger/30',
+}
+
+function ParametresPage() {
+  const queryClient = useQueryClient()
+  const { data, isLoading } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => fetchSettings(),
+  })
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ['settings'] })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+        <p className="text-sm font-semibold text-ink-primary">Chargement…</p>
+        <p className="mt-1 max-w-sm text-sm text-ink-muted">Récupération de vos paramètres.</p>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+        <p className="text-sm font-semibold text-ink-primary">Non authentifié</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">Paramètres</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">
-        Page pas encore connectée aux données réelles — prochaine étape du plan.
-      </p>
+    <div className="mx-auto max-w-2xl space-y-5">
+      <AccountSection profile={data.profile} onSaved={invalidate} />
+      <SiteSection brand={data.brand} onSaved={invalidate} />
+      <QuestionsSection brand={data.brand} questions={data.questions} onSaved={invalidate} />
+      <NotificationsSection brand={data.brand} notifications={data.notifications} onSaved={invalidate} />
+      <SubscriptionSection brand={data.brand} />
+      <SecuritySection />
     </div>
+  )
+}
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-surface p-5">
+      <h2 className="font-display text-sm font-semibold text-ink-primary">{title}</h2>
+      {description && <p className="mt-1 text-xs text-ink-muted">{description}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
+  )
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  placeholder,
+  error,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  type?: string
+  placeholder?: string
+  error?: string
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-ink-secondary">{label}</span>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'mt-1 w-full rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
+          error ? 'border-danger/60 focus:border-danger' : 'border-border focus:border-brand/50',
+        )}
+      />
+      {error && <p className="mt-1 text-[11px] text-danger">{error}</p>}
+    </label>
+  )
+}
+
+function SaveButton({
+  onClick,
+  saving,
+  label = 'Enregistrer',
+  disabled = false,
+}: {
+  onClick: () => void
+  saving: boolean
+  label?: string
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving || disabled}
+      className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-brand-hover disabled:opacity-50"
+    >
+      {saving ? 'Enregistrement…' : label}
+    </button>
+  )
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-5 w-9 shrink-0 rounded-full border transition-colors ${
+        checked ? 'border-brand/40 bg-brand' : 'border-border bg-elevated'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 size-3.5 rounded-full transition-transform ${
+          checked ? 'translate-x-[18px] bg-black/80' : 'translate-x-0.5 bg-ink-muted'
+        }`}
+      />
+    </button>
+  )
+}
+
+// --- Compte ---
+
+function AccountSection({
+  profile,
+  onSaved,
+}: {
+  profile: SettingsData['profile']
+  onSaved: () => void
+}) {
+  const [fullName, setFullName] = useState(profile.fullName ?? '')
+
+  const mutation = useMutation({
+    mutationFn: (name: string) => updateProfileName({ data: name }),
+    onSuccess: () => {
+      toast.success('Profil mis à jour.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour le profil.'),
+  })
+
+  return (
+    <SectionCard title="Compte" description="Vos informations personnelles.">
+      <div className="space-y-3">
+        <TextField label="Nom complet" value={fullName} onChange={setFullName} placeholder="Votre nom" />
+        <label className="block">
+          <span className="text-xs font-medium text-ink-secondary">Email</span>
+          <input
+            type="email"
+            value={profile.email}
+            disabled
+            className="mt-1 w-full cursor-not-allowed rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink-muted"
+          />
+        </label>
+        <div className="flex justify-end">
+          <SaveButton onClick={() => mutation.mutate(fullName)} saving={mutation.isPending} />
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
+// --- Site ---
+
+function SiteSection({
+  brand,
+  onSaved,
+}: {
+  brand: SettingsData['brand']
+  onSaved: () => void
+}) {
+  const [name, setName] = useState(brand?.name ?? '')
+  const [websiteUrl, setWebsiteUrl] = useState(brand?.websiteUrl ?? '')
+  const [setupOpen, setSetupOpen] = useState(false)
+
+  useEffect(() => {
+    setName(brand?.name ?? '')
+    setWebsiteUrl(brand?.websiteUrl ?? '')
+  }, [brand?.id])
+
+  const mutation = useMutation({
+    mutationFn: () => updateBrandSite({ data: { brandId: brand!.id, name, websiteUrl } }),
+    onSuccess: () => {
+      toast.success('Marque mise à jour.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour la marque.'),
+  })
+
+  const urlTouched = websiteUrl.trim().length > 0
+  const urlValid = useMemo(() => isValidWebsiteUrl(websiteUrl), [websiteUrl])
+
+  if (!brand) {
+    return (
+      <SectionCard
+        title="Site"
+        description="Configurez votre marque pour commencer à suivre votre visibilité IA."
+      >
+        <p className="text-xs text-ink-muted">Aucune marque configurée pour le moment.</p>
+        <button
+          type="button"
+          onClick={() => setSetupOpen(true)}
+          className="mt-3 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-brand-hover"
+        >
+          + Configurer ma marque
+        </button>
+        <BrandSetupDrawer open={setupOpen} onClose={() => setSetupOpen(false)} />
+      </SectionCard>
+    )
+  }
+
+  return (
+    <SectionCard title="Site" description="Le nom et l'URL suivis par Reflet.">
+      <div className="space-y-3">
+        <TextField label="Nom de la marque" value={name} onChange={setName} />
+        <TextField
+          label="Site web"
+          value={websiteUrl}
+          onChange={setWebsiteUrl}
+          placeholder="https://votre-site.fr"
+          error={
+            urlTouched && !urlValid
+              ? 'URL invalide — utilisez un format du type https://votre-site.fr'
+              : undefined
+          }
+        />
+        <div className="flex justify-end">
+          <SaveButton
+            onClick={() => mutation.mutate()}
+            saving={mutation.isPending}
+            disabled={!name.trim() || !urlValid}
+          />
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
+// --- Questions ---
+
+function QuestionsSection({
+  brand,
+  questions,
+  onSaved,
+}: {
+  brand: SettingsData['brand']
+  questions: SettingsData['questions']
+  onSaved: () => void
+}) {
+  const [newText, setNewText] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingText, setEditingText] = useState('')
+
+  const addMutation = useMutation({
+    mutationFn: () => addQuestion({ data: { brandId: brand!.id, text: newText } }),
+    onSuccess: () => {
+      setNewText('')
+      toast.success('Question ajoutée.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || "Impossible d'ajouter cette question."),
+  })
+
+  const editMutation = useMutation({
+    mutationFn: (data: { questionId: string; text: string }) => updateQuestionText({ data }),
+    onSuccess: () => {
+      setEditingId(null)
+      toast.success('Question modifiée.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de modifier cette question.'),
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: (data: { questionId: string; active: boolean }) => toggleQuestionActive({ data }),
+    onSuccess: () => onSaved(),
+    onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour cette question.'),
+  })
+
+  if (!brand) {
+    return (
+      <SectionCard title="Questions" description="Les questions suivies pour mesurer votre visibilité.">
+        <p className="text-xs text-ink-muted">Configurez votre marque avant d'ajouter des questions.</p>
+      </SectionCard>
+    )
+  }
+
+  return (
+    <SectionCard
+      title="Questions"
+      description={`${questions.length}/30 questions suivies. Une question désactivée n'est plus mesurée mais reste visible.`}
+    >
+      <div className="space-y-2">
+        {questions.length === 0 && (
+          <p className="text-xs text-ink-muted">Aucune question pour le moment.</p>
+        )}
+        {questions.map((q) => {
+          const editingOverlong = editingId === q.id && editingText.length > QUESTION_MAX_LENGTH
+          const editingNearLimit =
+            editingId === q.id &&
+            !editingOverlong &&
+            editingText.length > QUESTION_MAX_LENGTH * 0.9
+          return (
+            <div
+              key={q.id}
+              className={`rounded-md border border-border bg-elevated px-3 py-2 ${
+                !q.active ? 'opacity-60' : ''
+              }`}
+            >
+              {editingId === q.id ? (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      className={cn(
+                        'flex-1 rounded-sm border bg-canvas px-2 py-1 text-xs text-ink-primary outline-none',
+                        editingOverlong
+                          ? 'border-danger/60 focus:border-danger'
+                          : 'border-border focus:border-brand/50',
+                      )}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => editMutation.mutate({ questionId: q.id, text: editingText })}
+                      disabled={editMutation.isPending || editingOverlong || !editingText.trim()}
+                      className="flex size-6 items-center justify-center rounded-sm text-success hover:bg-success/10 disabled:opacity-40"
+                      title="Valider"
+                    >
+                      <Check className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-danger/10 hover:text-danger"
+                      title="Annuler"
+                    >
+                      <XIcon className="size-3.5" />
+                    </button>
+                  </div>
+                  {(editingOverlong || editingNearLimit) && (
+                    <p
+                      className={cn(
+                        'mt-1 text-right text-[10px]',
+                        editingOverlong ? 'text-danger' : 'text-warning',
+                      )}
+                    >
+                      {editingText.length}/{QUESTION_MAX_LENGTH}
+                      {editingOverlong ? ' — trop long' : ''}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="flex-1 text-xs text-ink-secondary">« {q.text} »</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(q.id)
+                      setEditingText(q.text)
+                    }}
+                    className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-elevated hover:text-ink-primary"
+                    title="Modifier"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <Toggle
+                    checked={q.active}
+                    onChange={(v) => toggleMutation.mutate({ questionId: q.id, active: v })}
+                  />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center gap-2">
+          <input
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            placeholder="Nouvelle question à suivre…"
+            className={cn(
+              'flex-1 rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
+              newText.length > QUESTION_MAX_LENGTH
+                ? 'border-danger/60 focus:border-danger'
+                : 'border-border focus:border-brand/50',
+            )}
+          />
+          <button
+            type="button"
+            onClick={() => newText.trim() && addMutation.mutate()}
+            disabled={
+              addMutation.isPending ||
+              questions.length >= 30 ||
+              !newText.trim() ||
+              newText.length > QUESTION_MAX_LENGTH
+            }
+            className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-elevated text-ink-secondary hover:text-ink-primary disabled:opacity-50"
+            title="Ajouter"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
+        {newText.length > QUESTION_MAX_LENGTH * 0.9 && (
+          <p
+            className={cn(
+              'mt-1 text-right text-[11px]',
+              newText.length > QUESTION_MAX_LENGTH ? 'text-danger' : 'text-warning',
+            )}
+          >
+            {newText.length}/{QUESTION_MAX_LENGTH}
+            {newText.length > QUESTION_MAX_LENGTH ? ' — trop long' : ''}
+          </p>
+        )}
+      </div>
+    </SectionCard>
+  )
+}
+
+// --- Notifications ---
+
+function NotificationsSection({
+  brand,
+  notifications,
+  onSaved,
+}: {
+  brand: SettingsData['brand']
+  notifications: SettingsData['notifications']
+  onSaved: () => void
+}) {
+  const [prefs, setPrefs] = useState(
+    notifications ?? {
+      emailEnabled: true,
+      notifyMeasurementRun: true,
+      notifySiteChange: true,
+      notifyOpportunity: true,
+      notifyBilling: true,
+    },
+  )
+
+  useEffect(() => {
+    if (notifications) setPrefs(notifications)
+  }, [notifications])
+
+  const mutation = useMutation({
+    mutationFn: () => updateNotificationPreferences({ data: { brandId: brand!.id, ...prefs } }),
+    onSuccess: () => {
+      toast.success('Préférences de notification enregistrées.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour les notifications.'),
+  })
+
+  if (!brand) {
+    return (
+      <SectionCard title="Notifications" description="Alertes envoyées par email.">
+        <p className="text-xs text-ink-muted">Configurez votre marque avant de régler les notifications.</p>
+      </SectionCard>
+    )
+  }
+
+  const rows: { key: keyof typeof prefs; label: string }[] = [
+    { key: 'emailEnabled', label: 'Notifications par email (interrupteur général)' },
+    { key: 'notifyMeasurementRun', label: 'Nouvelle mesure terminée' },
+    { key: 'notifySiteChange', label: 'Changement détecté sur le site' },
+    { key: 'notifyOpportunity', label: 'Nouvelle opportunité identifiée' },
+    { key: 'notifyBilling', label: 'Facturation et abonnement' },
+  ]
+
+  return (
+    <SectionCard title="Notifications" description="Choisissez ce qui déclenche un email.">
+      <div className="space-y-2.5">
+        {rows.map((r) => (
+          <div key={r.key} className="flex items-center justify-between gap-3">
+            <span className="text-xs text-ink-secondary">{r.label}</span>
+            <Toggle checked={prefs[r.key]} onChange={(v) => setPrefs((p) => ({ ...p, [r.key]: v }))} />
+          </div>
+        ))}
+        <div className="flex justify-end pt-1">
+          <SaveButton onClick={() => mutation.mutate()} saving={mutation.isPending} />
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
+// --- Abonnement ---
+// Lecture seule : aucun système de facturation réel n'existe encore.
+// Pas de faux bouton "changer de plan" tant que ça n'est pas branché.
+
+function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
+  if (!brand) {
+    return (
+      <SectionCard title="Abonnement">
+        <p className="text-xs text-ink-muted">Configurez votre marque pour voir votre abonnement.</p>
+      </SectionCard>
+    )
+  }
+
+  return (
+    <SectionCard title="Abonnement">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-ink-primary">Plan actuel</p>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Marque créée le{' '}
+            {new Date(brand.createdAt).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
+        <span className={`rounded-sm border px-2 py-1 text-[11px] font-medium ${PLAN_CLASS[brand.plan]}`}>
+          {PLAN_LABEL[brand.plan]}
+        </span>
+      </div>
+      <p className="mt-3 text-xs text-ink-muted">
+        La gestion de la facturation n'est pas encore disponible dans cette version.
+      </p>
+    </SectionCard>
+  )
+}
+
+// --- Sécurité ---
+
+function SecuritySection() {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const mutation = useMutation({
+    mutationFn: (password: string) => updatePassword({ data: password }),
+    onSuccess: () => {
+      toast.success('Mot de passe mis à jour.')
+      setNewPassword('')
+      setConfirmPassword('')
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour le mot de passe.'),
+  })
+
+  function handleSubmit() {
+    if (newPassword !== confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas.')
+      return
+    }
+    mutation.mutate(newPassword)
+  }
+
+  return (
+    <SectionCard title="Sécurité" description="Changer votre mot de passe.">
+      <div className="space-y-3">
+        <TextField
+          label="Nouveau mot de passe"
+          type="password"
+          value={newPassword}
+          onChange={setNewPassword}
+          placeholder="8 caractères minimum"
+        />
+        <TextField
+          label="Confirmer le mot de passe"
+          type="password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+        />
+        <div className="flex justify-end">
+          <SaveButton onClick={handleSubmit} saving={mutation.isPending} label="Mettre à jour le mot de passe" />
+        </div>
+      </div>
+    </SectionCard>
   )
 }

@@ -91,11 +91,11 @@ export function Sidebar({
           }`}
         >
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand text-sm font-black text-black">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand font-display text-sm font-bold text-black">
               R
             </div>
             {!isCollapsed && (
-              <span className="text-sm font-semibold text-ink-primary whitespace-nowrap transition-opacity duration-200">
+              <span className="font-display text-sm font-semibold text-ink-primary whitespace-nowrap transition-opacity duration-200">
                 Reflet
               </span>
             )}

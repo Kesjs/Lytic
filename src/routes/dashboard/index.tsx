@@ -1,12 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchDashboardHome } from '~/lib/queries/dashboard'
+import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/lib/queries/dashboard'
+import { ScoreChart } from '~/components/dashboard/ScoreChart'
+import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
+import { ManualMeasureButton } from '~/components/dashboard/ManualMeasureButton'
+import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/')({
   component: AccueilPage,
 })
 
 function AccueilPage() {
+  const [setupOpen, setSetupOpen] = useState(false)
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
@@ -17,31 +23,62 @@ function AccueilPage() {
   }
 
   if (!data?.brand) {
-    // État "No data" — aucune marque configurée pour ce compte.
+    // État A — compte sans marque. Un seul CTA, pas d'onboarding multi-étapes.
     return (
-      <StateMessage
-        title="Aucune marque configurée"
-        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
-      />
+      <>
+        <div className="mx-auto max-w-lg py-10 text-center">
+          <p className="font-display text-lg font-semibold text-ink-primary">
+            Votre visibilité IA commence ici.
+          </p>
+          <p className="mt-2 text-sm text-ink-muted">
+            Ajoutez votre marque pour découvrir comment elle apparaît dans les réponses générées
+            par ChatGPT.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSetupOpen(true)}
+            className="mt-5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
+          >
+            + Configurer ma marque
+          </button>
+
+          <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <p className="text-xs font-medium text-ink-primary">1. Analyse</p>
+              <p className="mt-1 text-xs text-ink-muted">Nous analysons votre présence.</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <p className="text-xs font-medium text-ink-primary">2. Mesure</p>
+              <p className="mt-1 text-xs text-ink-muted">
+                Nous suivons vos questions dans ChatGPT.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <p className="text-xs font-medium text-ink-primary">3. Opportunités</p>
+              <p className="mt-1 text-xs text-ink-muted">Nous vous montrons où progresser.</p>
+            </div>
+          </div>
+        </div>
+        <BrandSetupDrawer open={setupOpen} onClose={() => setSetupOpen(false)} />
+      </>
     )
   }
 
-  const { brand, latestRun, previousRun, opportunities, events, pages } = data
+  const { brand, latestRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors } =
+    data
 
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
         <div className="rounded-lg border border-border bg-surface p-5">
           <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
-          <p className="mt-3 text-xs uppercase tracking-wide text-ink-muted">Visibilité IA</p>
+          <p className="mt-3 text-xs font-medium text-ink-muted">Visibilité IA</p>
 
           {!latestRun ? (
-            <p className="mt-1 text-sm text-ink-secondary">
-              Aucune mesure effectuée pour le moment.
-            </p>
+            <DashboardStateView state="no_data" compact />
           ) : latestRun.status === 'success' && latestRun.score !== null ? (
             <>
-              <div className="mt-1 text-4xl font-bold text-brand-text">
+              <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
                 {Math.round(latestRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
               </div>
               {latestRun.score_delta !== null && (
@@ -60,35 +97,51 @@ function AccueilPage() {
                   ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR')
                   : '—'}
               </p>
+              {/* Distingue une mesure fraîche d'une mesure périmée — §36D.10 :
+                  "Aucun changement détecté" ne doit jamais se confondre avec
+                  une donnée simplement ancienne. */}
+              {deriveRunFreshness(latestRun.completed_at) === 'stale' && (
+                <DashboardStateView state="stale" compact className="mt-2 !py-0" />
+              )}
             </>
           ) : (
             <RunStatusBadge status={latestRun.status} run={latestRun} />
           )}
         </div>
 
-        <div className="flex items-center justify-center rounded-lg border border-border bg-surface p-5 text-sm text-ink-muted">
-          {previousRun ? 'Graphique d\u2019évolution (à venir)' : 'Pas encore assez de mesures pour un graphique'}
-        </div>
+        <ScoreChart hasAnyRun={!!latestRun} />
       </header>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           label="Mentions"
-          value={latestRun?.status === 'success' ? '—' : null}
+          value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
           hint="Sur les questions suivies"
         />
-        <KpiCard label="Recommandations" value={null} hint="Sur les questions suivies" />
-        <KpiCard label="Position moyenne" value={null} hint="Quand mentionné" />
-        <KpiCard label="Présence concurrentielle" value={null} hint="Vs. concurrents détectés" />
+        <KpiCard
+          label="Recommandations"
+          value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
+          hint="Sur les questions suivies"
+        />
+        <KpiCard
+          label="Position moyenne"
+          value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
+          hint="Quand mentionné"
+        />
+        <KpiCard
+          label="Présence concurrentielle"
+          value={
+            kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
+          }
+          hint="Vs. concurrents détectés"
+        />
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-5">
           <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
           {opportunities.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Aucune opportunité détectée pour l'instant.
-            </p>
+            <DashboardStateView state={latestRun ? 'no_opportunity' : 'no_data'} compact />
           ) : (
             <ul className="mt-3 space-y-2">
               {opportunities.map((opp) => (
@@ -114,10 +167,10 @@ function AccueilPage() {
             <ul className="mt-3 space-y-2">
               {events.map((event) => (
                 <li key={event.id} className="text-sm text-ink-secondary">
-                  <span className="text-ink-primary">{event.title}</span>{' '}
-                  <span className="text-xs text-ink-muted">
-                    · {new Date(event.created_at).toLocaleDateString('fr-FR')}
-                  </span>
+                  <p className="text-ink-primary">{event.title}</p>
+                  <p className="text-xs text-ink-muted">
+                    {new Date(event.created_at).toLocaleDateString('fr-FR')}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -126,21 +179,165 @@ function AccueilPage() {
       </section>
 
       <section className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
-        {pages.length === 0 ? (
-          <p className="mt-3 text-sm text-ink-muted">
-            Aucune page suivie — configurez votre site dans Paramètres.
-          </p>
-        ) : (
-          <p className="mt-3 text-sm text-ink-secondary">
-            {pages.length} page{pages.length > 1 ? 's' : ''} suivie
-            {pages.length > 1 ? 's' : ''} ·{' '}
-            {pages.filter((p) => p.status === 'ok').length} vérifiée
-            {pages.filter((p) => p.status === 'ok').length > 1 ? 's' : ''} récemment
-          </p>
-        )}
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
+          <Link
+            to="/dashboard/performance"
+            className="text-xs text-ink-muted hover:text-ink-secondary"
+          >
+            Toutes les questions →
+          </Link>
+        </div>
+        <QuestionsPerfTable questions={questionsPerf} hasAnyRun={!!latestRun} />
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink-primary">Concurrents</h2>
+            <Link
+              to="/dashboard/concurrents"
+              className="text-xs text-ink-muted hover:text-ink-secondary"
+            >
+              Tous les concurrents →
+            </Link>
+          </div>
+          <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
+          {pages.length === 0 ? (
+            <p className="mt-3 text-sm text-ink-muted">
+              Aucune page suivie — configurez votre site dans Paramètres.
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-ink-secondary">
+              {pages.length} page{pages.length > 1 ? 's' : ''} suivie
+              {pages.length > 1 ? 's' : ''}, dont{' '}
+              {pages.filter((p) => p.status === 'ok').length} vérifiée
+              {pages.filter((p) => p.status === 'ok').length > 1 ? 's' : ''} récemment
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-ink-secondary">
+          Dernière mesure :{' '}
+          <span className="text-ink-primary">
+            {latestRun?.completed_at
+              ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : 'aucune mesure effectuée'}
+          </span>
+        </p>
+        <ManualMeasureButton lastCompletedAt={latestRun?.completed_at ?? null} hasBrand />
       </section>
     </div>
+  )
+}
+
+function QuestionsPerfTable({
+  questions,
+  hasAnyRun,
+}: {
+  questions: QuestionPerf[]
+  hasAnyRun: boolean
+}) {
+  if (!hasAnyRun) {
+    return (
+      <p className="mt-3 text-sm text-ink-muted">
+        Aucune mesure effectuée pour le moment — les questions suivies apparaîtront ici.
+      </p>
+    )
+  }
+  if (questions.length === 0) {
+    return (
+      <p className="mt-3 text-sm text-ink-muted">
+        Aucune donnée par question pour la dernière mesure.
+      </p>
+    )
+  }
+  return (
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-xs font-medium text-ink-muted">
+            <th className="pb-2 font-medium">Question</th>
+            <th className="pb-2 pl-4 text-right font-medium">Mention</th>
+            <th className="pb-2 pl-4 text-right font-medium">Reco.</th>
+            <th className="pb-2 pl-4 text-right font-medium">Position</th>
+          </tr>
+        </thead>
+        <tbody>
+          {questions.map((q) => (
+            <tr key={q.id} className="border-b border-border/50 last:border-0">
+              <td className="max-w-xs truncate py-2 pr-4 text-ink-primary">{q.text}</td>
+              <td className="py-2 pl-4 text-right">
+                <BoolDot value={q.mentioned} />
+              </td>
+              <td className="py-2 pl-4 text-right">
+                <BoolDot value={q.recommended} />
+              </td>
+              <td className="py-2 pl-4 text-right text-ink-secondary">
+                {q.position !== null ? `#${q.position}` : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function CompetitorsMiniList({
+  competitors,
+  hasAnyRun,
+}: {
+  competitors: CompetitorMini[]
+  hasAnyRun: boolean
+}) {
+  if (!hasAnyRun) {
+    return (
+      <p className="mt-3 text-sm text-ink-muted">
+        Aucune mesure effectuée pour le moment.
+      </p>
+    )
+  }
+  if (competitors.length === 0) {
+    return (
+      <p className="mt-3 text-sm text-ink-muted">
+        Aucun concurrent détecté dans les réponses observées pour l'instant.
+      </p>
+    )
+  }
+  return (
+    <ul className="mt-3 space-y-2">
+      {competitors.map((c) => (
+        <li
+          key={c.id}
+          className="flex items-center justify-between rounded-md border border-border bg-elevated px-3 py-2 text-sm"
+        >
+          <span className="text-ink-primary">{c.name}</span>
+          <span className="text-xs text-ink-muted">
+            {c.mentions} mention{c.mentions > 1 ? 's' : ''}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function BoolDot({ value }: { value: boolean }) {
+  return (
+    <span
+      className={`inline-block size-2 rounded-full ${value ? 'bg-success' : 'bg-ink-muted/40'}`}
+      aria-label={value ? 'Oui' : 'Non'}
+    />
   )
 }
 
@@ -157,7 +354,7 @@ function KpiCard({ label, value, hint }: { label: string; value: string | null; 
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
       <p className="text-xs text-ink-secondary">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-ink-primary">{value ?? '—'}</p>
+      <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink-primary">{value ?? '—'}</p>
       <p className="mt-1 text-xs text-ink-muted">{hint}</p>
     </div>
   )
