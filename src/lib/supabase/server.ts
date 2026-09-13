@@ -7,12 +7,14 @@ import type { Database } from './database.types'
 // service_role. Pas de fallback codé en dur : on veut échouer bruyamment
 // si les variables d'env manquent, jamais retomber sur un secret en clair.
 export function getSupabaseServerClient() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
+  const supabaseUrl =
+    process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey =
+    process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-      'VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY doivent être définies côté serveur (voir .env.example).',
+      'VITE_SUPABASE_URL (ou NEXT_PUBLIC_SUPABASE_URL) et la clé ANON doivent être définies côté serveur.',
     )
   }
 
@@ -38,12 +40,13 @@ export function getSupabaseServerClient() {
  * ou le client navigateur, qui respectent le RLS par marque.
  */
 export function getSupabaseAdminClient() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const supabaseUrl =
+    process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(
-      'VITE_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY doivent être définies pour le client admin.',
+      'VITE_SUPABASE_URL (ou NEXT_PUBLIC_SUPABASE_URL) et SUPABASE_SERVICE_ROLE_KEY doivent être définies pour le client admin.',
     )
   }
 

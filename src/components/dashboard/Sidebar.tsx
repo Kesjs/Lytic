@@ -1,4 +1,5 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import {
   LayoutDashboard,
   LineChart,
@@ -7,9 +8,9 @@ import {
   History,
   Settings,
   LogOut,
+  User,
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
-import { useNavigate } from '@tanstack/react-router'
 
 // Items réels du dashboard Reflet (reflet-prompt-dashboard.md §3).
 // Jamais de jargon interne ici (Run, Measurement Engine, Observation…).
@@ -24,6 +25,14 @@ const navItems = [
 export function Sidebar() {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) setUserEmail(data.user.email)
+    })
+  }, [])
 
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient()
@@ -64,7 +73,13 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-3 space-y-1">
+        {userEmail && (
+          <div className="flex items-center gap-2 rounded-md bg-elevated/40 px-3 py-2 text-xs text-ink-secondary">
+            <span className="size-2 rounded-full bg-success shrink-0" />
+            <span className="truncate text-ink-primary font-medium">{userEmail}</span>
+          </div>
+        )}
         <Link
           to="/dashboard/parametres"
           className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
