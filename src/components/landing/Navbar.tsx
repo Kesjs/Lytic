@@ -100,17 +100,17 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-200 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
         scrolled ? 'border-b border-border bg-canvas/80 backdrop-blur-md' : 'border-b border-transparent bg-transparent'
       }`}
     >
       <div
-        className={`mx-auto flex max-w-1200 items-center justify-between px-6 transition-all duration-200 ${
-          scrolled ? 'h-14' : 'h-20'
+        className={`mx-auto flex max-w-1200 items-center justify-between px-6 transition-all duration-500 ${
+          scrolled ? 'h-16' : 'h-24'
         }`}
       >
         <Link to="/" className="flex items-center">
-          <img src={logoUrl} alt="Reflet" className="h-10" />
+          <img src={logoUrl} alt="Reflet" className="h-12" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

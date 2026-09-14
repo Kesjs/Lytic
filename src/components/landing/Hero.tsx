@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { AiCycle } from './AiCycle'
 import { DashboardPreview } from './DashboardPreview'
 
@@ -32,6 +32,10 @@ export function Hero({
   engines,
   preview = <DashboardPreview />,
 }: HeroProps) {
+  const { scrollY } = useScroll()
+  const opacity = useTransform(scrollY, [0, 400], [1, 0])
+  const y = useTransform(scrollY, [0, 400], [0, 100])
+
   return (
     <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-24">
       {/* Background Texture avec fondu progressif */}
@@ -47,7 +51,7 @@ export function Hero({
       </div>
 
       {/* Contenu textuel Hero : parfaitement centré au chargement */}
-      <div className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
+      <motion.div style={{ opacity, y }} className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
         {/* Badge animé style Border Beam */}
         <motion.div
           initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
@@ -141,7 +145,7 @@ export function Hero({
         >
           1 site, jusqu'à 30 questions, mesure continue
         </motion.p>
-      </div>
+      </motion.div>
 
       {/* Aperçu du produit avec apparition fluide */}
       <motion.div
