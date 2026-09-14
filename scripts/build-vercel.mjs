@@ -99,9 +99,9 @@ await esbuild.build({
   outfile: join(outputDir, 'functions', '__server.func', 'index.mjs'),
   allowOverwrite: true,
   banner: {
-    js: `import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);`,
+    js: `import { createRequire as __createRequire } from 'node:module';\nif (typeof globalThis.require === 'undefined') { globalThis.require = __createRequire(import.meta.url); }`,
   },
-  external: ['node:*'],
+  external: ['node:*', 'puppeteer-core', '@sparticuz/chromium-min'],
 });
 
 // Function config for Vercel
