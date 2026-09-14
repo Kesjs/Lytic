@@ -20,7 +20,7 @@ export interface HeroProps {
 }
 
 export function Hero({
-  eyebrow = 'Visibilité IA en temps réel',
+  eyebrow = 'Soyez recommandé par les IA',
   title = (
     <>
       Voyez comment les <span className="text-brand-text">IA</span> parlent de votre marque.
@@ -63,7 +63,7 @@ export function Hero({
             <span className="text-border-strong">·</span>
             <span className="inline-flex items-center gap-1 font-semibold text-brand-text">
               <Sparkles className="size-3 text-brand" />
-              <span>Moteur v1.1</span>
+              <span>Nouveauté</span>
               <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
             </span>
           </div>
