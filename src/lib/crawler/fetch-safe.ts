@@ -1,4 +1,4 @@
-import { dns } from 'node:dns/promises'
+import { lookup } from 'node:dns/promises'
 import { Buffer } from 'node:buffer'
 
 // ─── Plages IP privées / réservées (SSRF protection) ─────────────────────────
@@ -78,7 +78,7 @@ async function assertNotPrivateHost(hostname: string): Promise<void> {
 
   let addresses: string[]
   try {
-    const result = await dns.lookup(hostname, { all: true })
+    const result = await lookup(hostname, { all: true })
     addresses = result.map((r) => r.address)
   } catch {
     // Hostname non résolvable → on laisse le fetch échouer normalement
