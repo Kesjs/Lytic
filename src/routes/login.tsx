@@ -136,7 +136,7 @@ function LoginPage() {
       const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.signUp({
         email,
-        password: password || undefined,
+        password: password || '',
       })
       if (error) throw error
       toast.success('Compte créé ! Vérifiez vos emails pour valider votre inscription.')

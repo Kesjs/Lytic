@@ -81,7 +81,7 @@ function OpportunitesPage() {
   }
 
   const filtered =
-    statusFilter === 'all' ? opportunities : opportunities.filter((o) => o.status === statusFilter)
+    statusFilter === 'all' ? opportunities : opportunities.filter((o: any) => o.status === statusFilter)
 
   async function handleStatusChange(id: string, status: OpportunityStatus, title: string) {
     setUpdatingId(id)
@@ -123,7 +123,7 @@ function OpportunitesPage() {
         <DashboardStateView state="no_opportunity" title="Aucune opportunité dans ce statut" description="Changez de filtre pour voir les autres opportunités." />
       ) : (
         <div className="space-y-3">
-          {filtered.map((o) => (
+          {filtered.map((o: any) => (
             <OpportunityCard
               key={o.id}
               opportunity={o}

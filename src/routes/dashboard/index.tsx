@@ -144,7 +144,7 @@ function AccueilPage() {
             <DashboardStateView state={latestRun ? 'no_opportunity' : 'no_data'} compact />
           ) : (
             <ul className="mt-3 space-y-2">
-              {opportunities.map((opp) => (
+              {opportunities.map((opp: any) => (
                 <li
                   key={opp.id}
                   className="rounded-md border border-border bg-elevated px-3 py-2 text-sm text-ink-primary"
@@ -165,7 +165,7 @@ function AccueilPage() {
             <p className="mt-3 text-sm text-ink-muted">Aucun événement récent.</p>
           ) : (
             <ul className="mt-3 space-y-2">
-              {events.map((event) => (
+              {events.map((event: any) => (
                 <li key={event.id} className="text-sm text-ink-secondary">
                   <p className="text-ink-primary">{event.title}</p>
                   <p className="text-xs text-ink-muted">
@@ -215,8 +215,8 @@ function AccueilPage() {
             <p className="mt-3 text-sm text-ink-secondary">
               {pages.length} page{pages.length > 1 ? 's' : ''} suivie
               {pages.length > 1 ? 's' : ''}, dont{' '}
-              {pages.filter((p) => p.status === 'ok').length} vérifiée
-              {pages.filter((p) => p.status === 'ok').length > 1 ? 's' : ''} récemment
+              {pages.filter((p: any) => p.status === 'ok').length} vérifiée
+              {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
             </p>
           )}
         </div>

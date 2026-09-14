@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getCookies, setCookie } from '@tanstack/react-start/server'
 import type { Database } from './database.types'
 
@@ -10,7 +10,7 @@ const DEFAULT_SUPABASE_ANON_KEY =
 // Client serveur — à utiliser dans les server functions / loaders de routes.
 // Respecte le RLS via la session de l'utilisateur (cookies), jamais la clé
 // service_role.
-export function getSupabaseServerClient() {
+export function getSupabaseServerClient(): SupabaseClient<Database> {
   const supabaseUrl =
     process.env.VITE_SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -20,18 +20,21 @@ export function getSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     DEFAULT_SUPABASE_ANON_KEY
 
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
-        return Object.entries(getCookies()).map(([name, value]) => ({ name, value }))
+        return Object.entries(getCookies()).map(([name, value]) => ({
+          name,
+          value: value as string,
+        }))
       },
-      setAll(cookies) {
+      setAll(cookies: { name: string; value: string; options: any }[]) {
         cookies.forEach(({ name, value, options }) => {
           setCookie(name, value, options)
         })
       },
     },
-  })
+  }) as SupabaseClient<Database>
 }
 
 /**
@@ -41,7 +44,7 @@ export function getSupabaseServerClient() {
  * du dashboard : les pages utilisateur passent par getSupabaseServerClient()
  * ou le client navigateur, qui respectent le RLS par marque.
  */
-export function getSupabaseAdminClient() {
+export function getSupabaseAdminClient(): SupabaseClient<Database> {
   const supabaseUrl =
     process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -58,5 +61,5 @@ export function getSupabaseAdminClient() {
   // qui casse l'inférence de type TypeScript ici.
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
-  })
+  }) as SupabaseClient<Database>
 }

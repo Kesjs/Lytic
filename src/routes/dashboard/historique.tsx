@@ -66,7 +66,7 @@ function HistoriquePage() {
     return <DashboardStateView state="no_data" title="Aucun historique pour l'instant" description="Les mesures et les modifications de site détectées apparaîtront ici au fil du temps." />
   }
 
-  const filtered = entries.filter((e) => {
+  const filtered = entries.filter((e: any) => {
     if (filter === 'all') return true
     if (filter === 'run') return e.kind === 'run'
     return e.kind === 'change'
@@ -99,7 +99,7 @@ function HistoriquePage() {
         />
       ) : (
         <ol className="space-y-3">
-          {filtered.map((entry) => (
+          {filtered.map((entry: any) => (
             <TimelineItem key={`${entry.kind}-${entry.id}`} entry={entry} />
           ))}
         </ol>

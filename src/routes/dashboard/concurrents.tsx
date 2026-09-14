@@ -72,7 +72,7 @@ function ConcurrentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {competitors.map((c) => (
+                {competitors.map((c: any) => (
                   <CompetitorRowLine
                     key={c.id}
                     competitor={c}

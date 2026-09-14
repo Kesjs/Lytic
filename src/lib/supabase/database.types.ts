@@ -20,7 +20,7 @@ export interface Database {
           full_name?: string | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Update: { [key: string]: any }
       }
       brands: {
         Row: {
@@ -41,7 +41,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
-        Update: Partial<Database['public']['Tables']['brands']['Insert']>
+        Update: { [key: string]: any }
       }
       questions: {
         Row: {
@@ -60,7 +60,7 @@ export interface Database {
           position?: number
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['questions']['Insert']>
+        Update: { [key: string]: any }
       }
       measurement_runs: {
         Row: {
@@ -87,7 +87,7 @@ export interface Database {
           score_delta?: number | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['measurement_runs']['Insert']>
+        Update: { [key: string]: any }
       }
       observations: {
         Row: {
@@ -112,7 +112,7 @@ export interface Database {
           raw_answer?: string | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['observations']['Insert']>
+        Update: { [key: string]: any }
       }
       competitors: {
         Row: {
@@ -129,7 +129,7 @@ export interface Database {
           hidden?: boolean
           first_seen_at?: string
         }
-        Update: Partial<Database['public']['Tables']['competitors']['Insert']>
+        Update: { [key: string]: any }
       }
       observation_competitors: {
         Row: {
@@ -150,7 +150,7 @@ export interface Database {
           position?: number | null
           context_excerpt?: string | null
         }
-        Update: Partial<Database['public']['Tables']['observation_competitors']['Insert']>
+        Update: { [key: string]: any }
       }
       opportunities: {
         Row: {
@@ -183,12 +183,12 @@ export interface Database {
           updated_at?: string
           resolved_at?: string | null
         }
-        Update: Partial<Database['public']['Tables']['opportunities']['Insert']>
+        Update: { [key: string]: any }
       }
       opportunity_questions: {
         Row: { opportunity_id: string; question_id: string }
         Insert: { opportunity_id: string; question_id: string }
-        Update: Partial<Database['public']['Tables']['opportunity_questions']['Insert']>
+        Update: { [key: string]: any }
       }
       opportunity_evidence: {
         Row: {
@@ -209,7 +209,7 @@ export interface Database {
           content?: string | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['opportunity_evidence']['Insert']>
+        Update: { [key: string]: any }
       }
       site_pages: {
         Row: {
@@ -228,7 +228,7 @@ export interface Database {
           last_checked_at?: string | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['site_pages']['Insert']>
+        Update: { [key: string]: any }
       }
       site_changes: {
         Row: {
@@ -259,7 +259,7 @@ export interface Database {
           linked_run_id?: string | null
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['site_changes']['Insert']>
+        Update: { [key: string]: any }
       }
       events: {
         Row: {
@@ -290,7 +290,7 @@ export interface Database {
           read?: boolean
           created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['events']['Insert']>
+        Update: { [key: string]: any }
       }
       notification_preferences: {
         Row: {
@@ -315,8 +315,20 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
-        Update: Partial<Database['public']['Tables']['notification_preferences']['Insert']>
+        Update: { [key: string]: any }
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

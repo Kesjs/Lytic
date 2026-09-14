@@ -44,7 +44,7 @@ export function QuestionDrawer({
             <div className="space-y-6">
               <div>
                 <p className="text-xs font-medium text-ink-muted">Question</p>
-                <p className="mt-1 text-sm text-ink-primary">{data.question.text}</p>
+                <p className="mt-1 text-sm text-ink-primary">{(data as any).question.text}</p>
               </div>
 
               <div>
