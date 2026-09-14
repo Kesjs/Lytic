@@ -42,6 +42,12 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
     onError: (err: Error) => toast.error(err.message || 'Impossible de générer les questions.'),
   })
 
+  // urlValid doit être calculé avant tout early-return : sinon le nombre de
+  // hooks appelés change entre le rendu fermé (open=false) et le rendu
+  // ouvert (open=true), ce qui viole les Rules of Hooks et déclenche
+  // React error #310 dès l'ouverture du tiroir.
+  const urlValid = useMemo(() => isValidWebsiteUrl(websiteUrl), [websiteUrl])
+
   if (!open) return null
 
   function updateQuestion(i: number, value: string) {
@@ -59,7 +65,6 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
 
   const filledQuestions = questions.filter((q) => q.trim()).length
   const urlTouched = websiteUrl.trim().length > 0
-  const urlValid = useMemo(() => isValidWebsiteUrl(websiteUrl), [websiteUrl])
   const hasOverlongQuestion = questions.some((q) => q.length > QUESTION_MAX_LENGTH)
   const canSubmit =
     name.trim() &&
