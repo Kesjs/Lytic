@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { X, Plus, Trash2, Sparkles } from 'lucide-react'
+import { X, Plus, Trash2, Sparkles, Globe } from 'lucide-react'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
@@ -114,18 +114,23 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
 
             <label className="block">
               <span className="text-xs font-medium text-ink-secondary">Site web</span>
-              <input
-                value={websiteUrl}
-                onChange={(e) => setWebsiteUrl(e.target.value)}
-                onBlur={() => setWebsiteUrl((v) => normalizeWebsiteUrl(v))}
-                placeholder="votre-site.fr"
-                className={cn(
-                  'mt-1 w-full rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
-                  urlTouched && !urlValid
-                    ? 'border-danger/60 focus:border-danger'
-                    : 'border-border focus:border-brand/50',
-                )}
-              />
+              <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Globe className="size-4 text-ink-muted" />
+                </div>
+                <input
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  onBlur={() => setWebsiteUrl((v) => normalizeWebsiteUrl(v))}
+                  placeholder="tondomaine.com"
+                  className={cn(
+                    'w-full rounded-md border bg-elevated py-2 pl-9 pr-3 text-sm text-ink-primary outline-none',
+                    urlTouched && !urlValid
+                      ? 'border-danger/60 focus:border-danger'
+                      : 'border-border focus:border-brand/50',
+                  )}
+                />
+              </div>
               {urlTouched && !urlValid && (
                 <p className="mt-1 text-[11px] text-danger">
                   URL invalide — utilisez un format du type https://votre-site.fr

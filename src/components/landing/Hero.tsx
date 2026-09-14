@@ -53,29 +53,7 @@ export function Hero({
       {/* Contenu textuel Hero : parfaitement centré au chargement dans la hauteur de l'écran */}
       <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6 pt-20">
         <motion.div style={{ opacity, y }} className="flex flex-col items-center text-center">
-        {/* Badge animé style Border Beam */}
-        <motion.div
-          initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative inline-flex overflow-hidden rounded-full p-[1px] shadow-lg transition-transform hover:scale-[1.02]"
-        >
-          {/* Éclairage tournant (Border Beam) */}
-          <div className="absolute left-1/2 top-1/2 aspect-square w-[400%] -translate-x-1/2 -translate-y-1/2">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-              className="h-full w-full bg-[conic-gradient(from_0deg,transparent_0_340deg,theme(colors.brand.DEFAULT)_360deg)] opacity-70"
-            />
-          </div>
-          {/* Contenu du badge */}
-          <div className="relative flex items-center gap-3 rounded-full bg-surface/90 p-1 backdrop-blur-md">
-            <span className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
-              New
-            </span>
-            <span className="pr-3 text-sm font-medium text-ink-primary">{eyebrow}</span>
-          </div>
-        </motion.div>
+
 
         {/* Titre principal avec apparition en fondu et léger flou cinématique (21st.dev blur-in) */}
         <motion.h1
