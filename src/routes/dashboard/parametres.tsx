@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Pencil, Plus, Check, X as XIcon } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import {
   fetchSettings,
   updateProfileName,
@@ -16,6 +17,7 @@ import {
   updateNotificationPreferences,
   type SettingsData,
 } from '~/lib/queries/settings'
+import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
 
 export const Route = createFileRoute('/dashboard/parametres')({
   component: ParametresPage,
@@ -47,19 +49,12 @@ function ParametresPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-        <p className="text-sm font-semibold text-ink-primary">Chargement…</p>
-        <p className="mt-1 max-w-sm text-sm text-ink-muted">Récupération de vos paramètres.</p>
-      </div>
-    )
+    return <DashboardStateView state="loading" />
   }
 
   if (!data) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-        <p className="text-sm font-semibold text-ink-primary">Non authentifié</p>
-      </div>
+      <DashboardStateView state="no_data" title="Non authentifié" description="Connectez-vous pour accéder à vos paramètres." />
     )
   }
 
@@ -67,6 +62,7 @@ function ParametresPage() {
     <div className="mx-auto max-w-2xl space-y-5">
       <AccountSection profile={data.profile} onSaved={invalidate} />
       <SiteSection brand={data.brand} onSaved={invalidate} />
+      {data.brand && <CrawlSection brand={data.brand} />}
       <QuestionsSection brand={data.brand} questions={data.questions} onSaved={invalidate} />
       <NotificationsSection brand={data.brand} notifications={data.notifications} onSaved={invalidate} />
       <SubscriptionSection brand={data.brand} />
@@ -622,3 +618,56 @@ function SecuritySection() {
     </SectionCard>
   )
 }
+
+// --- Crawl (Change Detection) ---
+
+function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
+  const [isCrawling, setIsCrawling] = useState(false)
+
+  const triggerMutation = useMutation({
+    mutationFn: () => triggerSiteCrawl({ data: { brandId: brand!.id } }),
+    onSuccess: async (data) => {
+      setIsCrawling(true)
+      toast.info('Analyse du site démarrée')
+      
+      let done = false
+      let runId = data.runId
+
+      while (!done) {
+        try {
+          const res = await processNextPage({ data: { runId } })
+          done = res.done
+        } catch (err) {
+          console.error(err)
+          break
+        }
+      }
+
+      setIsCrawling(false)
+      toast.success('Analyse du site terminée')
+    },
+    onError: (err: Error) => {
+      setIsCrawling(false)
+      toast.error(err.message || 'Erreur lors du crawl')
+    }
+  })
+
+  return (
+    <SectionCard title="Mémoire du Site (Change Detection)" description="Reflet analyse votre site pour détecter les modifications et prouver l'impact de vos optimisations.">
+      <div className="flex items-center justify-between mt-4">
+        <p className="text-sm text-ink-secondary">
+          {isCrawling ? 'Analyse en cours...' : 'Le site est analysé régulièrement pour détecter les changements de structure et de contenu.'}
+        </p>
+        <button
+          type="button"
+          onClick={() => triggerMutation.mutate()}
+          disabled={isCrawling || triggerMutation.isPending}
+          className="rounded-md bg-brand/10 border border-brand/30 px-3 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-brand/20 disabled:opacity-50"
+        >
+          {isCrawling || triggerMutation.isPending ? 'Analyse en cours...' : 'Vérifier les modifications'}
+        </button>
+      </div>
+    </SectionCard>
+  )
+}
+

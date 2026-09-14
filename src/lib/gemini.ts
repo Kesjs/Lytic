@@ -128,3 +128,33 @@ export async function analyzeWithGemini(
 
   throw lastError
 }
+
+export async function generateBrandQuestions(brandName: string, websiteUrl: string): Promise<string[]> {
+  const client = getClient()
+  const model = client.getGenerativeModel({
+    model: MODEL,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: SchemaType.ARRAY,
+        items: { type: SchemaType.STRING },
+        description: 'Liste de 3 à 5 questions que les prospects posent à une IA concernant cette marque ou ce domaine.',
+      },
+    },
+  })
+
+  const prompt = `Génère 5 questions pertinentes qu'un utilisateur pourrait poser à ChatGPT concernant la marque "${brandName}" (Site web : ${websiteUrl}). Les questions doivent tester si l'IA connaît la marque et la recommande par rapport à ses concurrents.
+Exemples de questions attendues :
+- "Quels sont les meilleurs outils pour [domaine de la marque] ?"
+- "Que vaut la marque ${brandName} ?"
+- "Quelles sont les alternatives à [Concurrent principal] ?"
+Règles :
+- Les questions doivent être naturelles.
+- Pas plus de 300 caractères par question.
+- Retourne uniquement le tableau JSON.`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+  const parsed = JSON.parse(text) as string[]
+  return parsed.slice(0, 5)
+}

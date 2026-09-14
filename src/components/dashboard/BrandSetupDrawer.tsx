@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { X, Plus, Trash2 } from 'lucide-react'
-import { createBrandWithQuestions } from '~/lib/queries/settings'
+import { X, Plus, Trash2, Sparkles } from 'lucide-react'
+import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 
 // Point d'entrée unique pour sortir de l'état "compte sans marque" — ouvert
@@ -30,6 +30,15 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
       onClose()
     },
     onError: (err: Error) => toast.error(err.message || 'Impossible de configurer la marque.'),
+  })
+
+  const generateQuestionsMutation = useMutation({
+    mutationFn: () => generateQuestionsWithGemini({ data: { name, websiteUrl } }),
+    onSuccess: (data) => {
+      setQuestions(data.length > 0 ? data : [''])
+      toast.success('Questions générées par l\'IA !')
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de générer les questions.'),
   })
 
   if (!open) return null
@@ -127,8 +136,18 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
               <p className="mt-1 text-[11px] text-ink-muted">
                 Ce que vos prospects pourraient demander à ChatGPT — au moins une pour commencer.
               </p>
+              
+              <button
+                type="button"
+                onClick={() => generateQuestionsMutation.mutate()}
+                disabled={!name.trim() || !urlValid || generateQuestionsMutation.isPending}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-brand/30 bg-brand/5 px-3 py-2 text-xs font-medium text-brand transition-colors hover:bg-brand/10 disabled:opacity-50"
+              >
+                <Sparkles className="size-3.5" />
+                {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
+              </button>
 
-              <div className="mt-2 space-y-2">
+              <div className="mt-4 space-y-2">
                 {questions.map((q, i) => {
                   const overlong = q.length > QUESTION_MAX_LENGTH
                   const nearLimit = !overlong && q.length > QUESTION_MAX_LENGTH * 0.9

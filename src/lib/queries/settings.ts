@@ -352,3 +352,24 @@ export const updateNotificationPreferences = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
     return { success: true } as const
   })
+
+export const generateQuestionsWithGemini = createServerFn({ method: 'POST' })
+  .validator((data: { name: string; websiteUrl: string }) => data)
+  .handler(async ({ data }): Promise<string[]> => {
+    const supabase = getSupabaseServerClient()
+    await requireUser(supabase)
+
+    const name = data.name.trim()
+    const websiteUrl = data.websiteUrl.trim()
+    if (!name || !websiteUrl) {
+      throw new Error('Le nom et l\'URL de la marque sont requis pour générer les questions.')
+    }
+    if (!isValidWebsiteUrl(websiteUrl)) {
+      throw new Error('URL invalide.')
+    }
+
+    // Dynamic import to avoid running gemini code on client side bundle if not split
+    const { generateBrandQuestions } = await import('~/lib/gemini')
+    return await generateBrandQuestions(name, websiteUrl)
+  })
+

@@ -273,6 +273,15 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         read: false,
       })
 
+      // Déclenche l'Opportunity Engine (non-bloquant)
+      if (finalStatus === 'success' || finalStatus === 'partial') {
+        import('~/lib/opportunities_engine').then(({ generateOpportunitiesForRun }) => {
+          generateOpportunitiesForRun(run.id, brand.id, adminSupabase).catch((err) =>
+            console.error('Erreur generateOpportunitiesForRun:', err)
+          )
+        })
+      }
+
       return {
         done: true,
         run: {
