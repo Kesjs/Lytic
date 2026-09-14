@@ -46,6 +46,17 @@ const EVENT_TYPE_CLASS: Record<string, string> = {
   error: 'bg-danger/10 text-danger border-danger/30',
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  title: 'Titre',
+  meta: 'Méta-données',
+  headings: 'En-têtes',
+  body: 'Contenu principal',
+  pricing: 'Prix',
+  cta: 'Appel à l\'action',
+  links: 'Liens',
+  structure: 'Structure',
+}
+
 function HistoriquePage() {
   const [filter, setFilter] = useState<FilterValue>('all')
 
@@ -196,54 +207,104 @@ function RunEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'run
 }
 
 function ChangeEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'change' }> }) {
+  // Déterminer s'il y a un diff sémantique (nouveau format)
+  const hasSemanticDiff = entry.oldContent !== null && entry.newContent !== null && Array.isArray(entry.changedFields) && entry.changedFields.length > 0
+
   return (
     <>
       <EntryHeader
         icon={<FileEdit className="size-3.5" />}
-        title={entry.changeType}
+        title={entry.changeType === 'content' ? 'Changement de contenu' : 'Changement de structure'}
         date={entry.date}
       />
-      <p className="mt-1.5 text-xs text-ink-secondary">{entry.pageUrl}</p>
+      <p className="mt-1.5 text-xs text-ink-secondary">
+        Page concernée : <a href={entry.pageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-text">{entry.pageUrl}</a>
+      </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 mb-3">
         <span
           className={`rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${IMPORTANCE_CLASS[entry.importance]}`}
         >
           {IMPORTANCE_LABEL[entry.importance]}
         </span>
         <span className="rounded-sm border border-border px-1.5 py-0.5 text-[11px] text-ink-muted">
-          Confiance {entry.confidence}%
-        </span>
-        <span className="rounded-sm border border-border px-1.5 py-0.5 text-[11px] text-ink-muted">
-          Détecté via {entry.detectionMethod}
+          Détecté via {entry.detectionMethod === 'semantic_diff' ? 'analyse sémantique' : 'analyse de hash'}
         </span>
       </div>
 
-      {(entry.beforeSnippet || entry.afterSnippet) && (
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {entry.beforeSnippet && (
-            <div>
-              <p className="text-[11px] font-medium text-ink-muted">Avant</p>
-              <p className="mt-0.5 text-xs text-ink-secondary">{entry.beforeSnippet}</p>
-            </div>
-          )}
-          {entry.afterSnippet && (
-            <div>
-              <p className="text-[11px] font-medium text-ink-muted">Après</p>
-              <p className="mt-0.5 text-xs text-ink-secondary">{entry.afterSnippet}</p>
-            </div>
-          )}
+      {hasSemanticDiff ? (
+        <div className="space-y-3 mt-4 border-t border-border pt-3">
+          {entry.changedFields!.map((field) => {
+            const oldVal = entry.oldContent[field]
+            const newVal = entry.newContent[field]
+            return (
+              <div key={field} className="flex flex-col gap-1">
+                <span className="text-[11px] font-medium text-ink-muted uppercase tracking-wide">
+                  {FIELD_LABELS[field] || field}
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="rounded-md bg-danger/5 border border-danger/10 p-2 text-xs text-ink-secondary">
+                    <span className="text-danger-muted font-medium mb-1 block">Avant</span>
+                    <DiffValueRenderer value={oldVal} />
+                  </div>
+                  <div className="rounded-md bg-success/5 border border-success/10 p-2 text-xs text-ink-secondary">
+                    <span className="text-success-muted font-medium mb-1 block">Après</span>
+                    <DiffValueRenderer value={newVal} />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
+      ) : (
+        // Fallback vers l'ancien format (snippets)
+        (entry.beforeSnippet || entry.afterSnippet) && (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {entry.beforeSnippet && (
+              <div>
+                <p className="text-[11px] font-medium text-ink-muted">Avant</p>
+                <p className="mt-0.5 text-xs text-ink-secondary">{entry.beforeSnippet}</p>
+              </div>
+            )}
+            {entry.afterSnippet && (
+              <div>
+                <p className="text-[11px] font-medium text-ink-muted">Après</p>
+                <p className="mt-0.5 text-xs text-ink-secondary">{entry.afterSnippet}</p>
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {entry.linkedRunDate && (
-        <p className="mt-2 text-[11px] text-ink-muted">
-          Confirmé par une mesure ultérieure le{' '}
+        <p className="mt-3 text-[11px] text-ink-muted">
+          Confirmé par une mesure le{' '}
           {new Date(entry.linkedRunDate).toLocaleDateString('fr-FR')}
         </p>
       )}
     </>
   )
+}
+
+function DiffValueRenderer({ value }: { value: any }) {
+  if (value === null || value === undefined || value === '') {
+    return <span className="italic text-ink-muted opacity-60">(Vide)</span>
+  }
+  
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="italic text-ink-muted opacity-60">(Aucun)</span>
+    }
+    return (
+      <ul className="list-disc list-inside space-y-0.5 ml-1">
+        {value.map((item, i) => (
+          <li key={i} className="line-clamp-2" title={String(item)}>{String(item)}</li>
+        ))}
+      </ul>
+    )
+  }
+
+  return <span className="line-clamp-3 whitespace-pre-wrap" title={String(value)}>{String(value)}</span>
 }
 
 function EventEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'event' }> }) {

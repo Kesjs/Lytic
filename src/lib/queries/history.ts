@@ -27,6 +27,9 @@ export interface ChangeEntry {
   beforeSnippet: string | null
   afterSnippet: string | null
   linkedRunDate: string | null
+  changedFields: string[] | null
+  oldContent: any | null
+  newContent: any | null
 }
 
 export interface EventEntry {
@@ -115,6 +118,9 @@ export const fetchHistory = createServerFn({ method: 'GET' }).handler(async (): 
     beforeSnippet: c.before_snippet,
     afterSnippet: c.after_snippet,
     linkedRunDate: c.linked_run_id ? (runDateById.get(c.linked_run_id) ?? null) : null,
+    changedFields: c.changed_fields,
+    oldContent: c.old_content,
+    newContent: c.new_content,
   }))
 
   const eventEntries: EventEntry[] = (events ?? []).map((e) => ({
