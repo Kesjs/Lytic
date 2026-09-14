@@ -17,7 +17,7 @@ export const Route = createFileRoute('/dashboard/')({
 
 function AccueilPage() {
   const [setupOpen, setSetupOpen] = useState(false)
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
   })

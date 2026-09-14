@@ -12,4 +12,7 @@ export default defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  optimizeDeps: {
+    exclude: ['puppeteer-core'],
+  },
 })
