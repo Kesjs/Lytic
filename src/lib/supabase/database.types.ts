@@ -216,17 +216,33 @@ export interface Database {
           id: string
           brand_id: string
           url: string
-          status: 'unchecked' | 'ok' | 'stale' | 'unavailable'
+          status: 'unchecked' | 'ok' | 'stale' | 'unavailable' | 'removed'
           last_checked_at: string | null
           created_at: string
+          title_hash: string | null
+          meta_hash: string | null
+          headings_hash: string | null
+          body_hash: string | null
+          pricing_hash: string | null
+          cta_hash: string | null
+          links_hash: string | null
+          structure_hash: string | null
         }
         Insert: {
           id?: string
           brand_id: string
           url: string
-          status?: 'unchecked' | 'ok' | 'stale' | 'unavailable'
+          status?: 'unchecked' | 'ok' | 'stale' | 'unavailable' | 'removed'
           last_checked_at?: string | null
           created_at?: string
+          title_hash?: string | null
+          meta_hash?: string | null
+          headings_hash?: string | null
+          body_hash?: string | null
+          pricing_hash?: string | null
+          cta_hash?: string | null
+          links_hash?: string | null
+          structure_hash?: string | null
         }
         Update: { [key: string]: any }
       }
@@ -237,13 +253,15 @@ export interface Database {
           page_id: string
           detected_at: string
           change_type: string
-          importance: 'low' | 'medium' | 'high'
+          importance: 'low' | 'watch' | 'high' | 'critical'
           confidence: number
           detection_method: string
           before_snippet: string | null
           after_snippet: string | null
           linked_run_id: string | null
           created_at: string
+          crawl_run_id: string | null
+          changed_fields: string[] | null
         }
         Insert: {
           id?: string
@@ -251,12 +269,43 @@ export interface Database {
           page_id: string
           detected_at?: string
           change_type: string
-          importance: 'low' | 'medium' | 'high'
+          importance: 'low' | 'watch' | 'high' | 'critical'
           confidence?: number
           detection_method: string
           before_snippet?: string | null
           after_snippet?: string | null
           linked_run_id?: string | null
+          created_at?: string
+          crawl_run_id?: string | null
+          changed_fields?: string[] | null
+        }
+        Update: { [key: string]: any }
+      }
+      site_crawl_runs: {
+        Row: {
+          id: string
+          brand_id: string
+          status: 'pending' | 'crawling' | 'completed' | 'failed'
+          started_at: string
+          updated_at: string
+          completed_at: string | null
+          pages_total: number
+          pages_checked: number
+          pages_changed: number
+          version_number: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          status?: 'pending' | 'crawling' | 'completed' | 'failed'
+          started_at?: string
+          updated_at?: string
+          completed_at?: string | null
+          pages_total?: number
+          pages_checked?: number
+          pages_changed?: number
+          version_number?: number | null
           created_at?: string
         }
         Update: { [key: string]: any }

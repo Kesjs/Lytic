@@ -27,13 +27,15 @@ const RUN_STATUS_LABEL: Record<string, string> = {
 
 const IMPORTANCE_LABEL: Record<string, string> = {
   low: 'Importance faible',
-  medium: 'Importance moyenne',
+  watch: 'À surveiller',
   high: 'Importance haute',
+  critical: 'Importance critique',
 }
 
 const IMPORTANCE_CLASS: Record<string, string> = {
+  critical: 'bg-danger/10 text-danger border-danger/30',
   high: 'bg-danger/10 text-danger border-danger/30',
-  medium: 'bg-warning/10 text-warning border-warning/30',
+  watch: 'bg-warning/10 text-warning border-warning/30',
   low: 'bg-ink-muted/10 text-ink-muted border-border',
 }
 
@@ -47,13 +49,23 @@ const EVENT_TYPE_CLASS: Record<string, string> = {
 function HistoriquePage() {
   const [filter, setFilter] = useState<FilterValue>('all')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['history'],
     queryFn: () => fetchHistory(),
   })
 
   if (isLoading) {
     return <DashboardStateView state="loading" />
+  }
+
+  if (isError) {
+    return (
+      <DashboardStateView
+        state="unavailable"
+        title="Impossible de charger cette page"
+        description="Vérifiez votre connexion et réessayez."
+      />
+    )
   }
 
   if (!data?.brand) {

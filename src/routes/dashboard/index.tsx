@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/lib/queries/dashboard'
 import { ScoreChart } from '~/components/dashboard/ScoreChart'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { ManualMeasureButton } from '~/components/dashboard/ManualMeasureButton'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
+import { Skeleton } from '~/components/ui/skeleton'
 
 export const Route = createFileRoute('/dashboard/')({
   component: AccueilPage,
@@ -13,49 +15,85 @@ export const Route = createFileRoute('/dashboard/')({
 
 function AccueilPage() {
   const [setupOpen, setSetupOpen] = useState(false)
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
   })
 
   if (isLoading) {
-    return <StateMessage title="Chargement…" description="Récupération de vos données Reflet." />
+    return <AccueilSkeleton />
+  }
+
+  if (isError) {
+    return (
+      <DashboardStateView
+        state="unavailable"
+        title="Impossible de charger votre tableau de bord"
+        description="Vérifiez votre connexion et réessayez."
+      />
+    )
   }
 
   if (!data?.brand) {
     // État A — compte sans marque. Un seul CTA, pas d'onboarding multi-étapes.
+    // Aperçu flouté du futur dashboard en arrière-plan : comble le vide
+    // visuel et installe l'anticipation ("voilà ce que vous aurez") plutôt
+    // que de laisser un simple bloc centré dans beaucoup de vide.
     return (
       <>
-        <div className="mx-auto max-w-lg py-10 text-center">
-          <p className="font-display text-lg font-semibold text-ink-primary">
-            Votre visibilité IA commence ici.
-          </p>
-          <p className="mt-2 text-sm text-ink-muted">
-            Ajoutez votre marque pour découvrir comment elle apparaît dans les réponses générées
-            par ChatGPT.
-          </p>
-          <button
-            type="button"
-            onClick={() => setSetupOpen(true)}
-            className="mt-5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
+        <div className="relative mx-auto max-w-3xl py-10 text-center overflow-hidden">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 grid grid-cols-2 gap-4 opacity-[0.15] blur-[2px] sm:grid-cols-4"
           >
-            + Configurer ma marque
-          </button>
+            {['Mentions', 'Recommandations', 'Position moyenne', 'Présence'].map((label) => (
+              <div key={label} className="rounded-lg border border-border bg-surface p-4">
+                <p className="text-xs text-ink-secondary">{label}</p>
+                <p className="mt-1 font-display text-2xl font-semibold text-ink-primary">—</p>
+              </div>
+            ))}
+          </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-canvas/40 via-canvas/85 to-canvas"
+          />
 
-          <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-surface p-4">
-              <p className="text-xs font-medium text-ink-primary">1. Analyse</p>
-              <p className="mt-1 text-xs text-ink-muted">Nous analysons votre présence.</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-4">
-              <p className="text-xs font-medium text-ink-primary">2. Mesure</p>
-              <p className="mt-1 text-xs text-ink-muted">
-                Nous suivons vos questions dans ChatGPT.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-4">
-              <p className="text-xs font-medium text-ink-primary">3. Opportunités</p>
-              <p className="mt-1 text-xs text-ink-muted">Nous vous montrons où progresser.</p>
+          <div className="mx-auto max-w-lg">
+            <p className="font-display text-lg font-semibold text-ink-primary">
+              Votre visibilité IA commence ici.
+            </p>
+            <p className="mt-2 text-sm text-ink-muted">
+              Ajoutez votre marque pour découvrir comment elle apparaît dans les réponses générées
+              par ChatGPT.
+            </p>
+            <button
+              type="button"
+              onClick={() => setSetupOpen(true)}
+              className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
+            >
+              <Plus className="size-4" />
+              Configurer ma marque
+            </button>
+            {/* Réassurance sur l'effort demandé, pour réduire la friction avant le clic */}
+            <p className="mt-2 text-xs text-ink-muted">
+              Configuration en 2 min · Gratuit pendant l'essai · Sans carte bancaire
+            </p>
+
+            <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+              <div className="rounded-lg border border-border bg-surface p-4">
+                <p className="text-xs font-medium text-ink-primary">1. Analyse</p>
+                <p className="mt-1 text-xs text-ink-muted">Nous analysons votre présence.</p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-4">
+                <p className="text-xs font-medium text-ink-primary">2. Mesure</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Nous suivons vos questions dans ChatGPT.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-4">
+                <p className="text-xs font-medium text-ink-primary">3. Opportunités</p>
+                <p className="mt-1 text-xs text-ink-muted">Nous vous montrons où progresser.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -341,11 +379,54 @@ function BoolDot({ value }: { value: boolean }) {
   )
 }
 
-function StateMessage({ title, description }: { title: string; description: string }) {
+// Skeleton calqué sur la structure réelle de l'Accueil (header + 4 KPI +
+// 2 sections + tableau) pour éviter le layout shift au chargement des
+// vraies données, plutôt qu'un message texte plaqué au centre de l'écran.
+function AccueilSkeleton() {
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-semibold text-ink-primary">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
+    <div className="space-y-6">
+      <header className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="mt-4 h-9 w-20" />
+          <Skeleton className="mt-3 h-3 w-32" />
+        </div>
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <Skeleton className="h-full min-h-[180px] w-full" />
+        </div>
+      </header>
+
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-border bg-surface p-4">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="mt-2 h-7 w-12" />
+            <Skeleton className="mt-2 h-3 w-24" />
+          </div>
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-border bg-surface p-5">
+            <Skeleton className="h-4 w-32" />
+            <div className="mt-3 space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="rounded-lg border border-border bg-surface p-5">
+        <Skeleton className="h-4 w-48" />
+        <div className="mt-4 space-y-2.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-5 w-full" />
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

@@ -129,6 +129,15 @@ export interface DashboardStateViewProps {
   description?: string
   /** Compact = ligne inline (utilisé dans une card existante). Par défaut : bloc centré pleine hauteur. */
   compact?: boolean
+  /**
+   * Quand le composant est utilisé comme contenu de page entier (isLoading /
+   * isError / !data?.brand dans les routes dashboard/*), il doit toujours
+   * s'afficher dans une card cohérente avec le reste du design system —
+   * jamais du texte flottant à même le fond (cf. capture d'écran retour
+   * utilisateur : "Aucune marque configurée" seul sur le fond noir).
+   * Mettre à false uniquement quand l'appelant fournit déjà sa propre card.
+   */
+  card?: boolean
   className?: string
 }
 
@@ -137,6 +146,7 @@ export function DashboardStateView({
   title,
   description,
   compact = false,
+  card = true,
   className,
 }: DashboardStateViewProps) {
   const config = STATE_CONFIG[state]
@@ -156,14 +166,15 @@ export function DashboardStateView({
     )
   }
 
-  if (state === 'loading' && !compact) {
+  const wrapperClass = cn(
+    'flex min-h-[40vh] flex-col items-center justify-center gap-2 text-center',
+    card && 'rounded-lg border border-border bg-surface p-8',
+    className,
+  )
+
+  if (state === 'loading') {
     return (
-      <div
-        className={cn(
-          'flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center',
-          className,
-        )}
-      >
+      <div className={cn(wrapperClass, 'gap-4')}>
         <Icon className={cn('size-6', TONE_CLASSES[config.tone], config.spin && 'animate-spin')} />
         <div className="flex w-full max-w-sm flex-col items-center space-y-3">
           <Skeleton className="h-5 w-1/3" />
@@ -174,15 +185,19 @@ export function DashboardStateView({
   }
 
   return (
-    <div
-      className={cn(
-        'flex min-h-[40vh] flex-col items-center justify-center gap-2 text-center',
-        className,
-      )}
-    >
+    <div className={wrapperClass}>
       <Icon className={cn('size-6', TONE_CLASSES[config.tone], config.spin && 'animate-spin')} />
       <p className="font-display text-lg font-semibold text-ink-primary">{title ?? config.defaultTitle}</p>
       <p className="max-w-sm text-sm text-ink-muted">{description ?? config.defaultDescription}</p>
+      {state === 'unavailable' && (
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-2 rounded-md border border-border bg-elevated px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:text-ink-primary"
+        >
+          Réessayer
+        </button>
+      )}
     </div>
   )
 }

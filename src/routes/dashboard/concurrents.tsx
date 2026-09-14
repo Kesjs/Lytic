@@ -16,13 +16,23 @@ function ConcurrentsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [hidingId, setHidingId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['competitors-overview'],
     queryFn: () => fetchCompetitorsOverview(),
   })
 
   if (isLoading) {
     return <DashboardStateView state="loading" />
+  }
+
+  if (isError) {
+    return (
+      <DashboardStateView
+        state="unavailable"
+        title="Impossible de charger cette page"
+        description="Vérifiez votre connexion et réessayez."
+      />
+    )
   }
 
   if (!data?.brand) {

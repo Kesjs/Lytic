@@ -1,8 +1,11 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Menu, PanelLeft } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
+import { AccountMenu } from '~/components/dashboard/AccountMenu'
+import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 export const Route = createFileRoute('/dashboard')({
@@ -26,6 +29,15 @@ function DashboardLayout() {
 
   const currentTitle = pageTitles[pathname] || 'Tableau de bord'
 
+  // Requête légère (juste l'existence d'une marque) pour afficher le badge
+  // "Non configuré" dans le header tant que l'onboarding n'est pas fait —
+  // repère visuel constant, quelle que soit la page du dashboard consultée.
+  const { data: brand, isLoading: isBrandLoading } = useQuery({
+    queryKey: ['current-brand'],
+    queryFn: () => fetchCurrentBrand(),
+  })
+  const isBrandConfigured = !isBrandLoading && !!brand
+
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => {
@@ -44,10 +56,7 @@ function DashboardLayout() {
   if (isAuthenticated === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-          <p className="text-xs text-ink-muted">Chargement de votre espace...</p>
-        </div>
+        <div className="size-5 animate-spin rounded-full border-2 border-ink-muted/30 border-t-brand" />
       </div>
     )
   }
@@ -104,19 +113,38 @@ function DashboardLayout() {
               <PanelLeft className="size-4" />
             </button>
 
-            {/* Séparateur & Fil d'Ariane dynamique */}
+            {/* Fil d'Ariane dynamique — "Reflet /" seulement sur mobile,
+                où la sidebar (donc le logo) est cachée derrière le hamburger ;
+                sur desktop le logo est déjà visible juste à côté, "Reflet /"
+                y est redondant. */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="font-display font-semibold text-ink-primary">Reflet</span>
-              <span className="text-border-strong">/</span>
-              <span className="text-ink-secondary font-medium">{currentTitle}</span>
+              <span className="flex items-center gap-2 lg:hidden">
+                <span className="font-display font-semibold text-ink-primary">Reflet</span>
+                <span className="text-border-strong">/</span>
+              </span>
+              <span className="text-ink-secondary font-medium lg:text-sm lg:font-semibold lg:text-ink-primary">
+                {currentTitle}
+              </span>
+
+              {/* Repère visuel constant tant que la marque n'est pas créée */}
+              {isBrandConfigured === false && (
+                <span className="ml-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                  Non configuré
+                </span>
+              )}
             </div>
           </div>
 
           {/* Section droite du Header — centre de notifications (§36D.8),
               remplace l'ancien badge "En ligne" qui n'était adossé à
-              aucune donnée réelle. */}
+              aucune donnée réelle. Sur mobile, l'avatar donne un accès direct
+              au compte/déconnexion sans ouvrir le tiroir puis scroller
+              jusqu'en bas de la sidebar. */}
           <div className="flex items-center gap-3">
             <NotificationCenter />
+            <div className="lg:hidden">
+              <AccountMenu variant="header" />
+            </div>
           </div>
         </header>
 

@@ -87,4 +87,15 @@ export function isValidWebsiteUrl(value: string): boolean {
   }
 }
 
+// Normalise un domaine saisi sans protocole ("tylaafrica.com") en URL
+// complète ("https://tylaafrica.com") — appelé au blur du champ Site web
+// pour éviter d'imposer la saisie de "https://" à l'utilisateur, tout en
+// respectant un http:// ou https:// explicitement tapé.
+export function normalizeWebsiteUrl(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return trimmed
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
 export const QUESTION_MAX_LENGTH = 300

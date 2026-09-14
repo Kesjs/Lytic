@@ -21,7 +21,7 @@ export interface ChangeEntry {
   date: string
   pageUrl: string
   changeType: string
-  importance: 'low' | 'medium' | 'high'
+  importance: 'low' | 'watch' | 'high' | 'critical'
   confidence: number
   detectionMethod: string
   beforeSnippet: string | null

@@ -13,13 +13,23 @@ export const Route = createFileRoute('/dashboard/performance')({
 function PerformancePage() {
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['performance-overview'],
     queryFn: () => fetchPerformanceOverview(),
   })
 
   if (isLoading) {
     return <DashboardStateView state="loading" />
+  }
+
+  if (isError) {
+    return (
+      <DashboardStateView
+        state="unavailable"
+        title="Impossible de charger cette page"
+        description="Vérifiez votre connexion et réessayez."
+      />
+    )
   }
 
   if (!data?.brand) {

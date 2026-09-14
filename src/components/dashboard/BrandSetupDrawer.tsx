@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { X, Plus, Trash2, Sparkles } from 'lucide-react'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
-import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
 
 // Point d'entrée unique pour sortir de l'état "compte sans marque" — ouvert
@@ -76,11 +76,11 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-border bg-canvas shadow-2xl">
+      <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-border bg-canvas shadow-2xl animate-in slide-in-from-right duration-300 ease-out">
         <div className="flex items-center justify-between border-b border-border p-5">
           <div>
             <h2 className="font-display text-sm font-semibold text-ink-primary">
@@ -117,7 +117,8 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
               <input
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                placeholder="https://votre-site.fr"
+                onBlur={() => setWebsiteUrl((v) => normalizeWebsiteUrl(v))}
+                placeholder="votre-site.fr"
                 className={cn(
                   'mt-1 w-full rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
                   urlTouched && !urlValid

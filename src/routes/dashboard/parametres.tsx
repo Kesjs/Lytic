@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Pencil, Plus, Check, X as XIcon } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
-import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import {
   fetchSettings,
@@ -93,6 +93,7 @@ function TextField({
   label,
   value,
   onChange,
+  onBlur,
   type = 'text',
   placeholder,
   error,
@@ -100,6 +101,7 @@ function TextField({
   label: string
   value: string
   onChange: (v: string) => void
+  onBlur?: () => void
   type?: string
   placeholder?: string
   error?: string
@@ -112,6 +114,7 @@ function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className={cn(
           'mt-1 w-full rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
           error ? 'border-danger/60 focus:border-danger' : 'border-border focus:border-brand/50',
@@ -263,7 +266,8 @@ function SiteSection({
           label="Site web"
           value={websiteUrl}
           onChange={setWebsiteUrl}
-          placeholder="https://votre-site.fr"
+          onBlur={() => setWebsiteUrl((v) => normalizeWebsiteUrl(v))}
+          placeholder="votre-site.fr"
           error={
             urlTouched && !urlValid
               ? 'URL invalide — utilisez un format du type https://votre-site.fr'
