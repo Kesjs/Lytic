@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio'
+import { fetchSafe } from './fetch-safe'
 
 export interface FetchResult {
   url: string
@@ -8,16 +9,9 @@ export interface FetchResult {
 }
 
 export async function fetchPage(url: string): Promise<FetchResult> {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'RefletBot/1.0 (+https://reflet.app)',
-      'Accept': 'text/html,application/xhtml+xml',
-    },
-    // Timeout of 10s is standard for serverless
-    signal: AbortSignal.timeout(10000), 
-  })
+  const result = await fetchSafe(url, { timeoutMs: 10_000 })
 
-  const html = await response.text()
+  const html = result.text
   const $ = cheerio.load(html)
   
   // Détection SPA (Single Page Application sans SSR)
@@ -30,9 +24,9 @@ export async function fetchPage(url: string): Promise<FetchResult> {
   const isSPA = bodyText.length < 500 && hasRoot && !hasSsrState
 
   return {
-    url,
+    url: result.url, // URL finale après redirections
     html,
-    status: response.status,
+    status: result.status,
     isSPA,
   }
 }

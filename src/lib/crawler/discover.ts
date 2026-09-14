@@ -1,8 +1,12 @@
 import * as cheerio from 'cheerio'
+import { fetchSafe } from './fetch-safe'
 
 export function normalizeUrl(rawUrl: string, baseUrl: string): string | null {
   try {
     const url = new URL(rawUrl, baseUrl)
+    
+    // Rejeter les schémas dangereux (SSRF / XSS)
+    if (url.protocol === 'javascript:' || url.protocol === 'data:' || url.protocol === 'vbscript:') return null
     
     // Ignore non-http
     if (!url.protocol.startsWith('http')) return null
@@ -37,9 +41,9 @@ export async function discoverUrls(baseUrl: string): Promise<string[]> {
 
   try {
     // 1. Check robots.txt
-    const robotsRes = await fetch(new URL('/robots.txt', baseUrl).toString(), { signal: AbortSignal.timeout(5000) })
-    if (robotsRes.ok) {
-      const robotsTxt = await robotsRes.text()
+    const robotsRes = await fetchSafe(new URL('/robots.txt', baseUrl).toString(), { timeoutMs: 5000 })
+    if (robotsRes.status < 400) {
+      const robotsTxt = robotsRes.text
       const sitemapMatch = robotsTxt.match(/Sitemap:\s*(.+)/i)
       if (sitemapMatch && sitemapMatch[1]) {
         const sitemapUrl = sitemapMatch[1].trim()
@@ -60,10 +64,9 @@ export async function discoverUrls(baseUrl: string): Promise<string[]> {
 
     // 3. Fallback: simple HTML crawl of the home page
     if (discovered.size < 5) {
-      const homeRes = await fetch(baseUrl, { signal: AbortSignal.timeout(5000) })
-      if (homeRes.ok) {
-        const html = await homeRes.text()
-        const $ = cheerio.load(html)
+      const homeRes = await fetchSafe(baseUrl, { timeoutMs: 5000 })
+      if (homeRes.status < 400) {
+        const $ = cheerio.load(homeRes.text)
         $('a[href]').each((_, el) => {
           const href = $(el).attr('href')
           if (href) {
@@ -88,9 +91,9 @@ async function extractUrlsFromSitemap(sitemapUrl: string, depth = 0): Promise<st
   if (depth > 2) return [] // Limit recursive depth
   const urls: string[] = []
   try {
-    const res = await fetch(sitemapUrl, { signal: AbortSignal.timeout(5000) })
-    if (!res.ok) return []
-    const xml = await res.text()
+    const res = await fetchSafe(sitemapUrl, { timeoutMs: 5000 })
+    if (res.status >= 400) return []
+    const xml = res.text
     
     // Simple regex parsing for <loc> tags
     const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g)
@@ -105,7 +108,7 @@ async function extractUrlsFromSitemap(sitemapUrl: string, depth = 0): Promise<st
       }
     }
   } catch (err) {
-    // Ignore sitemap fetch errors
+    // Ignore sitemap fetch errors (SSRF blocked, timeout, etc.)
   }
   return urls
 }
