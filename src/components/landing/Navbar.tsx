@@ -110,7 +110,7 @@ export function Navbar() {
         }`}
       >
         <Link to="/" className="flex items-center">
-          <img src={logoUrl} alt="Reflet" className="h-8" />
+          <img src={logoUrl} alt="Reflet" className="h-10" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

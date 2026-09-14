@@ -33,7 +33,7 @@ export function Hero({
   preview = <DashboardPreview />,
 }: HeroProps) {
   return (
-    <section className="relative min-h-[92vh] overflow-hidden px-6 pt-32 pb-24 md:pt-44 md:pb-32 flex flex-col justify-between">
+    <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-24">
       {/* Background Texture avec fondu progressif */}
       <div
         className="pointer-events-none absolute inset-0 z-0 select-none opacity-60"
@@ -46,14 +46,8 @@ export function Hero({
         <GrainGradientShader className="w-full h-full" />
       </div>
 
-      {/* Halo de lumière d'ambiance dorée / brand au sommet */}
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[680px] rounded-full bg-brand/15 blur-[140px] z-0"
-        aria-hidden="true"
-      />
-
       {/* Contenu textuel Hero : parfaitement centré au chargement */}
-      <div className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center my-auto">
+      <div className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
         {/* Badge animé style 21st.dev avec point pulsant et glow */}
         <motion.div
           initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
