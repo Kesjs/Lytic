@@ -1,6 +1,6 @@
 import { lookup } from 'node:dns/promises'
 import { Buffer } from 'node:buffer'
-import { REFLET_UA } from './robots'
+import { REFLET_UA } from './constants'
 
 // ─── Plages IP privées / réservées (SSRF protection) ─────────────────────────
 //

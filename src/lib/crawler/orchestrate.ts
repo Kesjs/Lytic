@@ -5,7 +5,8 @@ import { fetchPage } from './fetch'
 import { sanitizeHtml } from './sanitize'
 import { generateHashes } from './hash'
 import { computeDiff } from './diff'
-import { checkBotAccess, type IaBotId } from './robots'
+import { checkBotAccess } from './robots'
+import type { IaBotId } from './constants'
 
 // Délai par défaut entre deux fetches de pages si le robots.txt ne spécifie
 // pas de Crawl-delay. 800 ms offre un compromis correct : on n'inonde pas

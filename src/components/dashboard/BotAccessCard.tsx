@@ -1,6 +1,6 @@
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react'
 import type { BotAccessData } from '~/lib/queries/bot-access'
-import { IA_BOTS } from '~/lib/crawler/robots'
+import { IA_BOTS } from '~/lib/crawler/constants'
 
 interface Props {
   data: BotAccessData | null

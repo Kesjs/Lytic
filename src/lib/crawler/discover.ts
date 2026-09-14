@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio'
 import { fetchSafe } from './fetch-safe'
-import { fetchRobots, isAllowed, REFLET_UA, type RobotsRules } from './robots'
+import { fetchRobots, isAllowed, type RobotsRules } from './robots'
+import { REFLET_UA } from './constants'
 
 export function normalizeUrl(rawUrl: string, baseUrl: string): string | null {
   try {

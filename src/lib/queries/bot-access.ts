@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
-import type { IaBotId, BotAccess } from '../crawler/robots'
+import type { IaBotId, BotAccess } from '../crawler/constants'
 
 export interface BotAccessData {
   checkedAt: string
