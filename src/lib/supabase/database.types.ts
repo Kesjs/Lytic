@@ -246,6 +246,8 @@ export interface Database {
           cta_hash: string | null
           links_hash: string | null
           structure_hash: string | null
+          extracted_content: Json
+          is_spa: boolean
         }
         Insert: {
           id?: string
@@ -262,6 +264,8 @@ export interface Database {
           cta_hash?: string | null
           links_hash?: string | null
           structure_hash?: string | null
+          extracted_content?: Json
+          is_spa?: boolean
         }
         Update: { [key: string]: any }
       }
@@ -281,6 +285,8 @@ export interface Database {
           created_at: string
           crawl_run_id: string | null
           changed_fields: string[] | null
+          old_content: Json | null
+          new_content: Json | null
         }
         Insert: {
           id?: string
@@ -297,6 +303,8 @@ export interface Database {
           created_at?: string
           crawl_run_id?: string | null
           changed_fields?: string[] | null
+          old_content?: Json | null
+          new_content?: Json | null
         }
         Update: { [key: string]: any }
       }

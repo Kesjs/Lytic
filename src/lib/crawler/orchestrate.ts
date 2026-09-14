@@ -3,7 +3,7 @@ import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/
 import { discoverUrls } from './discover'
 import { fetchPage } from './fetch'
 import { sanitizeHtml } from './sanitize'
-import { generateHashes } from './hash'
+import { extractContent } from './extract'
 import { computeDiff } from './diff'
 import { checkBotAccess } from './robots'
 import type { IaBotId } from './constants'
@@ -195,25 +195,18 @@ export const processNextPage = createServerFn({ method: 'POST' })
         await admin.from('site_pages').update({ status: 'unavailable', last_checked_at: new Date().toISOString() }).eq('id', page.id)
       } else {
         const $ = sanitizeHtml(fetchRes.html)
-        const newHashes = generateHashes($)
+        const newContent = extractContent($)
 
-        const oldHashes = {
-          title_hash: page.title_hash,
-          meta_hash: page.meta_hash,
-          headings_hash: page.headings_hash,
-          body_hash: page.body_hash,
-          pricing_hash: page.pricing_hash,
-          cta_hash: page.cta_hash,
-          links_hash: page.links_hash,
-          structure_hash: page.structure_hash,
-        }
+        const oldContent = page.extracted_content as any || null
 
-        const isBaseline = !page.title_hash && !page.body_hash && !page.structure_hash
-        const diff = computeDiff(isBaseline ? null : oldHashes, newHashes)
+        // On considère isBaseline si on n'a jamais extrait de titre ni de body (ou pas d'ancien contenu JSON)
+        const isBaseline = !oldContent || (!oldContent.title && !oldContent.body && !oldContent.structure)
+        const diff = computeDiff(isBaseline ? null : oldContent, newContent)
 
         // Mettre à jour la page
         await admin.from('site_pages').update({
-          ...newHashes,
+          extracted_content: newContent as any,
+          is_spa: fetchRes.isSPA,
           status: 'ok',
           last_checked_at: new Date().toISOString(),
         }).eq('id', page.id)
@@ -226,8 +219,10 @@ export const processNextPage = createServerFn({ method: 'POST' })
             crawl_run_id: run.id,
             change_type: isBaseline ? 'structure' : 'content',
             importance: isBaseline ? 'low' : 'watch',
-            detection_method: 'hash_diff',
+            detection_method: 'semantic_diff',
             changed_fields: diff.changedFields,
+            old_content: isBaseline ? null : oldContent,
+            new_content: newContent as any,
           })
         }
       }
