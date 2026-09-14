@@ -8,6 +8,8 @@ import {
   X,
 } from 'lucide-react'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
+import logoUrl from '~/assets/reflet-horizontal-light.svg'
+import iconUrl from '~/assets/reflet-icon.svg'
 
 // Items réels du dashboard Reflet (reflet-prompt-dashboard.md §3).
 // Jamais de jargon interne ici (Run, Measurement Engine, Observation…).
@@ -51,15 +53,14 @@ export function Sidebar({
             isCollapsed ? 'lg:justify-center' : 'justify-between'
           }`}
         >
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand font-display text-sm font-bold text-black">
-              R
-            </div>
-            {!isCollapsed && (
-              <span className="font-display text-sm font-semibold text-ink-primary whitespace-nowrap transition-opacity duration-200">
-                Reflet
-              </span>
-            )}
+          <div className="flex items-center overflow-hidden">
+            <Link to="/dashboard" className="flex items-center">
+              {isCollapsed ? (
+                <img src={iconUrl} alt="Reflet" className="h-7 w-7 ml-0.5" />
+              ) : (
+                <img src={logoUrl} alt="Reflet" className="h-6" />
+              )}
+            </Link>
           </div>
 
           {/* Bouton fermeture sur mobile */}

@@ -40,11 +40,11 @@ export function AiCycle({
           transition={{ duration: 0.3 }}
           className="flex items-center gap-3"
         >
-          {/* Badge rond blanc avec l'icône centrée */}
-          <div className="flex size-11 items-center justify-center rounded-full bg-white shadow-sm">
+          {/* Logo sans fond */}
+          <div className="flex items-center justify-center">
             {(() => {
               const CurrentIcon = engines[index].Icon
-              return <CurrentIcon className="size-5 text-black" />
+              return <CurrentIcon className="size-6 text-white" />
             })()}
           </div>
           <span className="font-medium text-ink-primary text-sm">

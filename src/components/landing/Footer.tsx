@@ -1,3 +1,5 @@
+import logoUrl from '~/assets/reflet-horizontal-light.svg'
+
 const columns = [
   { title: 'Produit', links: ['Vue d’ensemble', 'Visibilité IA', 'Questions et mesures', 'Preuves et opportunités', 'Historique du site'] },
   { title: 'Ressources', links: ['Blog', 'Guides', 'Études', 'Glossaire'] },
@@ -25,7 +27,8 @@ export function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-16 border-t border-border pt-8">
+        <div className="mt-16 border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <img src={logoUrl} alt="Reflet" className="h-5" />
           <p className="text-xs text-ink-muted">© 2026 Reflet — Mesurer. Comprendre. Améliorer.</p>
         </div>
       </div>
