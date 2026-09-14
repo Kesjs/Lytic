@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { motion } from 'framer-motion'
 import { AiCycle } from './AiCycle'
 import { DashboardPreview } from './DashboardPreview'
 
@@ -15,7 +16,7 @@ export interface HeroProps {
 }
 
 export function Hero({
-  eyebrow = 'Visibilité IA',
+  eyebrow = 'Visibilité IA en temps réel',
   title = (
     <>
       Voyez comment les <span className="text-brand-text">IA</span> parlent de votre marque.
@@ -28,45 +29,127 @@ export function Hero({
   preview = <DashboardPreview />,
 }: HeroProps) {
   return (
-    <section className="relative overflow-hidden px-6 pb-24 pt-40">
-      <div className="mx-auto max-w-2xl text-center">
-        <span className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1 text-xs text-ink-secondary">
-          {eyebrow}
-        </span>
+    <section className="relative min-h-[92vh] overflow-hidden px-6 pt-32 pb-24 md:pt-44 md:pb-32 flex flex-col justify-between">
+      {/* Background Texture avec fondu progressif */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 select-none bg-[url('/dark-texture.jpg')] bg-cover bg-center opacity-45 mix-blend-screen"
+        style={{
+          maskImage: 'radial-gradient(ellipse 95% 80% at 50% 35%, black 35%, transparent 95%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 95% 80% at 50% 35%, black 35%, transparent 95%)',
+        }}
+        aria-hidden="true"
+      />
 
-        <h1 className="mt-6 text-4xl font-medium leading-[1.1] tracking-tight text-ink-primary sm:text-5xl">
+      {/* Halo de lumière d'ambiance dorée / brand au sommet */}
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[680px] rounded-full bg-brand/15 blur-[140px] z-0"
+        aria-hidden="true"
+      />
+
+      {/* Contenu textuel Hero : parfaitement centré au chargement */}
+      <div className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center my-auto">
+        {/* Badge animé style 21st.dev avec point pulsant et glow */}
+        <motion.div
+          initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="group relative inline-flex items-center gap-2.5 rounded-full border border-border/80 bg-surface/70 px-4 py-1.5 text-xs font-medium text-ink-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:border-brand/50 hover:bg-surface">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+            </span>
+            <span className="text-ink-secondary">{eyebrow}</span>
+            <span className="text-border-strong">·</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-brand-text">
+              <Sparkles className="size-3 text-brand" />
+              <span>Moteur v1.1</span>
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Titre principal avec apparition en fondu et léger flou cinématique (21st.dev blur-in) */}
+        <motion.h1
+          initial={{ opacity: 0, y: 22, filter: 'blur(12px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.75, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-7 font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
+        >
           {title}
-        </h1>
+        </motion.h1>
 
-        <AiCycle engines={engines} />
+        {/* Cycle des IA animées */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-2"
+        >
+          <AiCycle engines={engines} />
+        </motion.div>
 
-        <p className="mx-auto mt-6 max-w-[520px] text-base leading-relaxed text-ink-secondary">
+        {/* Paragraphe descriptif avec apparition progressive */}
+        <motion.p
+          initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.7, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto mt-6 max-w-[560px] text-base leading-relaxed text-ink-secondary sm:text-lg"
+        >
           {description}
-        </p>
+        </motion.p>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        {/* Boutons d'action avec effet shimmer 21st.dev sur le CTA principal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-9 flex flex-wrap items-center justify-center gap-3.5"
+        >
+          {/* Bouton Shimmer CTA animé */}
           <Link
             to={primaryCta.to}
-            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-brand-hover"
+            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-brand px-6 py-3.5 text-sm font-semibold text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(201,171,30,0.45)] active:scale-[0.98]"
           >
-            {primaryCta.label}
-            <ArrowRight className="size-4" />
+            {/* Rayon de lumière shimmer traversant */}
+            <span
+              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+              aria-hidden="true"
+            />
+            <span className="relative z-10">{primaryCta.label}</span>
+            <ArrowRight className="relative z-10 size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
-          
+
+          {/* Bouton secondaire sleek glassmorphic */}
           <a
             href={secondaryCta.href}
-            className="inline-flex items-center rounded-md border border-border px-5 py-2.5 text-sm text-ink-primary transition-colors hover:border-border-strong"
+            className="inline-flex items-center rounded-lg border border-border/80 bg-surface/50 px-5 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 hover:border-brand/40 hover:bg-surface hover:text-white"
           >
             {secondaryCta.label}
           </a>
-        </div>
+        </motion.div>
 
-        <p className="mt-6 text-xs text-ink-muted">1 site, jusqu'à 30 questions, mesure continue</p>
+        {/* Mention rassurante */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.5 }}
+          className="mt-6 text-xs text-ink-muted"
+        >
+          1 site, jusqu'à 30 questions, mesure continue
+        </motion.p>
       </div>
 
-      <div id="produit" className="mx-auto mt-16 max-w-1200">
+      {/* Aperçu du produit avec apparition fluide */}
+      <motion.div
+        id="produit"
+        initial={{ opacity: 0, y: 45, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{ duration: 0.85, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 mx-auto mt-20 w-full max-w-1200"
+      >
         {preview}
-      </div>
+      </motion.div>
     </section>
   )
 }
