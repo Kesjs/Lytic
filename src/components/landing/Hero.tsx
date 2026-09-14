@@ -69,7 +69,7 @@ export function Hero({
           </div>
           {/* Contenu du badge */}
           <div className="relative flex items-center gap-3 rounded-full bg-surface/90 p-1 backdrop-blur-md">
-            <span className="rounded-full bg-[#c9ab1e] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_12px_rgba(201,171,30,0.4)]">
+            <span className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
               New
             </span>
             <span className="pr-3 text-sm font-medium text-ink-primary">{eyebrow}</span>
