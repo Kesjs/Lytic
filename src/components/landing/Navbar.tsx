@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { ChevronDown, Menu, X, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
-import logoUrl from '~/assets/reflet-horizontal-light.svg'
+import logoUrl from '~/assets/reflet-horizontal-dark.svg'
 
 const productLinks = [
   { label: 'Vue d’ensemble', href: '/#produit' },
@@ -110,7 +110,7 @@ export function Navbar() {
         }`}
       >
         <Link to="/" className="flex items-center">
-          <img src={logoUrl} alt="Reflet" className="h-6" />
+          <img src={logoUrl} alt="Reflet" className="h-8" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

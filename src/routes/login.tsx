@@ -7,7 +7,7 @@ import { GrainGradientShader } from '~/components/auth/grain-gradient-shader'
 import { OtpInput } from '~/components/auth/otp-input'
 import { toast } from 'sonner'
 import { cn } from '~/lib/utils'
-import logoUrl from '~/assets/reflet-horizontal-light.svg'
+import logoUrl from '~/assets/reflet-horizontal-dark.svg'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>): { mode?: AuthMode; tab?: AuthMode } => ({
@@ -247,7 +247,7 @@ function LoginPage() {
                     exit={{ opacity: 0, scale: 0.85, y: -3 }}
                     transition={{ type: 'spring', stiffness: 450, damping: 25 }}
                   >
-                    <img src={logoUrl} alt="Reflet" className="h-6" />
+                    <img src={logoUrl} alt="Reflet" className="h-8" />
                   </motion.div>
                 )}
               </AnimatePresence>

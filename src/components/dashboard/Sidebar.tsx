@@ -8,7 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
-import logoUrl from '~/assets/reflet-horizontal-light.svg'
+import logoUrl from '~/assets/reflet-horizontal-dark.svg'
 import iconUrl from '~/assets/reflet-icon.svg'
 
 // Items réels du dashboard Reflet (reflet-prompt-dashboard.md §3).
@@ -58,7 +58,7 @@ export function Sidebar({
               {isCollapsed ? (
                 <img src={iconUrl} alt="Reflet" className="h-7 w-7 ml-0.5" />
               ) : (
-                <img src={logoUrl} alt="Reflet" className="h-6" />
+                <img src={logoUrl} alt="Reflet" className="h-8" />
               )}
             </Link>
           </div>
