@@ -48,24 +48,27 @@ export function Hero({
 
       {/* Contenu textuel Hero : parfaitement centré au chargement */}
       <div className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
-        {/* Badge animé style 21st.dev avec point pulsant et glow */}
+        {/* Badge animé style Border Beam */}
         <motion.div
           initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="relative inline-flex overflow-hidden rounded-full p-[1px] shadow-lg transition-transform hover:scale-[1.02]"
         >
-          <div className="group relative inline-flex items-center gap-2.5 rounded-full border border-border/80 bg-surface/70 px-4 py-1.5 text-xs font-medium text-ink-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:border-brand/50 hover:bg-surface">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+          {/* Éclairage tournant (Border Beam) */}
+          <div className="absolute left-1/2 top-1/2 aspect-square w-[400%] -translate-x-1/2 -translate-y-1/2">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+              className="h-full w-full bg-[conic-gradient(from_0deg,transparent_0_340deg,theme(colors.brand.DEFAULT)_360deg)] opacity-70"
+            />
+          </div>
+          {/* Contenu du badge */}
+          <div className="relative flex items-center gap-3 rounded-full bg-surface/90 p-1 backdrop-blur-md">
+            <span className="rounded-full bg-[#c9ab1e] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_12px_rgba(201,171,30,0.4)]">
+              New
             </span>
-            <span className="text-ink-secondary">{eyebrow}</span>
-            <span className="text-border-strong">·</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-brand-text">
-              <Sparkles className="size-3 text-brand" />
-              <span>Nouveauté</span>
-              <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">→</span>
-            </span>
+            <span className="pr-3 text-sm font-medium text-ink-primary">{eyebrow}</span>
           </div>
         </motion.div>
 
