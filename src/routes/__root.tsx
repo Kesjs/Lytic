@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
@@ -48,6 +49,14 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  useEffect(() => {
+    const handlePreloadError = () => {
+      window.location.reload()
+    }
+    window.addEventListener('vite:preloadError', handlePreloadError)
+    return () => window.removeEventListener('vite:preloadError', handlePreloadError)
+  }, [])
+
   return (
     <RootDocument>
       <QueryClientProvider client={queryClient}>
