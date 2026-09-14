@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { X, Plus, Trash2, Sparkles } from 'lucide-react'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { ShiningButton } from '~/components/ui/shining-button'
 
 // Point d'entrée unique pour sortir de l'état "compte sans marque" — ouvert
 // depuis l'Accueil (État A) et depuis Paramètres → Site. Saisie manuelle
@@ -137,15 +138,15 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 Ce que vos prospects pourraient demander à ChatGPT — au moins une pour commencer.
               </p>
               
-              <button
+              <ShiningButton
                 type="button"
                 onClick={() => generateQuestionsMutation.mutate()}
                 disabled={!name.trim() || !urlValid || generateQuestionsMutation.isPending}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-brand/30 bg-brand/5 px-3 py-2 text-xs font-medium text-brand transition-colors hover:bg-brand/10 disabled:opacity-50"
+                className="mt-3 w-full gap-1.5"
               >
                 <Sparkles className="size-3.5" />
                 {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
-              </button>
+              </ShiningButton>
 
               <div className="mt-4 space-y-2">
                 {questions.map((q, i) => {

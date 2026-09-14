@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { ChevronDown, Check, X as XIcon } from 'lucide-react'
+import { ChevronDown, Check, X as XIcon, ArrowRight } from 'lucide-react'
 import {
   fetchOpportunities,
   fetchOpportunityEvidence,
@@ -162,34 +163,36 @@ function OpportunityCard({
   })
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-5">
-      <div className="flex items-start justify-between gap-4">
+    <section className="rounded-lg border border-border bg-surface transition-colors hover:border-border/80 overflow-hidden">
+      <div className="flex items-start justify-between gap-4 p-5">
         <button
           type="button"
           onClick={onToggle}
-          className="flex flex-1 items-start gap-2 text-left"
+          className="flex flex-1 items-start gap-3 text-left outline-none"
         >
-          <ChevronDown
-            className={`mt-0.5 size-4 shrink-0 text-ink-muted transition-transform ${
-              expanded ? 'rotate-180' : ''
-            }`}
-          />
+          <div className="mt-1 flex size-5 items-center justify-center rounded-sm bg-elevated border border-border">
+            <ChevronDown
+              className={`size-3.5 shrink-0 text-ink-muted transition-transform duration-300 ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
           <div>
             <p className="text-sm font-semibold text-ink-primary">{opportunity.title}</p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span
                 className={`rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${PRIORITY_CLASS[opportunity.priority]}`}
               >
                 {PRIORITY_LABEL[opportunity.priority]}
               </span>
-              <span className="rounded-sm border border-border px-1.5 py-0.5 text-[11px] text-ink-muted">
+              <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
                 Confiance {opportunity.confidence}%
               </span>
-              <span className="rounded-sm border border-border px-1.5 py-0.5 text-[11px] text-ink-muted">
+              <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
                 {opportunity.observationsCount} observation
                 {opportunity.observationsCount > 1 ? 's' : ''}
               </span>
-              <span className="rounded-sm border border-border px-1.5 py-0.5 text-[11px] text-ink-muted">
+              <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
                 {STATUS_LABEL[opportunity.status]}
               </span>
             </div>
@@ -203,96 +206,123 @@ function OpportunityCard({
               onClick={onResolve}
               disabled={updating}
               title="Marquer comme résolue"
-              className="flex size-7 items-center justify-center rounded-md border border-border text-ink-muted hover:border-success/40 hover:text-success disabled:opacity-50"
+              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-success/40 hover:bg-success/5 hover:text-success disabled:opacity-50"
             >
-              <Check className="size-3.5" />
+              <Check className="size-4" />
             </button>
             <button
               type="button"
               onClick={onDismiss}
               disabled={updating}
               title="Ignorer cette opportunité"
-              className="flex size-7 items-center justify-center rounded-md border border-border text-ink-muted hover:border-danger/40 hover:text-danger disabled:opacity-50"
+              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"
             >
-              <XIcon className="size-3.5" />
+              <XIcon className="size-4" />
             </button>
           </div>
         )}
       </div>
 
-      {opportunity.questions.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[11px] font-medium text-ink-muted">
-            Questions concernées
-          </p>
-          <ul className="mt-1 space-y-1">
-            {opportunity.questions.map((q, i) => (
-              <li key={i} className="text-xs text-ink-secondary">
-                « {q} »
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="border-t border-border/50 bg-elevated/30"
+          >
+            <div className="p-5 space-y-6">
+              {opportunity.questions.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider">
+                    Questions concernées
+                  </p>
+                  <ul className="mt-2 space-y-1.5 border-l-2 border-border pl-3">
+                    {opportunity.questions.map((q, i) => (
+                      <li key={i} className="text-xs font-medium text-ink-secondary">
+                        « {q} »
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-      <div className="mt-3">
-        <p className="text-[11px] font-medium text-ink-muted">Pourquoi</p>
-        <p className="mt-1 text-xs text-ink-secondary">{opportunity.reason}</p>
-      </div>
+              <div>
+                <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider">
+                  Pourquoi (Diagnostic)
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
+                  {opportunity.reason}
+                </p>
+              </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className="text-[11px] font-medium text-ink-muted">
-            Contenu actuel du site
-          </p>
-          <p className="mt-1 text-xs text-ink-secondary">
-            {opportunity.currentSiteContent ?? 'Aucun contenu identifié sur ce sujet.'}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] font-medium text-ink-muted">
-            Direction proposée
-          </p>
-          <p className="mt-1 text-xs text-ink-secondary">{opportunity.proposedDirection}</p>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="mb-2 text-[11px] font-medium text-ink-muted">
-            Chaîne de preuves
-          </p>
-          {evidenceLoading ? (
-            <p className="text-xs text-ink-muted">Chargement…</p>
-          ) : !evidenceData || evidenceData.evidence.length === 0 ? (
-            <p className="text-xs text-ink-muted">Aucune preuve détaillée disponible.</p>
-          ) : (
-            <ol className="space-y-2">
-              {evidenceData.evidence.map((step, i) => (
-                <li key={step.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border bg-elevated text-[10px] text-ink-muted">
-                      {i + 1}
+              {/* Visual Diff: Before / After */}
+              <div>
+                <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider mb-2">
+                  Action recommandée
+                </p>
+                <div className="grid gap-px rounded-md border border-border overflow-hidden bg-border sm:grid-cols-2">
+                  <div className="bg-surface p-4 flex flex-col h-full">
+                    <span className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-danger/80">
+                      <span className="size-1.5 rounded-full bg-danger/80" /> Contenu actuel
                     </span>
-                    {i < evidenceData.evidence.length - 1 && (
-                      <span className="w-px flex-1 bg-border" />
-                    )}
-                  </div>
-                  <div className="pb-2">
-                    <p className="text-[11px] text-ink-muted">
-                      {EVIDENCE_STEP_LABEL[step.stepType]}
+                    <p className="text-xs leading-relaxed text-ink-secondary flex-1">
+                      {opportunity.currentSiteContent ?? 'Aucun contenu pertinent identifié sur le site.'}
                     </p>
-                    <p className="text-xs font-medium text-ink-primary">{step.label}</p>
-                    {step.content && (
-                      <p className="mt-0.5 text-xs text-ink-secondary">{step.content}</p>
-                    )}
                   </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div>
-      )}
+                  <div className="bg-surface p-4 flex flex-col h-full relative">
+                    <div className="absolute top-1/2 -left-3.5 hidden sm:flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface z-10 shadow-sm text-ink-muted">
+                      <ArrowRight className="size-3.5" />
+                    </div>
+                    <span className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-success/80">
+                      <span className="size-1.5 rounded-full bg-success/80" /> Cible (Direction)
+                    </span>
+                    <p className="text-xs leading-relaxed text-ink-secondary flex-1">
+                      {opportunity.proposedDirection}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <p className="mb-3 text-[11px] font-medium text-ink-muted uppercase tracking-wider">
+                  Preuves détaillées
+                </p>
+                {evidenceLoading ? (
+                  <p className="text-xs text-ink-muted animate-pulse">Chargement de la chaîne d'observations…</p>
+                ) : !evidenceData || evidenceData.evidence.length === 0 ? (
+                  <p className="text-xs text-ink-muted">Aucune preuve détaillée disponible.</p>
+                ) : (
+                  <ol className="space-y-4">
+                    {evidenceData.evidence.map((step, i) => (
+                      <li key={step.id} className="relative flex gap-4">
+                        {i < evidenceData.evidence.length - 1 && (
+                          <div className="absolute left-[11px] top-6 bottom-[-16px] w-px bg-border/60" />
+                        )}
+                        <div className="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-[10px] font-medium text-ink-secondary shadow-sm">
+                          {i + 1}
+                        </div>
+                        <div className="pb-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+                            {EVIDENCE_STEP_LABEL[step.stepType]}
+                          </p>
+                          <p className="mt-0.5 text-xs font-medium text-ink-primary">{step.label}</p>
+                          {step.content && (
+                            <p className="mt-1 text-xs text-ink-secondary bg-elevated/50 p-2.5 rounded border border-border/40">
+                              {step.content}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

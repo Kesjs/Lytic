@@ -13,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react'
 import { cn } from '~/lib/utils'
+import { Skeleton } from '~/components/ui/skeleton'
 
 // Système d'états visuels formalisé (§36D.10 du doc de conception).
 // Chaque page du dashboard doit distinguer explicitement ces 11 états —
@@ -155,6 +156,23 @@ export function DashboardStateView({
     )
   }
 
+  if (state === 'loading' && !compact) {
+    return (
+      <div
+        className={cn(
+          'flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center',
+          className,
+        )}
+      >
+        <Icon className={cn('size-6', TONE_CLASSES[config.tone], config.spin && 'animate-spin')} />
+        <div className="flex w-full max-w-sm flex-col items-center space-y-3">
+          <Skeleton className="h-5 w-1/3" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
@@ -163,7 +181,7 @@ export function DashboardStateView({
       )}
     >
       <Icon className={cn('size-6', TONE_CLASSES[config.tone], config.spin && 'animate-spin')} />
-      <p className="text-sm font-semibold text-ink-primary">{title ?? config.defaultTitle}</p>
+      <p className="font-display text-lg font-semibold text-ink-primary">{title ?? config.defaultTitle}</p>
       <p className="max-w-sm text-sm text-ink-muted">{description ?? config.defaultDescription}</p>
     </div>
   )
