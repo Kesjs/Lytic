@@ -37,7 +37,7 @@ export function Hero({
   const y = useTransform(scrollY, [0, 400], [0, 100])
 
   return (
-    <section className="relative overflow-hidden px-6 pt-32 pb-16 md:pt-40 md:pb-24">
+    <section className="relative overflow-hidden">
       {/* Background Texture avec fondu progressif */}
       <div
         className="pointer-events-none absolute inset-0 z-0 select-none opacity-60"
@@ -50,8 +50,9 @@ export function Hero({
         <GrainGradientShader className="w-full h-full" />
       </div>
 
-      {/* Contenu textuel Hero : parfaitement centré au chargement */}
-      <motion.div style={{ opacity, y }} className="relative z-10 mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
+      {/* Contenu textuel Hero : parfaitement centré au chargement dans la hauteur de l'écran */}
+      <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6 pt-20">
+        <motion.div style={{ opacity, y }} className="flex flex-col items-center text-center">
         {/* Badge animé style Border Beam */}
         <motion.div
           initial={{ opacity: 0, y: -18, filter: 'blur(8px)' }}
@@ -146,6 +147,7 @@ export function Hero({
           1 site, jusqu'à 30 questions, mesure continue
         </motion.p>
       </motion.div>
+      </div>
 
       {/* Aperçu du produit avec apparition fluide */}
       <motion.div
