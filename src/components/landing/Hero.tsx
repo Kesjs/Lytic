@@ -5,13 +5,17 @@ import { motion } from 'framer-motion'
 import { AiCycle } from './AiCycle'
 import { DashboardPreview } from './DashboardPreview'
 
+import { GrainGradientShader } from '../shared/grain-gradient-shader'
+
+import type { AiEngine } from './AiCycle'
+
 export interface HeroProps {
   eyebrow?: string
   title?: ReactNode
   description?: string
   primaryCta?: { label: string; to: string }
   secondaryCta?: { label: string; href: string }
-  engines?: string[]
+  engines?: AiEngine[]
   preview?: ReactNode
 }
 
@@ -32,13 +36,15 @@ export function Hero({
     <section className="relative min-h-[92vh] overflow-hidden px-6 pt-32 pb-24 md:pt-44 md:pb-32 flex flex-col justify-between">
       {/* Background Texture avec fondu progressif */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 select-none bg-[url('/dark-texture.jpg')] bg-cover bg-center opacity-45 mix-blend-screen"
+        className="pointer-events-none absolute inset-0 z-0 select-none opacity-60"
         style={{
           maskImage: 'radial-gradient(ellipse 95% 80% at 50% 35%, black 35%, transparent 95%)',
           WebkitMaskImage: 'radial-gradient(ellipse 95% 80% at 50% 35%, black 35%, transparent 95%)',
         }}
         aria-hidden="true"
-      />
+      >
+        <GrainGradientShader className="w-full h-full" />
+      </div>
 
       {/* Halo de lumière d'ambiance dorée / brand au sommet */}
       <div

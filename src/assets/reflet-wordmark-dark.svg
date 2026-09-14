@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="200" viewBox="0 0 500 200">
+<rect x="0" y="0" width="500" height="200" fill="#0a0a0a"/>
+<text x="91.38" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#ffffff">R</text>
+<text x="156.62" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#ffffff">E</text>
+<text x="212.88" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#ffffff">F</text>
+<text x="264.62" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#ffffff">L</text>
+<g transform="translate(334.38,0) scale(-1,1) translate(-334.38,0)">
+<text x="311.88" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#f2d94e">E</text>
+</g>
+<text x="368.12" y="132.40" font-family="Helvetica, Arial, sans-serif" font-size="90" font-weight="600" fill="#ffffff">T</text>
+</svg>

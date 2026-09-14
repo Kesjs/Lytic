@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="200" viewBox="0 0 520 200">
+<rect x="0" y="0" width="520" height="200" fill="#0a0a0a"/>
+<rect x="60" y="40.00" width="120" height="120" rx="26.40" fill="#f2d94e"/>
+<g transform="translate(120.00,100.00)">
+<path d="M-30.00,-33.75 L30.00,-33.75 L0,0 Z" fill="#0a0a0a"/>
+<path d="M-30.00,33.75 L30.00,33.75 L0,0 Z" fill="#0a0a0a"/>
+</g>
+<text x="220.00" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#ffffff">R</text>
+<text x="266.40" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#ffffff">E</text>
+<text x="306.40" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#ffffff">F</text>
+<text x="343.20" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#ffffff">L</text>
+<g transform="translate(392.80,0) scale(-1,1) translate(-392.80,0)">
+<text x="376.80" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#f2d94e">E</text>
+</g>
+<text x="416.80" y="123.04" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="600" fill="#ffffff">T</text>
+</svg>
