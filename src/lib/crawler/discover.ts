@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio'
 import { fetchSafe } from './fetch-safe'
+import { fetchRobots, isAllowed, REFLET_UA, type RobotsRules } from './robots'
 
 export function normalizeUrl(rawUrl: string, baseUrl: string): string | null {
   try {
@@ -35,24 +36,33 @@ export function normalizeUrl(rawUrl: string, baseUrl: string): string | null {
   }
 }
 
-export async function discoverUrls(baseUrl: string): Promise<string[]> {
+export interface DiscoverResult {
+  urls: string[]
+  robotsRules: RobotsRules
+}
+
+/**
+ * Découvre les URLs d'un site en respectant son robots.txt.
+ *
+ * Retourne les URLs filtrées (Disallow respectés) ET les règles robots.txt
+ * pour que l'orchestrateur puisse récupérer le crawlDelay sans refaire
+ * un fetch supplémentaire.
+ */
+export async function discoverUrls(baseUrl: string): Promise<DiscoverResult> {
   const discovered = new Set<string>()
   discovered.add(normalizeUrl(baseUrl, baseUrl) || baseUrl)
 
+  // 1. Fetch + parse du robots.txt (une seule fois pour ce domaine)
+  const robotsRules = await fetchRobots(baseUrl)
+
   try {
-    // 1. Check robots.txt
-    const robotsRes = await fetchSafe(new URL('/robots.txt', baseUrl).toString(), { timeoutMs: 5000 })
-    if (robotsRes.status < 400) {
-      const robotsTxt = robotsRes.text
-      const sitemapMatch = robotsTxt.match(/Sitemap:\s*(.+)/i)
-      if (sitemapMatch && sitemapMatch[1]) {
-        const sitemapUrl = sitemapMatch[1].trim()
-        const sitemapUrls = await extractUrlsFromSitemap(sitemapUrl)
-        for (const u of sitemapUrls) discovered.add(u)
-      }
+    // 2. Sitemaps trouvés dans robots.txt
+    for (const sitemapUrl of robotsRules.sitemaps) {
+      const sitemapUrls = await extractUrlsFromSitemap(sitemapUrl)
+      for (const u of sitemapUrls) discovered.add(u)
     }
 
-    // 2. If we don't have many URLs yet, try standard sitemaps
+    // 3. Sitemaps standards si on n'a pas encore beaucoup d'URLs
     if (discovered.size < 5) {
       const paths = ['/sitemap.xml', '/sitemap_index.xml', '/wp-sitemap.xml']
       for (const p of paths) {
@@ -62,9 +72,12 @@ export async function discoverUrls(baseUrl: string): Promise<string[]> {
       }
     }
 
-    // 3. Fallback: simple HTML crawl of the home page
+    // 4. Fallback: crawl HTML de la page d'accueil
     if (discovered.size < 5) {
-      const homeRes = await fetchSafe(baseUrl, { timeoutMs: 5000 })
+      const homeRes = await fetchSafe(baseUrl, {
+        timeoutMs: 5_000,
+        headers: { 'User-Agent': REFLET_UA },
+      })
       if (homeRes.status < 400) {
         const $ = cheerio.load(homeRes.text)
         $('a[href]').each((_, el) => {
@@ -83,15 +96,22 @@ export async function discoverUrls(baseUrl: string): Promise<string[]> {
     console.error(`[discover] Error discovering ${baseUrl}`, err)
   }
 
-  // Limit to 200 pages as per specs
-  return Array.from(discovered).slice(0, 200)
+  // 5. Filtrer les URLs interdites par robots.txt avant de retourner
+  const filtered = Array.from(discovered)
+    .filter((url) => isAllowed(url, robotsRules))
+    .slice(0, 200) // Limit to 200 pages
+
+  return { urls: filtered, robotsRules }
 }
 
 async function extractUrlsFromSitemap(sitemapUrl: string, depth = 0): Promise<string[]> {
   if (depth > 2) return [] // Limit recursive depth
   const urls: string[] = []
   try {
-    const res = await fetchSafe(sitemapUrl, { timeoutMs: 5000 })
+    const res = await fetchSafe(sitemapUrl, {
+      timeoutMs: 5_000,
+      headers: { 'User-Agent': REFLET_UA },
+    })
     if (res.status >= 400) return []
     const xml = res.text
     

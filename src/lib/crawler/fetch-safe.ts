@@ -1,5 +1,6 @@
 import { lookup } from 'node:dns/promises'
 import { Buffer } from 'node:buffer'
+import { REFLET_UA } from './robots'
 
 // ─── Plages IP privées / réservées (SSRF protection) ─────────────────────────
 //
@@ -145,7 +146,7 @@ export async function fetchSafe(
 
     const response = await fetch(currentUrl, {
       headers: {
-        'User-Agent': 'RefletBot/1.0 (+https://reflet.app)',
+        'User-Agent': REFLET_UA,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9',
         ...headers,
       },

@@ -5,8 +5,19 @@ import { fetchPage } from './fetch'
 import { sanitizeHtml } from './sanitize'
 import { generateHashes } from './hash'
 import { computeDiff } from './diff'
+import { checkBotAccess, type IaBotId } from './robots'
 
-// 1. Déclencher un crawl de site (découverte + init du run)
+// Délai par défaut entre deux fetches de pages si le robots.txt ne spécifie
+// pas de Crawl-delay. 800 ms offre un compromis correct : on n'inonde pas
+// les serveurs cibles tout en restant dans les timeouts Vercel (10s/page).
+const DEFAULT_CRAWL_DELAY_MS = 800
+
+// Bots IA dont le blocage génère automatiquement une opportunité haute priorité.
+// On limite aux bots majeurs pour éviter le bruit (CCBot, Bytespider sont moins
+// directement liés à la visibilité dans ChatGPT/Claude).
+const MAJOR_BOTS: IaBotId[] = ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'Google-Extended']
+
+// ─── 1. Déclencher un crawl de site ──────────────────────────────────────────
 export const triggerSiteCrawl = createServerFn({ method: 'POST' })
   .validator((data: { brandId: string }) => data)
   .handler(async ({ data }): Promise<{ runId: string }> => {
@@ -37,8 +48,8 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
       }
     }
 
-    // Découvrir les URLs
-    const urls = await discoverUrls(brand.website_url || '')
+    // Découvrir les URLs + récupérer les règles robots.txt (1 seul fetch)
+    const { urls, robotsRules } = await discoverUrls(brand.website_url || '')
     
     // Insérer les pages manquantes
     for (const url of urls) {
@@ -51,20 +62,92 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
     // Compter le total (existantes + nouvelles)
     const { count: pagesTotal } = await admin.from('site_pages').select('id', { count: 'exact', head: true }).eq('brand_id', brand.id).neq('status', 'removed')
 
+    // Délai à appliquer entre requêtes (robots.txt Crawl-delay ou défaut 800ms)
+    const crawlDelayMs = robotsRules.crawlDelayMs ?? DEFAULT_CRAWL_DELAY_MS
+
     // Créer le run
     const { data: run, error } = await admin.from('site_crawl_runs').insert({
       brand_id: brand.id,
       status: 'pending',
       pages_total: pagesTotal || 0,
       pages_checked: 0,
+      crawl_delay_ms: crawlDelayMs,
     }).select().single()
 
     if (error || !run) throw new Error('Impossible de créer le run')
 
+    // ── Chantier B : Diagnostic bots IA ──────────────────────────────────────
+    // Lancé en parallèle de la création du run, ne bloque pas si ça échoue.
+    try {
+      const botResult = await checkBotAccess(brand.website_url || '')
+
+      // Upsert du résultat (1 ligne par marque, mise à jour à chaque run)
+      await admin.from('brand_bot_access').upsert(
+        {
+          brand_id: brand.id,
+          checked_at: botResult.checkedAt,
+          llms_txt_found: botResult.llmsTxtFound,
+          bot_rules: botResult.bots,
+        },
+        { onConflict: 'brand_id' },
+      )
+
+      // Générer une opportunité haute priorité pour chaque bot majeur bloqué
+      for (const botId of MAJOR_BOTS) {
+        if (botResult.bots[botId] === 'blocked') {
+          const botLabel = botId === 'GPTBot' || botId === 'ChatGPT-User'
+            ? 'ChatGPT'
+            : botId === 'ClaudeBot'
+            ? 'Claude (Anthropic)'
+            : 'Google Gemini'
+
+          // Vérifier si une opportunité similaire est déjà ouverte pour éviter les doublons
+          const { data: existing } = await admin.from('opportunities')
+            .select('id')
+            .eq('brand_id', brand.id)
+            .eq('status', 'open')
+            .ilike('title', `%${botId}%`)
+            .maybeSingle()
+
+          if (!existing) {
+            await admin.from('opportunities').insert({
+              brand_id: brand.id,
+              title: `${botLabel} bloqué dans votre robots.txt`,
+              priority: 'high',
+              confidence: 95,
+              status: 'open',
+              observations_count: 0,
+              reason: `Le bot ${botId} est explicitement bloqué dans votre robots.txt (Disallow: /). ${botLabel} ne peut pas crawler votre site, ce qui réduit directement votre visibilité dans ses réponses générées.`,
+              proposed_direction: `Modifiez votre robots.txt pour autoriser ${botId} : ajoutez un bloc "User-agent: ${botId}" suivi de "Allow: /" ou supprimez la règle Disallow qui le bloque.`,
+            })
+          }
+        }
+      }
+
+      // Notifier si au moins un bot majeur est bloqué
+      const blockedMajorBots = MAJOR_BOTS.filter((b) => botResult.bots[b] === 'blocked')
+      if (blockedMajorBots.length > 0) {
+        await admin.from('events').insert({
+          brand_id: brand.id,
+          type: 'warning',
+          title: 'Bots IA bloqués détectés',
+          message: `${blockedMajorBots.length} bot(s) IA majeur(s) bloqué(s) dans votre robots.txt : ${blockedMajorBots.join(', ')}.`,
+          source_type: 'bot_access',
+          show_toast: false,
+          show_notification: true,
+          show_history: true,
+          read: false,
+        })
+      }
+    } catch (botErr) {
+      // Le diagnostic bots IA ne doit jamais faire échouer le crawl
+      console.error('[orchestrate] Erreur diagnostic bots IA :', botErr)
+    }
+
     return { runId: run.id }
   })
 
-// 2. Traiter la prochaine page (boucle client)
+// ─── 2. Traiter la prochaine page (boucle client) ────────────────────────────
 export const processNextPage = createServerFn({ method: 'POST' })
   .validator((data: { runId: string }) => data)
   .handler(async ({ data }): Promise<{ done: boolean, runId: string }> => {
@@ -94,6 +177,14 @@ export const processNextPage = createServerFn({ method: 'POST' })
       // Clôture transactionnelle via fonction SQL
       await admin.rpc('close_crawl_run', { p_run_id: run.id, p_brand_id: run.brand_id })
       return { done: true, runId: run.id }
+    }
+
+    // ── Délai de politeness ───────────────────────────────────────────────────
+    // On attend avant le fetch (sauf pour le tout premier appel où pages_checked
+    // vaut 0 — inutile d'attendre avant la première requête du run).
+    const delayMs = run.crawl_delay_ms ?? DEFAULT_CRAWL_DELAY_MS
+    if ((run.pages_checked ?? 0) > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
     }
 
     try {

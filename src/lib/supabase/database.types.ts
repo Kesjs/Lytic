@@ -43,6 +43,25 @@ export interface Database {
         }
         Update: { [key: string]: any }
       }
+      brand_bot_access: {
+        Row: {
+          id: string
+          brand_id: string
+          checked_at: string
+          llms_txt_found: boolean
+          bot_rules: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          checked_at?: string
+          llms_txt_found?: boolean
+          bot_rules?: Json
+          created_at?: string
+        }
+        Update: { [key: string]: any }
+      }
       questions: {
         Row: {
           id: string
@@ -292,6 +311,7 @@ export interface Database {
           pages_total: number
           pages_checked: number
           pages_changed: number
+          crawl_delay_ms: number | null
           version_number: number | null
           created_at: string
         }
@@ -305,6 +325,7 @@ export interface Database {
           pages_total?: number
           pages_checked?: number
           pages_changed?: number
+          crawl_delay_ms?: number | null
           version_number?: number | null
           created_at?: string
         }

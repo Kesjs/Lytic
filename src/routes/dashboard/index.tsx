@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/lib/queries/dashboard'
+import { fetchBotAccess } from '~/lib/queries/bot-access'
 import { ScoreChart } from '~/components/dashboard/ScoreChart'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { ManualMeasureButton } from '~/components/dashboard/ManualMeasureButton'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
+import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 
 export const Route = createFileRoute('/dashboard/')({
   component: AccueilPage,
@@ -19,8 +21,13 @@ function AccueilPage() {
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
   })
+  
+  const { data: botAccess, isLoading: isBotAccessLoading } = useQuery({
+    queryKey: ['bot-access'],
+    queryFn: () => fetchBotAccess(),
+  })
 
-  if (isLoading) {
+  if (isLoading || isBotAccessLoading) {
     return <AccueilSkeleton />
   }
 
@@ -173,6 +180,10 @@ function AccueilPage() {
           }
           hint="Vs. concurrents détectés"
         />
+      </section>
+
+      <section>
+        <BotAccessCard data={botAccess ?? null} />
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
