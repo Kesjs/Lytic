@@ -133,10 +133,16 @@ export const updateProfileName = createServerFn({ method: 'POST' })
   .handler(async ({ data: fullName }) => {
     const supabase = getSupabaseServerClient()
     const user = await requireUser(supabase)
+    // upsert plutôt que update : si la ligne profiles n'existe pas encore
+    // (compte créé avant le trigger handle_new_user, ou trigger en échec),
+    // un simple update() touche 0 ligne sans erreur et le changement se
+    // perd silencieusement. upsert() garantit que la ligne est créée si besoin.
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName.trim() || null })
-      .eq('id', user.id)
+      .upsert(
+        { id: user.id, email: user.email ?? '', full_name: fullName.trim() || null },
+        { onConflict: 'id' },
+      )
     if (error) throw new Error(error.message)
     return { success: true } as const
   })
@@ -372,4 +378,3 @@ export const generateQuestionsWithGemini = createServerFn({ method: 'POST' })
     const { generateBrandQuestions } = await import('~/lib/gemini')
     return await generateBrandQuestions(name, websiteUrl)
   })
-
