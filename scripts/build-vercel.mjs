@@ -101,7 +101,7 @@ await esbuild.build({
   banner: {
     js: `import { createRequire as __createRequire } from 'node:module';\nif (typeof globalThis.require === 'undefined') { globalThis.require = __createRequire(import.meta.url); }`,
   },
-  external: ['node:*', 'puppeteer-core', '@sparticuz/chromium-min'],
+  external: ['node:*'],
 });
 
 // Function config for Vercel
