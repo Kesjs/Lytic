@@ -123,11 +123,40 @@ export interface Database {
           brand_position: number | null
           raw_answer: string | null
           created_at: string
+          samples_count: number
+          agreement_score: number | null
         }
         Insert: {
           id?: string
           run_id: string
           question_id: string
+          engine?: string
+          brand_mentioned?: boolean
+          brand_recommended?: boolean
+          brand_position?: number | null
+          raw_answer?: string | null
+          created_at?: string
+          samples_count?: number
+          agreement_score?: number | null
+        }
+        Update: { [key: string]: any }
+      }
+      observation_samples: {
+        Row: {
+          id: string
+          observation_id: string
+          sample_index: number
+          engine: string
+          brand_mentioned: boolean
+          brand_recommended: boolean
+          brand_position: number | null
+          raw_answer: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          observation_id: string
+          sample_index: number
           engine?: string
           brand_mentioned?: boolean
           brand_recommended?: boolean

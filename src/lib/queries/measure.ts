@@ -6,6 +6,7 @@ import { runOpenAIQuery } from '~/lib/openai'
 import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
+import { aggregateSamples } from '~/lib/aggregate'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
 // Architecturé en deux server functions distinctes pour rester dans les
@@ -23,7 +24,10 @@ type RunStatus = Database['public']['Tables']['measurement_runs']['Row']['status
 type MeasurementRun = Database['public']['Tables']['measurement_runs']['Row']
 type Brand = Database['public']['Tables']['brands']['Row']
 
-/** Vérifie le délai de 7 jours entre deux mesures manuelles.
+/** Vérifie le délai entre deux mesures manuelles (MEASUREMENT_DELAY_DAYS ci-dessus,
+ *  actuellement 1 jour — le commentaire précédent mentionnait 7 jours à tort,
+ *  corrigé lors de la refonte v2 ; à valider côté produit si 7j était la vraie
+ *  intention, auquel cas changer uniquement la constante, pas cette fonction).
  *  Utilise .or() au lieu de .in('status', [...]) pour éviter l'erreur TS
  *  liée à l'inférence stricte du type enum dans le client Supabase. */
 async function checkMeasurementDelay(
@@ -354,35 +358,49 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     }
 
     // ─── Traitement de la question suivante ────────────────────────────────
+    // Refonte v2 (Evidence Engine) : une IA générative n'est pas déterministe,
+    // donc UNE question = SAMPLES_PER_QUESTION appels indépendants, agrégés
+    // par vote majoritaire — jamais une conclusion sur un seul appel.
+    // Voir doc de refonte §3.2/3.3 et src/lib/aggregate.ts.
     const brandDomain = brand.website_url ? extractBrandDomain(brand.website_url) : ''
+    const SAMPLES_PER_QUESTION = 3
 
     try {
-      // Étape A : appel OpenAI
-      const { text: rawAnswer, citations } = await runOpenAIQuery(nextQuestion.text)
+      // Étape A : SAMPLES_PER_QUESTION appels ChatGPT indépendants, en parallèle
+      // (sinon le temps de traitement par question est multiplié par 3)
+      const rawResults = await Promise.all(
+        Array.from({ length: SAMPLES_PER_QUESTION }, () => runOpenAIQuery(nextQuestion.text)),
+      )
 
-      // Étape B : parsing Gemini — on injecte les concurrents déjà connus pour
-      // éviter que l'IA en rate ou change légèrement leur nom d'un run à l'autre.
+      // Étape B : concurrents déjà connus, injectés dans chaque parsing pour
+      // éviter que l'IA en rate ou change légèrement leur nom d'un échantillon à l'autre.
       const { data: existingCompetitors } = await adminSupabase
         .from('competitors')
         .select('name')
         .eq('brand_id', brand.id)
       const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
 
-      const analysis = await analyzeAnswer(
-        rawAnswer,
-        brand.name,
-        brandDomain,
-        knownCompetitorNames,
+      // Étape C : chaque échantillon est analysé séparément (pas de moyenne sur le texte brut)
+      const analyses = await Promise.all(
+        rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames)),
       )
 
-      // Étape C : cited déterministe (non utilisé dans la DB pour l'instant,
+      // cited déterministe par échantillon (non utilisé dans la DB pour l'instant,
       // prévu pour la colonne brand_cited dans une future migration §DB-2)
-      const _brandCited = isBrandCited(citations, brandDomain)
+      const _brandCitedPerSample = rawResults.map((r) => isBrandCited(r.citations, brandDomain))
 
-      // Étape D : insert/upsert concurrents inconnus
-      for (const competitor of analysis.competitors) {
-        if (!competitor.mentioned) continue
+      // Étape D : agrégation par vote majoritaire (voir aggregate.ts)
+      const aggregated = aggregateSamples(
+        analyses.map((a) => ({
+          brand_mentioned: a.brand_mentioned,
+          brand_recommended: a.brand_recommended,
+          brand_position: a.brand_position,
+        })),
+      )
 
+      // Étape E : insert/upsert concurrents inconnus, vus sur n'importe quel échantillon
+      const allMentionedCompetitors = analyses.flatMap((a) => a.competitors).filter((c) => c.mentioned)
+      for (const competitor of allMentionedCompetitors) {
         const { data: existing } = await adminSupabase
           .from('competitors')
           .select('id')
@@ -400,39 +418,69 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         }
       }
 
-      // Étape E : insert observation
+      // Étape F : insert observation agrégée
       const { data: obs, error: obsError } = await adminSupabase
         .from('observations')
         .insert({
           run_id: run.id,
           question_id: nextQuestion.id,
           engine: 'openai',
-          brand_mentioned: analysis.brand_mentioned,
-          brand_recommended: analysis.brand_recommended,
-          brand_position: analysis.brand_position,
-          raw_answer: rawAnswer,
+          brand_mentioned: aggregated.brand_mentioned,
+          brand_recommended: aggregated.brand_recommended,
+          brand_position: aggregated.brand_position,
+          raw_answer: rawResults[0]?.text ?? null, // 1er échantillon conservé pour affichage rapide ; les 3 sont dans observation_samples
+          samples_count: aggregated.samples_count,
+          agreement_score: aggregated.agreement_score,
         })
         .select()
         .single()
 
       if (obsError || !obs) throw new Error('Erreur insertion observation : ' + obsError?.message)
 
-      // Étape F : insert observation_competitors
-      if (analysis.competitors.length > 0) {
+      // Étape G : insert des échantillons bruts (traçabilité / Evidence Chain)
+      const { error: samplesError } = await adminSupabase.from('observation_samples').insert(
+        rawResults.map((r, i) => ({
+          observation_id: obs.id,
+          sample_index: i + 1,
+          engine: 'openai',
+          brand_mentioned: analyses[i].brand_mentioned,
+          brand_recommended: analyses[i].brand_recommended,
+          brand_position: analyses[i].brand_position,
+          raw_answer: r.text,
+        })),
+      )
+      if (samplesError) {
+        console.error('[measure] Échec insertion observation_samples (non bloquant) :', samplesError)
+      }
+
+      // Étape H : insert observation_competitors (agrégés sur tous les échantillons, dédupliqués par concurrent)
+      if (allMentionedCompetitors.length > 0) {
         const { data: competitorRows } = await adminSupabase
           .from('competitors')
           .select('id, name')
           .eq('brand_id', brand.id)
           .in(
             'name',
-            analysis.competitors.map((c) => c.name),
+            allMentionedCompetitors.map((c) => c.name),
           )
 
         const competitorByName = new Map(
           (competitorRows ?? []).map((c) => [c.name.toLowerCase(), c.id]),
         )
 
-        const obsCompetitors = analysis.competitors
+        // Un seul enregistrement observation_competitors par concurrent : on garde
+        // l'échantillon le plus "favorable" à la détection (recommandé > mentionné,
+        // meilleure position) pour ne pas dupliquer sur les 3 échantillons.
+        const byCompetitor = new Map<string, (typeof allMentionedCompetitors)[number]>()
+        for (const c of allMentionedCompetitors) {
+          const key = c.name.toLowerCase()
+          const existing = byCompetitor.get(key)
+          if (!existing || (c.recommended && !existing.recommended)) {
+            byCompetitor.set(key, c)
+          }
+        }
+
+        const obsCompetitors = [...byCompetitor.values()]
           .map((c) => {
             const competitorId =
               competitorByName.get(c.name.toLowerCase()) ??
@@ -458,7 +506,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         }
       }
 
-      // Étape G : incrémente questions_completed
+      // Étape I : incrémente questions_completed
       await adminSupabase
         .from('measurement_runs')
         .update({ questions_completed: doneQuestionIds.size + 1 })
