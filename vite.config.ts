@@ -11,7 +11,7 @@ export default defineConfig({
     // tanstackStart() intègre et gère Nitro en interne, DOIT venir avant viteReact()
     tanstackStart({
       server: {
-        preset: 'node-server'
+        preset: 'vercel'
       }
     }),
     viteReact(),

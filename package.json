@@ -5,9 +5,9 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "vite dev --port 3001",
-    "build": "vite build",
+    "build": "node ./scripts/build-vercel.mjs",
     "preview": "vite preview",
-    "start": "node .output/server/index.mjs",
+    "start": "node server.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
