@@ -20,7 +20,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   const mutation = useMutation({
     mutationFn: () =>
       createBrandWithQuestions({
-        data: { name, websiteUrl, questions: questions.filter((q) => q.trim()) },
+        data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl), questions: questions.filter((q) => q.trim()) },
       }),
     onSuccess: () => {
       toast.success('Marque configurée — vous pouvez maintenant lancer une mesure.')
@@ -35,7 +35,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   })
 
   const generateQuestionsMutation = useMutation({
-    mutationFn: () => generateQuestionsWithGemini({ data: { name, websiteUrl } }),
+    mutationFn: () => generateQuestionsWithGemini({ data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl) } }),
     onSuccess: (data) => {
       setQuestions(data.length > 0 ? data : [''])
       toast.success('Questions générées par l\'IA !')

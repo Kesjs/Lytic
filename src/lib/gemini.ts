@@ -5,6 +5,7 @@
 // JAMAIS d'import depuis un composant client — clé API serveur uniquement.
 
 import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai'
+import * as cheerio from 'cheerio'
 
 const MODEL = 'gemini-3.7-flash'
 const MAX_RETRIES = 2
@@ -149,15 +150,44 @@ export async function analyzeWithGemini(
 export async function generateBrandQuestions(brandName: string, websiteUrl: string): Promise<string[]> {
   const client = getClient()
   
-  const prompt = `Génère 5 questions pertinentes qu'un utilisateur pourrait poser à ChatGPT concernant la marque "${brandName}" (Site web : ${websiteUrl}). Les questions doivent tester si l'IA connaît la marque et la recommande par rapport à ses concurrents.
-Exemples de questions attendues :
-- "Quels sont les meilleurs outils pour [domaine de la marque] ?"
-- "Que vaut la marque ${brandName} ?"
-- "Quelles sont les alternatives à [Concurrent principal] ?"
+  // Tente de récupérer le contenu du site pour donner du contexte à l'IA
+  let websiteContext = ''
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    // Ajout d'un faux User-Agent pour éviter certains blocages basiques
+    const response = await fetch(websiteUrl, { 
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    })
+    clearTimeout(timeoutId)
+    
+    if (response.ok) {
+      const html = await response.text()
+      const $ = cheerio.load(html)
+      $('script, style, noscript, iframe, img, svg, video, nav, footer').remove()
+      const text = $('body').text().replace(/\s+/g, ' ').trim()
+      websiteContext = text.substring(0, 3000) // On limite la taille pour ne pas exploser le prompt
+    }
+  } catch (err) {
+    console.warn(`Impossible de scraper ${websiteUrl} pour le contexte:`, err)
+  }
+
+  const contextPrompt = websiteContext 
+    ? `\n\nVoici le contenu extrait de leur page d'accueil pour comprendre exactement ce qu'ils font :\n"""\n${websiteContext}\n"""\n\nUtilise ce contexte pour générer des questions ultra-ciblées sur leur VRAIE activité, et non des questions génériques.` 
+    : ''
+
+  const prompt = `Tu es un expert en marketing IA. Génère 5 questions ultra-pertinentes qu'un utilisateur humain poserait naturellement à ChatGPT pour se renseigner sur la marque "${brandName}" (Site web : ${websiteUrl}). Les questions doivent tester si l'IA connaît la marque et la recommande par rapport à ses concurrents.${contextPrompt}
+
+Exemples de bonnes questions (naturelles) :
+- "Avis sur ${brandName}, est-ce que c'est fiable ?"
+- "Je cherche un [leur vrai service/produit], tu connais ${brandName} ?"
+- "Quelles sont les meilleures alternatives à [Concurrent principal] ?"
 Règles :
-- Les questions doivent être naturelles.
+- Les questions doivent être naturelles, comme si un humain tapait sur son clavier.
+- Interdiction d'utiliser des formulations robotiques comme "Qu'est-ce que la plateforme...".
 - Pas plus de 300 caractères par question.
-- Retourne uniquement le tableau JSON.`
+- Retourne uniquement le tableau JSON de 5 questions.`
 
   let lastError: unknown
   const modelsToTry = [MODEL, 'gemini-1.5-flash']
