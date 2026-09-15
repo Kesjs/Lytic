@@ -7,6 +7,7 @@ import { Pencil, Plus, Check, X as XIcon, Globe, Trash2 } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
+import { ThemeToggle } from '~/components/ui/theme-toggle'
 import {
   fetchSettings,
   updateProfileName,
@@ -63,6 +64,7 @@ function ParametresPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <AccountSection profile={data.profile} onSaved={invalidate} />
+      <AppearanceSection />
       <SiteSection brand={data.brand} onSaved={invalidate} />
       {data.brand && <CrawlSection brand={data.brand} />}
       <QuestionsSection brand={data.brand} questions={data.questions} onSaved={invalidate} />
@@ -190,6 +192,16 @@ function AccountSection({
           <SaveButton onClick={() => mutation.mutate(fullName)} saving={mutation.isPending} />
         </div>
       </div>
+    </SectionCard>
+  )
+}
+
+// --- Apparence ---
+
+function AppearanceSection() {
+  return (
+    <SectionCard title="Apparence" description="Thème clair ou sombre de l'interface.">
+      <ThemeToggle />
     </SectionCard>
   )
 }

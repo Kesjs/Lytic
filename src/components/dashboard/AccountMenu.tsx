@@ -51,7 +51,7 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
 
   const dropdown = isDropdownOpen && (
     <div
-      className={`absolute rounded-lg border border-border bg-zinc-950 p-1.5 shadow-2xl z-50 w-56 ${
+      className={`absolute rounded-lg border border-border bg-elevated p-1.5 shadow-2xl z-50 w-56 ${
         variant === 'header'
           ? 'right-0 top-full mt-2'
           : `bottom-full mb-2 ${isCollapsed ? 'left-2' : 'left-2 right-2 w-auto'}`

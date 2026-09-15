@@ -7,6 +7,7 @@ import { TooltipProvider } from '~/components/ui/tooltip'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
+import { ThemeProvider, THEME_STORAGE_KEY, useTheme } from '~/components/theme-provider'
 import appCss from '~/styles/app.css?url'
 
 const queryClient = new QueryClient()
@@ -72,29 +73,51 @@ function RootComponent() {
 
   return (
     <RootDocument>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Outlet />
-          <Toaster
-            theme="dark"
-            position={toastPosition}
-            toastOptions={{
-              classNames: {
-                toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
-              },
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Outlet />
+            <ThemedToaster toastPosition={toastPosition} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </RootDocument>
+  )
+}
+
+// Isolé pour pouvoir appeler useTheme() — le Toaster suit désormais le thème
+// actif au lieu d'être figé en theme="dark".
+function ThemedToaster({ toastPosition }: { toastPosition: 'top-center' | 'bottom-right' }) {
+  const { theme } = useTheme()
+  return (
+    <Toaster
+      theme={theme}
+      position={toastPosition}
+      toastOptions={{
+        classNames: {
+          toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
+        },
+      }}
+    />
   )
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className="dark">
+    // suppressHydrationWarning : le script ci-dessous peut corriger la classe
+    // avant l'hydratation React si le thème stocké diffère du rendu serveur
+    // (toujours "dark" côté serveur, faute de connaître le localStorage).
+    <html lang="fr" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Anti-flash : applique le thème stocké AVANT le premier paint,
+            pour ne pas voir un flash sombre puis clair (ou l'inverse) au
+            chargement. Doit utiliser la même clé que THEME_STORAGE_KEY. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');var isLight=t==='light';document.documentElement.classList.toggle('light',isLight);document.documentElement.classList.toggle('dark',!isLight);}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="bg-canvas text-ink-primary antialiased">
         {children}

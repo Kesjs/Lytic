@@ -38,7 +38,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex flex-col justify-between border-r border-border bg-black transition-all duration-300 ease-in-out ${
+      className={`fixed inset-y-0 left-0 z-50 flex flex-col justify-between border-r border-border bg-canvas transition-all duration-300 ease-in-out ${
         /* Mobile: glissement depuis la gauche */
         isOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 ${

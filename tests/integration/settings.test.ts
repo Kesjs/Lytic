@@ -373,7 +373,7 @@ describe('tests/integration/settings.test.ts', () => {
       ).rejects.toThrow('Ajoutez au moins une question à suivre.')
     })
 
-    it('refuse si plus de 30 questions sont fournies', async () => {
+    it('refuse si plus de 50 questions sont fournies', async () => {
       const mockClient = createMockSupabase({
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
         from: (table: string) => {
@@ -385,12 +385,12 @@ describe('tests/integration/settings.test.ts', () => {
       })
       ;(getSupabaseServerClient as any).mockReturnValue(mockClient)
 
-      const questions = Array.from({ length: 31 }, (_, i) => `Question ${i + 1} ?`)
+      const questions = Array.from({ length: 51 }, (_, i) => `Question ${i + 1} ?`)
       await expect(
         createBrandWithQuestions({
           data: { name: 'Brand', websiteUrl: 'https://site.fr', questions },
         }),
-      ).rejects.toThrow('Limite de 30 questions suivies atteinte pour ce plan.')
+      ).rejects.toThrow('Limite de 50 questions suivies atteinte pour ce plan.')
     })
 
     it('refuse si une question dépasse la longueur maximale (300 caractères)', async () => {
@@ -471,7 +471,7 @@ describe('tests/integration/settings.test.ts', () => {
   })
 
   describe('addQuestion', () => {
-    it('refuse si le quota de 30 questions est déjà atteint', async () => {
+    it('refuse si le quota de 50 questions est déjà atteint', async () => {
       const mockClient = createMockSupabase({
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
         from: (table: string) => {
@@ -479,7 +479,7 @@ describe('tests/integration/settings.test.ts', () => {
             return createChainableBuilder({ data: { id: 'brand-1' }, error: null })
           }
           if (table === 'questions') {
-            return createChainableBuilder({ count: 30, error: null })
+            return createChainableBuilder({ count: 50, error: null })
           }
           return createChainableBuilder()
         },
@@ -490,7 +490,7 @@ describe('tests/integration/settings.test.ts', () => {
         addQuestion({
           data: { brandId: 'brand-1', text: 'Nouvelle question ?' },
         }),
-      ).rejects.toThrow('Limite de 30 questions suivies atteinte pour ce plan.')
+      ).rejects.toThrow('Limite de 50 questions suivies atteinte pour ce plan.')
     })
 
     it('insère la nouvelle question avec position = count actuel', async () => {

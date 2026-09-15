@@ -93,7 +93,7 @@ export function NotificationCenter() {
       </Tooltip>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-zinc-950 shadow-2xl">
+        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-elevated shadow-2xl">
           <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5">
             <p className="text-xs font-semibold text-ink-primary">Notifications</p>
             {unreadCount > 0 && (
