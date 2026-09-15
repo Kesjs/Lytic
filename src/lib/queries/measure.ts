@@ -207,7 +207,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       // Calcule le score global à partir de toutes les observations du run
       const { data: allObs } = await adminSupabase
         .from('observations')
-        .select('brand_mentioned, brand_recommended, brand_position')
+        .select('brand_mentioned, brand_recommended, brand_position, raw_answer')
         .eq('run_id', run.id)
 
       const score = computeRunScore(allObs ?? [])
@@ -229,10 +229,11 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
 
       // Détermine le statut final
       const totalQuestions = run.questions_total
+      const successfulCount = (allObs ?? []).filter(o => o.raw_answer !== null).length
       let finalStatus: 'success' | 'partial' | 'failed'
-      if (completedCount === 0) {
+      if (successfulCount === 0) {
         finalStatus = 'failed'
-      } else if (completedCount < totalQuestions) {
+      } else if (successfulCount < totalQuestions) {
         finalStatus = 'partial'
       } else {
         finalStatus = 'success'

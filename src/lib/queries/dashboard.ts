@@ -137,7 +137,11 @@ async function computeLatestRunInsights(
     observationsCount: total,
   }
 
-  return { kpis, questionsPerf, topCompetitors }
+  // Retroactive fix for runs that were marked as success despite having null raw_answers
+  const successCount = observations.filter(o => o.raw_answer !== null).length
+  const actualStatus = latestRun.status === 'success' && successCount < questions.length ? 'partial' : latestRun.status
+
+  return { kpis, questionsPerf, topCompetitors, actualStatus }
 }
 
 export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(async (): Promise<any> => {
@@ -178,10 +182,18 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
       supabase.from('site_pages').select('*').eq('brand_id', brand.id),
     ])
 
-  const latestRun = runs?.[0] ?? null
+  let latestRun = runs?.[0] ?? null
   const previousRun = runs?.[1] ?? null
 
-  const insights = await computeLatestRunInsights(supabase, brand.id, latestRun)
+  const { kpis, questionsPerf, topCompetitors, actualStatus } = await computeLatestRunInsights(
+    supabase,
+    brand.id,
+    latestRun,
+  )
+
+  if (latestRun && actualStatus && latestRun.status !== actualStatus) {
+    latestRun = { ...latestRun, status: actualStatus }
+  }
 
   return {
     brand,
@@ -190,8 +202,8 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     opportunities: opportunities ?? [],
     events: events ?? [],
     pages: pages ?? [],
-    kpis: insights.kpis,
-    questionsPerf: insights.questionsPerf,
-    topCompetitors: insights.topCompetitors,
+    kpis,
+    questionsPerf,
+    topCompetitors,
   } as const
 })
