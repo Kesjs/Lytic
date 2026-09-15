@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { X, Plus, Trash2, Sparkles, Globe } from 'lucide-react'
+import { X, Plus, Trash2, Sparkles, Globe, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
@@ -163,7 +163,11 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 disabled={!name.trim() || !urlValid || generateQuestionsMutation.isPending}
                 className="mt-3 w-full gap-1.5"
               >
-                <Sparkles className="size-3.5" />
+                {generateQuestionsMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
                 {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
               </ShiningButton>
 
