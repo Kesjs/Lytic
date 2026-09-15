@@ -6,6 +6,7 @@
 
 import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai'
 import * as cheerio from 'cheerio'
+import { fetchSafe } from '~/lib/crawler/fetch-safe'
 
 const MODEL = 'gemini-3.7-flash'
 const MAX_RETRIES = 2
@@ -150,25 +151,17 @@ export async function analyzeWithGemini(
 export async function generateBrandQuestions(brandName: string, websiteUrl: string): Promise<string[]> {
   const client = getClient()
   
-  // Tente de récupérer le contenu du site pour donner du contexte à l'IA
+  // Tente de récupérer le contenu du site pour donner du contexte à l'IA.
+  // fetchSafe (protection SSRF : résolution DNS + rejet IPs privées, gère
+  // aussi les redirections) — websiteUrl vient de la saisie utilisateur,
+  // jamais de fetch() brut sur une entrée utilisateur côté serveur.
   let websiteContext = ''
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-    // Ajout d'un faux User-Agent pour éviter certains blocages basiques
-    const response = await fetch(websiteUrl, { 
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-    })
-    clearTimeout(timeoutId)
-    
-    if (response.ok) {
-      const html = await response.text()
-      const $ = cheerio.load(html)
-      $('script, style, noscript, iframe, img, svg, video, nav, footer').remove()
-      const text = $('body').text().replace(/\s+/g, ' ').trim()
-      websiteContext = text.substring(0, 3000) // On limite la taille pour ne pas exploser le prompt
-    }
+    const { text: html } = await fetchSafe(websiteUrl, { timeoutMs: 5000 })
+    const $ = cheerio.load(html)
+    $('script, style, noscript, iframe, img, svg, video, nav, footer').remove()
+    const text = $('body').text().replace(/\s+/g, ' ').trim()
+    websiteContext = text.substring(0, 3000) // On limite la taille pour ne pas exploser le prompt
   } catch (err) {
     console.warn(`Impossible de scraper ${websiteUrl} pour le contexte:`, err)
   }
@@ -212,8 +205,14 @@ Règles :
 
         const result = await model.generateContent(prompt)
         const text = result.response.text()
-        const parsed = JSON.parse(text) as string[]
-        return parsed.slice(0, 5)
+        const parsed: unknown = JSON.parse(text)
+        if (!Array.isArray(parsed)) throw new Error('Réponse Gemini invalide : tableau attendu.')
+        const questions = parsed
+          .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
+          .map((q) => q.trim())
+          .slice(0, 5)
+        if (questions.length === 0) throw new Error('Gemini n\'a retourné aucune question exploitable.')
+        return questions
       } catch (err) {
         lastError = err
       }
