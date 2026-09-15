@@ -31,8 +31,11 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
         setIsMeasuring(true)
         toast.info('Marque configurée. Lancement de la première mesure...')
         try {
+          // runFullMeasurement affiche déjà le toast correspondant au vrai
+          // statut du run (success / partial / failed) — on ne rajoute pas
+          // ici de toast de succès inconditionnel, sinon l'utilisateur voit
+          // "Première mesure terminée !" même quand la mesure a échoué.
           await runFullMeasurement(data.brandId, queryClient, (p) => setProgress(p))
-          toast.success('Première mesure terminée !')
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Erreur inconnue'
           toast.error(`Erreur lors de la mesure : ${message}`)

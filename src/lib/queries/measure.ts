@@ -525,13 +525,17 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     } catch (err) {
       // Échec sur cette question : logue mais continue — les questions suivantes
       // ne sont pas bloquées (impacte seulement partial vs success à la fin)
+      // Le détail complet (ex: rate_limit_exceeded, code, message brut du
+      // fournisseur IA) reste UNIQUEMENT dans ce log serveur — jamais dans
+      // un event visible utilisateur (Historique / Notifications lisent
+      // events.message directement).
       console.error(`[measure] Échec question ${nextQuestion.id} :`, err)
 
       await adminSupabase.from('events').insert({
         brand_id: brand.id,
         type: 'warning' as Database['public']['Tables']['events']['Row']['type'],
         title: 'Échec sur une question',
-        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée. Erreur: ${err instanceof Error ? err.message : String(err)}`,
+        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée. Réessayez plus tard.`,
         source_type: 'measurement_run',
         source_id: run.id,
         show_toast: false,

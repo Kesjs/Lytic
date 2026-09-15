@@ -197,7 +197,7 @@ function AccueilPage() {
       </section>
 
       <section>
-        <BotAccessCard data={botAccess ?? null} />
+        <BotAccessCard data={botAccess ?? null} brandId={brand.id} />
       </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">

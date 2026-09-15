@@ -1,19 +1,67 @@
-import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react'
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { CheckCircle2, XCircle, HelpCircle, Loader2 } from 'lucide-react'
 import type { BotAccessData } from '~/lib/queries/bot-access'
 import { IA_BOTS } from '~/lib/crawler/constants'
+import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
 
 interface Props {
   data: BotAccessData | null
+  brandId: string
 }
 
-export function BotAccessCard({ data }: Props) {
+export function BotAccessCard({ data, brandId }: Props) {
+  const queryClient = useQueryClient()
+  const [isChecking, setIsChecking] = useState(false)
+
+  // Même logique que CrawlSection (Paramètres → Site) : on la duplique ici
+  // en petit pour que la vérification soit accessible directement depuis
+  // cette carte, sans obliger l'utilisateur à aller dans Paramètres.
+  const checkMutation = useMutation({
+    mutationFn: () => triggerSiteCrawl({ data: { brandId } }),
+    onSuccess: async (result) => {
+      setIsChecking(true)
+      let done = false
+      let runId = result.runId
+
+      while (!done) {
+        try {
+          const res = await processNextPage({ data: { runId } })
+          done = res.done
+        } catch (err) {
+          console.error(err)
+          break
+        }
+      }
+
+      setIsChecking(false)
+      queryClient.invalidateQueries({ queryKey: ['bot-access'] })
+      toast.success('Vérification des bots IA terminée')
+    },
+    onError: (err: Error) => {
+      setIsChecking(false)
+      toast.error(err.message || 'Erreur lors de la vérification')
+    },
+  })
+
   if (!data) {
     return (
       <div className="rounded-lg border border-border bg-surface p-5">
         <h2 className="text-sm font-semibold text-ink-primary">Accès Bots IA</h2>
         <p className="mt-3 text-sm text-ink-muted">
-          Aucune analyse effectuée. Lancez une mesure pour vérifier si les bots d'IA peuvent crawler votre site.
+          Reflet peut vérifier si les bots des IA (GPTBot, ClaudeBot, Google-Extended...) sont autorisés
+          à explorer votre site, via votre robots.txt.
         </p>
+        <button
+          type="button"
+          onClick={() => checkMutation.mutate()}
+          disabled={checkMutation.isPending || isChecking}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
+        >
+          {(checkMutation.isPending || isChecking) && <Loader2 className="size-3.5 animate-spin" />}
+          {checkMutation.isPending || isChecking ? 'Vérification en cours…' : "Vérifier l'accès"}
+        </button>
       </div>
     )
   }
