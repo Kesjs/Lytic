@@ -43,7 +43,7 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée) :
         brand_id: brandId,
         title: opp.title,
         priority: opp.priority,
-        confidence: opp.confidence,
+        confidence: opp.confidence / 100,
         status: 'open',
         observations_count: observations.length,
         reason: opp.reason,

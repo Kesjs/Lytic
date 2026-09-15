@@ -197,7 +197,7 @@ function OpportunityCard({
                 {PRIORITY_LABEL[opportunity.priority]}
               </span>
               <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
-                Confiance {opportunity.confidence}%
+                Confiance {Math.round(opportunity.confidence * 100)}%
               </span>
               <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
                 {opportunity.observationsCount} observation

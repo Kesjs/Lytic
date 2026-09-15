@@ -266,7 +266,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           finalStatus === 'failed'
             ? 'La mesure a échoué'
             : finalStatus === 'partial'
-              ? `Mesure partielle (${completedCount}/${totalQuestions} questions)`
+              ? `Mesure partielle (${successfulCount}/${totalQuestions} réussies)`
               : 'Mesure terminée',
         message:
           finalStatus !== 'failed'

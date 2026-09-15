@@ -85,6 +85,7 @@ export async function runOpenAIQuery(question: string): Promise<OpenAIQueryResul
       return { text, citations }
     } catch (err) {
       lastError = err
+      console.error(`[openai] Erreur API OpenAI (tentative ${attempt + 1}/${MAX_RETRIES}):`, err)
       // Ne pas réessayer sur les erreurs 4xx (paramètres invalides, quota, etc.)
       if (err instanceof OpenAI.APIError && err.status >= 400 && err.status < 500) {
         throw err
