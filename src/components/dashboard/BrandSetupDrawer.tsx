@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { X, Plus, Trash2, Sparkles, Globe } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
@@ -167,46 +168,56 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
               </ShiningButton>
 
               <div className="mt-4 space-y-2">
-                {questions.map((q, i) => {
-                  const overlong = q.length > QUESTION_MAX_LENGTH
-                  const nearLimit = !overlong && q.length > QUESTION_MAX_LENGTH * 0.9
-                  return (
-                    <div key={i}>
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={q}
-                          onChange={(e) => updateQuestion(i, e.target.value)}
-                          placeholder={`Question ${i + 1}…`}
-                          className={cn(
-                            'flex-1 rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none',
-                            overlong
-                              ? 'border-danger/60 focus:border-danger'
-                              : 'border-border focus:border-brand/50',
-                          )}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeQuestion(i)}
-                          className="flex size-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-danger/10 hover:text-danger"
-                          title="Retirer"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
-                      {(overlong || nearLimit) && (
-                        <p
-                          className={cn(
-                            'mt-1 text-right text-[11px]',
-                            overlong ? 'text-danger' : 'text-warning',
-                          )}
-                        >
-                          {q.length}/{QUESTION_MAX_LENGTH}
-                          {overlong ? ' — trop long' : ''}
-                        </p>
-                      )}
-                    </div>
-                  )
-                })}
+                <AnimatePresence initial={false}>
+                  {questions.map((q, i) => {
+                    const overlong = q.length > QUESTION_MAX_LENGTH
+                    const nearLimit = !overlong && q.length > QUESTION_MAX_LENGTH * 0.9
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                        exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex gap-2">
+                          <textarea
+                            value={q}
+                            rows={2}
+                            onChange={(e) => updateQuestion(i, e.target.value)}
+                            placeholder={`Question ${i + 1}…`}
+                            className={cn(
+                              'flex-1 resize-none rounded-md border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none overflow-y-auto',
+                              overlong
+                                ? 'border-danger/60 focus:border-danger'
+                                : 'border-border focus:border-brand/50',
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(i)}
+                            className="flex size-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-danger/10 hover:text-danger"
+                            title="Retirer"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                        {(overlong || nearLimit) && (
+                          <p
+                            className={cn(
+                              'mt-1 text-right text-[11px]',
+                              overlong ? 'text-danger' : 'text-warning',
+                            )}
+                          >
+                            {q.length}/{QUESTION_MAX_LENGTH}
+                            {overlong ? ' — trop long' : ''}
+                          </p>
+                        )}
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
               </div>
 
               <button
