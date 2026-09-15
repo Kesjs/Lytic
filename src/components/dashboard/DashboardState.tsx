@@ -91,8 +91,8 @@ const STATE_CONFIG: Record<DashboardStateKind, StateConfig> = {
   },
   no_opportunity: {
     icon: Lightbulb,
-    defaultTitle: 'Aucune opportunité pour le moment',
-    defaultDescription: 'Reflet n\u2019a rien identifié à améliorer sur cette mesure.',
+    defaultTitle: 'Aucune opportunité détectée',
+    defaultDescription: 'Bonne nouvelle : l\'IA n\'a identifié aucune friction majeure vous défavorisant sur cette mesure.',
     tone: 'neutral',
   },
   failed: {

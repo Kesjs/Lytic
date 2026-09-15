@@ -105,7 +105,7 @@ export async function analyzeWithGemini(
   const prompt = buildPrompt(rawAnswer, brandName, brandDomain, knownCompetitors)
   let lastError: unknown
 
-  const modelsToTry = [MODEL, 'gemini-2.5-flash-lite']
+  const modelsToTry = [MODEL, 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash']
 
   for (const modelName of modelsToTry) {
     const model = client.getGenerativeModel({
@@ -183,7 +183,7 @@ Règles :
 - Retourne uniquement le tableau JSON de 5 questions.`
 
   let lastError: unknown
-  const modelsToTry = [MODEL, 'gemini-2.5-flash-lite']
+  const modelsToTry = [MODEL, 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash']
 
   for (const modelName of modelsToTry) {
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {

@@ -352,9 +352,12 @@ function CompetitorsMiniList({
   }
   if (competitors.length === 0) {
     return (
-      <p className="mt-3 text-sm text-ink-muted">
-        Aucun concurrent détecté dans les réponses observées pour l'instant.
-      </p>
+      <div className="mt-3 rounded-md bg-elevated/50 p-3">
+        <p className="text-sm text-ink-primary">👑 Bonne nouvelle</p>
+        <p className="mt-1 text-xs text-ink-muted">
+          L'IA ne vous compare à aucun concurrent pour l'instant. Pour forcer l'IA à chercher vos rivaux, ajoutez des questions du type "Alternatives à..."
+        </p>
+      </div>
     )
   }
   return (
