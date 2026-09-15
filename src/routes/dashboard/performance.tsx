@@ -36,16 +36,14 @@ function PerformancePage() {
     return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
-  const { latestRun, questions } = data
-  const hasAnyRun = !!latestRun
+  const { latestRun, displayRun, questions } = data
+  const hasAnyRun = !!displayRun
 
-  if (!latestRun) {
+  if (!displayRun) {
     return <DashboardStateView state="no_data" />
   }
 
-  if (latestRun.status === 'failed') {
-    return <DashboardStateView state="failed" />
-  }
+
 
   if (latestRun.status === 'measuring') {
     return <DashboardStateView state="measuring" description={`${latestRun.questions_completed}/${latestRun.questions_total} questions mesurées…`} />
@@ -59,24 +57,29 @@ function PerformancePage() {
     <div className="space-y-6">
       <header className="rounded-lg border border-border bg-surface p-5">
         <p className="text-xs font-medium text-ink-muted">Visibilité IA</p>
-        {latestRun.status === 'success' && latestRun.score !== null ? (
+        {displayRun.score !== null ? (
           <>
             <div className="mt-1 font-display text-3xl font-bold tabular-nums text-brand-text">
-              {Math.round(latestRun.score)} <span className="text-base text-ink-muted">/ 100</span>
+              {Math.round(displayRun.score)} <span className="text-base text-ink-muted">/ 100</span>
             </div>
-            {latestRun.score_delta !== null && (
+            {displayRun.score_delta !== null && (
               <p
-                className={`mt-1 text-sm ${latestRun.score_delta >= 0 ? 'text-success' : 'text-danger'}`}
+                className={`mt-1 text-sm ${displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'}`}
               >
-                {latestRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(latestRun.score_delta)} depuis
+                {displayRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(displayRun.score_delta)} depuis
                 la dernière mesure
+              </p>
+            )}
+            {latestRun?.status === 'failed' && (
+              <p className="mt-2 text-xs font-semibold text-danger">
+                La dernière tentative de mesure a échoué.
               </p>
             )}
           </>
         ) : (
-          <DashboardStateView state={latestRun.status === 'partial' ? 'partial' : 'stale'} compact className="mt-2" />
+          <DashboardStateView state={displayRun.status === 'partial' ? 'partial' : 'stale'} compact className="mt-2" />
         )}
-        {latestRun.status === 'success' && deriveRunFreshness(latestRun.completed_at) === 'stale' && (
+        {displayRun.status === 'success' && deriveRunFreshness(displayRun.completed_at) === 'stale' && (
           <DashboardStateView state="stale" compact className="mt-2 !py-0" />
         )}
       </header>

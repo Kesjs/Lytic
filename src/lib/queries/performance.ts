@@ -32,9 +32,11 @@ export const fetchPerformanceOverview = createServerFn({ method: 'GET' }).handle
     .select('*')
     .eq('brand_id', brand.id)
     .order('started_at', { ascending: false })
-    .limit(1)
+    .limit(3)
 
   const latestRun = runs?.[0] ?? null
+  const validRuns = runs?.filter(r => r.status === 'success' || r.status === 'partial') || []
+  let displayRun = validRuns[0] ?? null
 
   const { data: questions } = await supabase
     .from('questions')
@@ -52,11 +54,11 @@ export const fetchPerformanceOverview = createServerFn({ method: 'GET' }).handle
     position: null,
   }))
 
-  if (latestRun && (latestRun.status === 'success' || latestRun.status === 'partial')) {
+  if (displayRun && (displayRun.status === 'success' || displayRun.status === 'partial')) {
     const { data: observations } = await supabase
       .from('observations')
       .select('question_id, brand_mentioned, brand_recommended, brand_position')
-      .eq('run_id', latestRun.id)
+      .eq('run_id', displayRun.id)
 
     const byQuestion = new Map((observations ?? []).map((o) => [o.question_id, o]))
 
@@ -76,6 +78,7 @@ export const fetchPerformanceOverview = createServerFn({ method: 'GET' }).handle
   return {
     brand,
     latestRun,
+    displayRun,
     questions: rows,
   } as const
 })

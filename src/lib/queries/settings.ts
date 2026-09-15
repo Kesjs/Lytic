@@ -325,6 +325,27 @@ export const toggleQuestionActive = createServerFn({ method: 'POST' })
     return { success: true } as const
   })
 
+export const deleteQuestion = createServerFn({ method: 'POST' })
+  .validator((data: { questionId: string }) => data)
+  .handler(async ({ data }): Promise<any> => {
+    const supabase = getSupabaseServerClient()
+    const user = await requireUser(supabase)
+
+    const { data: question } = await supabase
+      .from('questions')
+      .select('id, brand_id')
+      .eq('id', data.questionId)
+      .maybeSingle()
+    if (!question) throw new Error('Question introuvable')
+    await requireOwnedBrand(supabase, user.id, question.brand_id)
+
+    // Note: observations related to this question might exist, but Supabase schema
+    // usually cascades deletion or we might need to handle it. Assuming ON DELETE CASCADE is set for question_id.
+    const { error } = await supabase.from('questions').delete().eq('id', data.questionId)
+    if (error) throw new Error(error.message)
+    return { success: true } as const
+  })
+
 // --- Notifications ---
 
 export const updateNotificationPreferences = createServerFn({ method: 'POST' })

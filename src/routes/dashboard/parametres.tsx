@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { toast } from 'sonner'
-import { Pencil, Plus, Check, X as XIcon, Globe } from 'lucide-react'
+import { Pencil, Plus, Check, X as XIcon, Globe, Trash2 } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
@@ -15,6 +15,7 @@ import {
   addQuestion,
   updateQuestionText,
   toggleQuestionActive,
+  deleteQuestion,
   updateNotificationPreferences,
   type SettingsData,
 } from '~/lib/queries/settings'
@@ -149,25 +150,7 @@ function SaveButton({
   )
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full border transition-colors ${
-        checked ? 'border-brand/40 bg-brand' : 'border-border bg-elevated'
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 size-3.5 rounded-full transition-transform ${
-          checked ? 'translate-x-[18px] bg-black/80' : 'translate-x-0.5 bg-ink-muted'
-        }`}
-      />
-    </button>
-  )
-}
+// L'ancien composant Toggle a été supprimé à la demande de l'utilisateur pour utiliser un checkbox standard.
 
 // --- Compte ---
 
@@ -328,6 +311,15 @@ function QuestionsSection({
     onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour cette question.'),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (data: { questionId: string }) => deleteQuestion({ data }),
+    onSuccess: () => {
+      toast.success('Question supprimée.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de supprimer cette question.'),
+  })
+
   if (!brand) {
     return (
       <SectionCard title="Questions" description="Les questions suivies pour mesurer votre visibilité.">
@@ -412,6 +404,13 @@ function QuestionsSection({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={q.active}
+                    onChange={(e) => toggleMutation.mutate({ questionId: q.id, active: e.target.checked })}
+                    className="size-4 cursor-pointer rounded border-border bg-canvas text-brand focus:ring-brand"
+                    title={q.active ? "Désactiver la question" : "Activer la question"}
+                  />
                   <p className="flex-1 text-xs text-ink-secondary">« {q.text} »</p>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -428,10 +427,22 @@ function QuestionsSection({
                     </TooltipTrigger>
                     <TooltipContent>Modifier</TooltipContent>
                   </Tooltip>
-                  <Toggle
-                    checked={q.active}
-                    onChange={(v) => toggleMutation.mutate({ questionId: q.id, active: v })}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Voulez-vous vraiment supprimer cette question ? L\'historique associé sera perdu.')) {
+                            deleteMutation.mutate({ questionId: q.id })
+                          }
+                        }}
+                        className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-danger/10 hover:text-danger"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Supprimer</TooltipContent>
+                  </Tooltip>
                 </div>
               )}
             </div>

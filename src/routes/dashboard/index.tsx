@@ -108,7 +108,7 @@ function AccueilPage() {
     )
   }
 
-  const { brand, latestRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors } =
+  const { brand, latestRun, displayRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors } =
     data
 
   return (
@@ -122,40 +122,45 @@ function AccueilPage() {
               <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
               <p className="mt-3 text-xs font-medium text-ink-muted">Visibilité IA</p>
 
-              {!latestRun ? (
+              {!displayRun ? (
                 <DashboardStateView state="no_data" compact className="mt-4" />
               ) : (
                 <>
-                  {latestRun.score !== null ? (
+                  {displayRun.score !== null ? (
                     <>
                       <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
-                        {Math.round(latestRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
+                        {Math.round(displayRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
                       </div>
-                      {latestRun.score_delta !== null && (
+                      {displayRun.score_delta !== null && (
                         <p
                           className={`mt-1 text-sm ${
-                            latestRun.score_delta >= 0 ? 'text-success' : 'text-danger'
+                            displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'
                           }`}
                         >
-                          {latestRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(latestRun.score_delta)} depuis
+                          {displayRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(displayRun.score_delta)} depuis
                           la dernière mesure
                         </p>
                       )}
                       <p className="mt-2 text-xs text-ink-muted">
                         Dernière mesure :{' '}
-                        {latestRun.completed_at
-                          ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR')
+                        {displayRun.completed_at
+                          ? new Date(displayRun.completed_at).toLocaleDateString('fr-FR')
                           : '—'}
                       </p>
-                      {deriveRunFreshness(latestRun.completed_at) === 'stale' && (
+                      {latestRun?.status === 'failed' && (
+                        <p className="mt-2 text-xs font-semibold text-danger">
+                          La dernière tentative de mesure a échoué.
+                        </p>
+                      )}
+                      {deriveRunFreshness(displayRun.completed_at) === 'stale' && (
                         <DashboardStateView state="stale" compact className="mt-2 !py-0" />
                       )}
-                      {latestRun.status === 'partial' && (
+                      {displayRun.status === 'partial' && (
                         <DashboardStateView state="partial" compact className="mt-2 !py-0" />
                       )}
                     </>
                   ) : (
-                    <RunStatusState status={latestRun.status} run={latestRun} />
+                    <RunStatusState status={displayRun.status} run={displayRun} />
                   )}
                 </>
               )}

@@ -483,7 +483,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         brand_id: brand.id,
         type: 'warning' as Database['public']['Tables']['events']['Row']['type'],
         title: 'Échec sur une question',
-        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée.`,
+        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée. Erreur: ${err instanceof Error ? err.message : String(err)}`,
         source_type: 'measurement_run',
         source_id: run.id,
         show_toast: false,

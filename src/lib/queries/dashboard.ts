@@ -164,7 +164,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
         .select('*')
         .eq('brand_id', brand.id)
         .order('started_at', { ascending: false })
-        .limit(2),
+        .limit(3),
       supabase
         .from('opportunities')
         .select('*')
@@ -182,22 +182,31 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
       supabase.from('site_pages').select('*').eq('brand_id', brand.id),
     ])
 
+  // latestRun sert pour l'état du bouton "Mesurer" et la date "Dernière mesure"
   let latestRun = runs?.[0] ?? null
-  const previousRun = runs?.[1] ?? null
+  
+  // dataRun sert à afficher les données (ne pas afficher de vide si la dernière a planté)
+  const validRuns = runs?.filter(r => r.status === 'success' || r.status === 'partial') || []
+  let dataRun = validRuns[0] ?? null
+  const previousRun = validRuns[1] ?? null
 
   const { kpis, questionsPerf, topCompetitors, actualStatus } = await computeLatestRunInsights(
     supabase,
     brand.id,
-    latestRun,
+    dataRun,
   )
 
-  if (latestRun && actualStatus && latestRun.status !== actualStatus) {
+  if (latestRun && actualStatus && latestRun.id === dataRun?.id && latestRun.status !== actualStatus) {
     latestRun = { ...latestRun, status: actualStatus }
+  }
+  if (dataRun && actualStatus && dataRun.status !== actualStatus) {
+    dataRun = { ...dataRun, status: actualStatus }
   }
 
   return {
     brand,
     latestRun,
+    displayRun: dataRun,
     previousRun,
     opportunities: opportunities ?? [],
     events: events ?? [],
