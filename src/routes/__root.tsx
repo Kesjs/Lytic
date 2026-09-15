@@ -95,6 +95,15 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="fr" className="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            try {
+              if (localStorage.getItem('theme') === 'light') {
+                document.documentElement.classList.remove('dark')
+              }
+            } catch (_) {}
+          `
+        }} />
       </head>
       <body className="bg-canvas text-ink-primary antialiased">
         {children}

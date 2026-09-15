@@ -9,11 +9,11 @@ export default {
         display: ['"Plus Jakarta Sans"', '"Space Grotesk"', 'Inter', 'sans-serif'],
       },
       colors: {
-        canvas: '#0f0f0f',
-        surface: '#141414',
-        elevated: '#1a1a1a',
-        border: { DEFAULT: '#262626', strong: '#333333' },
-        ink: { primary: '#f5f5f5', secondary: '#a3a3a3', muted: '#6b6b6b' },
+        canvas: 'var(--canvas)',
+        surface: 'var(--surface)',
+        elevated: 'var(--elevated)',
+        border: { DEFAULT: 'var(--border)', strong: 'var(--border-strong)' },
+        ink: { primary: 'var(--ink-primary)', secondary: 'var(--ink-secondary)', muted: 'var(--ink-muted)' },
         // Couleur d'accent Reflet — jaune soufre (reflet-brand-tokens.md)
         // ne jamais en définir une autre / ne jamais en proposer une variante
         brand: { DEFAULT: '#c9ab1e', hover: '#b3971a', text: '#f2d94e' },
