@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Check, ChevronDown, ChevronRight, Filter, Search, X as XIcon, Lightbulb } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Filter, Search, X as XIcon, Lightbulb, ArrowRight } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import {
   fetchOpportunities,
