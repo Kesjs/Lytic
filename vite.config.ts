@@ -9,7 +9,11 @@ export default defineConfig({
   plugins: [
     viteTsConfigPaths({ projects: ['./tsconfig.json'] }),
     // tanstackStart() intègre et gère Nitro en interne, DOIT venir avant viteReact()
-    tanstackStart(),
+    tanstackStart({
+      server: {
+        preset: 'node-server'
+      }
+    }),
     viteReact(),
   ],
   optimizeDeps: {

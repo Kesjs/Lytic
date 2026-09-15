@@ -26,65 +26,11 @@ cpSync(join(root, 'dist', 'server'), join(outputDir, 'functions', '__server.func
 
 // Write serverless function entry handler for Node.js
 const serverHandler = `import server from './server.js';
+import { toNodeListener } from 'h3-v2';
 
-export default async function handler(req, res) {
-  try {
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
-    const url = \`\${protocol}://\${host}\${req.url}\`;
-
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          for (const v of value) headers.append(key, v);
-        } else {
-          headers.set(key, value);
-        }
-      }
-    }
-
-    const init = {
-      method: req.method,
-      headers,
-    };
-
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      init.body = req;
-      init.duplex = 'half';
-    }
-
-    const webRequest = new Request(url, init);
-    const webResponse = await server.fetch(webRequest);
-
-    res.statusCode = webResponse.status;
-    webResponse.headers.forEach((val, key) => {
-      if (key.toLowerCase() === 'set-cookie') {
-        const cookies = webResponse.headers.getSetCookie ? webResponse.headers.getSetCookie() : [val];
-        res.setHeader(key, cookies);
-      } else {
-        res.setHeader(key, val);
-      }
-    });
-
-    if (!webResponse.body) {
-      res.end();
-      return;
-    }
-
-    const reader = webResponse.body.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(value);
-    }
-    res.end();
-  } catch (err) {
-    console.error('Server error:', err);
-    res.statusCode = 500;
-    res.end('Internal Server Error');
-  }
-}
+// Utiliser toNodeListener permet de conserver le contexte AsyncLocalStorage (ALS) de h3
+// ce qui est indispensable pour que getCookies() fonctionne dans les server functions.
+export default toNodeListener(server);
 `;
 
 writeFileSync(join(outputDir, 'functions', '__server.func', 'index.mjs'), serverHandler, 'utf8');

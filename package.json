@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "vite dev --port 3001",
-    "build": "node ./scripts/build-vercel.mjs",
+    "build": "vite build",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
