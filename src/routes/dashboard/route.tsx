@@ -1,12 +1,13 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Menu, PanelLeft } from 'lucide-react'
+import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
+import { Menu, PanelLeft, RefreshCw } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
+import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardLayout,
@@ -26,6 +27,23 @@ function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const queryClient = useQueryClient()
+  const isFetching = useIsFetching() > 0
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false)
+
+  async function handleRefresh() {
+    if (isManualRefreshing) return
+    setIsManualRefreshing(true)
+    try {
+      // Invalide TOUTES les queries actives (peu importe la page du
+      // dashboard consultée) puis attend le refetch réel avant d'arrêter
+      // l'animation — pas juste "cliquable", le spinner reflète le vrai
+      // état réseau.
+      await queryClient.invalidateQueries()
+    } finally {
+      setIsManualRefreshing(false)
+    }
+  }
 
   const currentTitle = pageTitles[pathname] || 'Tableau de bord'
 
@@ -141,6 +159,16 @@ function DashboardLayout() {
               au compte/déconnexion sans ouvrir le tiroir puis scroller
               jusqu'en bas de la sidebar. */}
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isManualRefreshing}
+              title="Actualiser"
+              aria-label="Actualiser le tableau de bord"
+              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors disabled:opacity-60"
+            >
+              <RefreshCw className={cn('size-4', (isManualRefreshing || isFetching) && 'animate-spin')} />
+            </button>
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />
