@@ -7,7 +7,6 @@ import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
 import { HeaderMeasureButton } from '~/components/dashboard/HeaderMeasureButton'
-import { AnimatedThemeToggler } from '~/components/ui/animated-theme-toggler'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
@@ -110,7 +109,7 @@ function DashboardLayout() {
         }`}
       >
         {/* VRAI Header Permanent (Desktop ET Mobile) */}
-        <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-surface/80 px-4 sm:px-6 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-black/80 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-3">
             {/* Bouton Menu sur mobile */}
             <Tooltip>
@@ -185,10 +184,6 @@ function DashboardLayout() {
               </TooltipTrigger>
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
-            <AnimatedThemeToggler 
-              variant="circle" 
-              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors" 
-            />
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />
