@@ -30,6 +30,9 @@ export interface ChangeEntry {
   changedFields: string[] | null
   oldContent: any | null
   newContent: any | null
+  runsWithinWindow: number | null
+  runsRequired: number | null
+  reliable: boolean | null
 }
 
 export interface EventEntry {
@@ -106,22 +109,45 @@ export const fetchHistory = createServerFn({ method: 'GET' }).handler(async (): 
     questionsCompleted: r.questions_completed,
   }))
 
-  const changeEntries: ChangeEntry[] = (changes ?? []).map((c) => ({
-    kind: 'change',
-    id: c.id,
-    date: c.detected_at,
-    pageUrl: pageUrlById.get(c.page_id) ?? 'Page inconnue',
-    changeType: c.change_type,
-    importance: c.importance,
-    confidence: c.confidence,
-    detectionMethod: c.detection_method,
-    beforeSnippet: c.before_snippet,
-    afterSnippet: c.after_snippet,
-    linkedRunDate: c.linked_run_id ? (runDateById.get(c.linked_run_id) ?? null) : null,
-    changedFields: c.changed_fields,
-    oldContent: c.old_content,
-    newContent: c.new_content,
-  }))
+  const { RELIABILITY_WINDOW_MS, RUNS_REQUIRED } = await import('~/lib/reliability')
+
+  const changeEntries: ChangeEntry[] = (changes ?? []).map((c) => {
+    let runsWithinWindow: number | null = null
+    let reliable: boolean | null = null
+
+    if (c.importance !== 'low') {
+      const detectedAtDate = new Date(c.detected_at)
+      const windowEndsAtDate = new Date(detectedAtDate.getTime() + RELIABILITY_WINDOW_MS)
+      
+      const runsInWindow = (runs ?? []).filter(r => {
+        if (r.status !== 'success') return false
+        const runDate = new Date(r.completed_at ?? r.started_at)
+        return runDate >= detectedAtDate && runDate <= windowEndsAtDate
+      })
+      runsWithinWindow = runsInWindow.length
+      reliable = runsWithinWindow >= RUNS_REQUIRED
+    }
+
+    return {
+      kind: 'change',
+      id: c.id,
+      date: c.detected_at,
+      pageUrl: pageUrlById.get(c.page_id) ?? 'Page inconnue',
+      changeType: c.change_type,
+      importance: c.importance,
+      confidence: c.confidence,
+      detectionMethod: c.detection_method,
+      beforeSnippet: c.before_snippet,
+      afterSnippet: c.after_snippet,
+      linkedRunDate: c.linked_run_id ? (runDateById.get(c.linked_run_id) ?? null) : null,
+      changedFields: c.changed_fields,
+      oldContent: c.old_content,
+      newContent: c.new_content,
+      runsWithinWindow,
+      runsRequired: RUNS_REQUIRED,
+      reliable,
+    }
+  })
 
   const eventEntries: EventEntry[] = (events ?? []).map((e) => ({
     kind: 'event',

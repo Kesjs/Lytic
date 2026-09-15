@@ -17,7 +17,7 @@ import { computeRunScore } from '~/lib/score'
 // Chaque appel à processNextQuestion est donc court (1 aller-retour LLM ~15-60s)
 // et ne dépasse pas les limites Vercel par défaut.
 
-const MEASUREMENT_DELAY_DAYS = 7
+const MEASUREMENT_DELAY_DAYS = 1
 
 type RunStatus = Database['public']['Tables']['measurement_runs']['Row']['status']
 type MeasurementRun = Database['public']['Tables']['measurement_runs']['Row']
@@ -93,6 +93,11 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       )
     }
 
+    // Cherche un changement non fiable à lier
+    const { getChangeReliabilityStatus } = await import('~/lib/reliability')
+    const reliability = await getChangeReliabilityStatus(supabase, brand.id)
+    const linkedChangeId = reliability && !reliability.reliable ? reliability.changeId : null
+
     // Crée le run
     const { data: run, error: runError } = await supabase
       .from('measurement_runs')
@@ -102,6 +107,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
         questions_total: questionsTotal,
         questions_completed: 0,
         started_at: new Date().toISOString(),
+        linked_change_id: linkedChangeId,
       })
       .select()
       .single()
@@ -349,9 +355,9 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           run_id: run.id,
           question_id: nextQuestion.id,
           engine: 'openai',
-          brand_mentioned: parsed.brand_mentioned,
-          brand_recommended: parsed.brand_recommended,
-          brand_position: parsed.brand_position,
+          brand_mentioned: analysis.brand_mentioned,
+          brand_recommended: analysis.brand_recommended,
+          brand_position: analysis.brand_position,
           raw_answer: rawAnswer,
         })
         .select()
@@ -360,21 +366,21 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       if (obsError || !obs) throw new Error('Erreur insertion observation : ' + obsError?.message)
 
       // Étape F : insert observation_competitors
-      if (parsed.competitors.length > 0) {
+      if (analysis.competitors.length > 0) {
         const { data: competitorRows } = await adminSupabase
           .from('competitors')
           .select('id, name')
           .eq('brand_id', brand.id)
           .in(
             'name',
-            parsed.competitors.map((c) => c.name),
+            analysis.competitors.map((c) => c.name),
           )
 
         const competitorByName = new Map(
           (competitorRows ?? []).map((c) => [c.name.toLowerCase(), c.id]),
         )
 
-        const obsCompetitors = parsed.competitors
+        const obsCompetitors = analysis.competitors
           .map((c) => {
             const competitorId =
               competitorByName.get(c.name.toLowerCase()) ??

@@ -50,7 +50,7 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const [toastPosition, setToastPosition] = useState<'top-center' | 'bottom-left'>('bottom-left')
+  const [toastPosition, setToastPosition] = useState<'top-center' | 'bottom-right'>('bottom-right')
 
   useEffect(() => {
     const handlePreloadError = () => {
@@ -59,7 +59,7 @@ function RootComponent() {
     window.addEventListener('vite:preloadError', handlePreloadError)
 
     const checkMobile = () => {
-      setToastPosition(window.innerWidth < 768 ? 'top-center' : 'bottom-left')
+      setToastPosition(window.innerWidth < 768 ? 'top-center' : 'bottom-right')
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)

@@ -7,6 +7,7 @@ import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
 import { HeaderMeasureButton } from '~/components/dashboard/HeaderMeasureButton'
+import { AnimatedThemeToggler } from '~/components/ui/animated-theme-toggler'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
@@ -184,6 +185,10 @@ function DashboardLayout() {
               </TooltipTrigger>
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
+            <AnimatedThemeToggler 
+              variant="circle" 
+              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors" 
+            />
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />

@@ -117,12 +117,11 @@ export async function analyzeAnswer(
       const response = await client.responses.create({
         model: MODEL,
         input: prompt,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
+        text: {
+          format: {
+            type: "json_schema",
             name: "parsed_observation",
-            schema: RESPONSE_SCHEMA,
-            strict: true
+            schema: RESPONSE_SCHEMA as Record<string, unknown>
           }
         }
       })
@@ -194,12 +193,11 @@ Règles :
       const response = await client.responses.create({
         model: MODEL,
         input: prompt,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
+        text: {
+          format: {
+            type: "json_schema",
             name: "brand_questions",
-            schema: QUESTIONS_SCHEMA,
-            strict: true
+            schema: QUESTIONS_SCHEMA as Record<string, unknown>
           }
         }
       })
@@ -279,12 +277,11 @@ Chaque opportunité doit être une recommandation actionnable : quelle page modi
       const response = await client.responses.create({
         model: MODEL,
         input: prompt,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
+        text: {
+          format: {
+            type: "json_schema",
             name: "opportunities",
-            schema: OPPORTUNITIES_SCHEMA,
-            strict: true
+            schema: OPPORTUNITIES_SCHEMA as Record<string, unknown>
           }
         }
       })

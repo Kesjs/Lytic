@@ -34,8 +34,8 @@ vi.mock('~/lib/openai', () => ({
   runOpenAIQuery: vi.fn(),
 }))
 
-vi.mock('~/lib/gemini', () => ({
-  analyzeWithGemini: vi.fn(),
+vi.mock('~/lib/analysis', () => ({
+  analyzeAnswer: vi.fn(),
 }))
 
 vi.mock('~/lib/opportunities_engine', () => ({
@@ -44,7 +44,7 @@ vi.mock('~/lib/opportunities_engine', () => ({
 
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 import { runOpenAIQuery } from '~/lib/openai'
-import { analyzeWithGemini } from '~/lib/gemini'
+import { analyzeAnswer } from '~/lib/analysis'
 import { triggerMeasurementRun, processNextQuestion } from '~/lib/queries/measure'
 
 function createChainableBuilder(result: any = { data: null, error: null, count: null }) {
@@ -319,7 +319,7 @@ describe('tests/integration/measure.test.ts', () => {
       expect(runOpenAIQuery).not.toHaveBeenCalled()
     })
 
-    it('traite une question avec succès (OpenAI + Gemini + insert observation + incrémente)', async () => {
+    it('traite une question avec succès (OpenAI + insert observation + incrémente)', async () => {
       const run = {
         id: 'run-1',
         brand_id: 'brand-1',
@@ -336,7 +336,7 @@ describe('tests/integration/measure.test.ts', () => {
         text: 'Ma Marque est une très bonne solution ainsi que ConcurA.',
         citations: ['https://mamarque.com/features'],
       })
-      ;(analyzeWithGemini as any).mockResolvedValue({
+      ;(analyzeAnswer as any).mockResolvedValue({
         brand_mentioned: true,
         brand_recommended: true,
         brand_position: 1,
@@ -403,7 +403,7 @@ describe('tests/integration/measure.test.ts', () => {
       expect(insertedObservation.brand_position).toBe(1)
     })
 
-    it('tolérance aux pannes : en cas d\'erreur LLM (OpenAI/Gemini), insère une observation fallback et ne bloque pas', async () => {
+    it('tolérance aux pannes : en cas d\'erreur LLM (OpenAI), insère une observation fallback et ne bloque pas', async () => {
       const run = {
         id: 'run-1',
         brand_id: 'brand-1',

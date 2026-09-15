@@ -93,6 +93,8 @@ export interface Database {
           score: number | null
           score_delta: number | null
           created_at: string
+          triggered_by: 'manual' | 'scheduled' | 'post_change'
+          linked_change_id: string | null
         }
         Insert: {
           id?: string
@@ -105,6 +107,8 @@ export interface Database {
           score?: number | null
           score_delta?: number | null
           created_at?: string
+          triggered_by?: 'manual' | 'scheduled' | 'post_change'
+          linked_change_id?: string | null
         }
         Update: { [key: string]: any }
       }
