@@ -110,7 +110,7 @@ function DashboardLayout() {
         }`}
       >
         {/* VRAI Header Permanent (Desktop ET Mobile) */}
-        <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-black/80 px-4 sm:px-6 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-surface/80 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-3">
             {/* Bouton Menu sur mobile */}
             <Tooltip>

@@ -92,14 +92,17 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{
           __html: `
             try {
-              if (localStorage.getItem('theme') === 'light') {
-                document.documentElement.classList.remove('dark')
+              const theme = localStorage.getItem('theme');
+              if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+              } else {
+                document.documentElement.classList.add('dark');
               }
             } catch (_) {}
           `
