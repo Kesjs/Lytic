@@ -29,6 +29,7 @@ export interface ParsedCompetitor {
   mentioned: boolean
   recommended: boolean
   position: number | null
+  context_excerpt: string | null
 }
 
 // Schéma JSON strict transmis à Gemini pour forcer une réponse structurée
@@ -51,8 +52,13 @@ const RESPONSE_SCHEMA: Schema = {
           mentioned: { type: SchemaType.BOOLEAN },
           recommended: { type: SchemaType.BOOLEAN },
           position: { type: SchemaType.NUMBER, nullable: true, description: 'Rang dans la réponse. null si non mentionné.' },
+          context_excerpt: {
+            type: SchemaType.STRING,
+            nullable: true,
+            description: 'Courte citation (1-2 phrases) du texte original où ce concurrent est mentionné. null si non mentionné.',
+          },
         },
-        required: ['name', 'mentioned', 'recommended', 'position'],
+        required: ['name', 'mentioned', 'recommended', 'position', 'context_excerpt'],
       },
       description: "Toutes les marques concurrentes identifi\u00e9es dans la r\u00e9ponse (hors la marque analys\u00e9e elle-m\u00eame)",
     },
@@ -60,7 +66,11 @@ const RESPONSE_SCHEMA: Schema = {
   required: ['brand_mentioned', 'brand_recommended', 'brand_position', 'competitors'],
 }
 
-function buildPrompt(rawAnswer: string, brandName: string, brandDomain: string): string {
+function buildPrompt(rawAnswer: string, brandName: string, brandDomain: string, knownCompetitors: string[]): string {
+  const knownList = knownCompetitors.length
+    ? `\nConcurrents déjà connus pour cette marque (réutilise ces noms exacts si tu les reconnais dans la réponse, ne les renomme pas et n'en change pas légèrement l'orthographe) :\n- ${knownCompetitors.join('\n- ')}\n`
+    : ''
+
   return `Tu es un analyseur de réponses IA spécialisé dans la visibilité de marque.
 
 Analyse la réponse suivante d'un assistant IA et extrais les informations de visibilité pour la marque "${brandName}" (domaine : ${brandDomain}).
@@ -70,8 +80,9 @@ Règles strictes :
 - brand_recommended = true uniquement si la marque est suggérée comme solution, produit ou service à utiliser
 - brand_position = rang de la marque parmi toutes les entités nommées (1 = premier nommé), null si non mentionnée
 - competitors = TOUTES les autres marques/produits nommés dans la réponse (pas la marque analysée)
+- context_excerpt = courte citation (1-2 phrases) du texte original où le concurrent est mentionné, null si non mentionné
 - Ne pas inventer de concurrents absents de la réponse
-
+${knownList}
 Réponse IA à analyser :
 ---
 ${rawAnswer}
@@ -86,6 +97,7 @@ export async function analyzeWithGemini(
   rawAnswer: string,
   brandName: string,
   brandDomain: string,
+  knownCompetitors: string[] = [],
 ): Promise<ParsedObservation> {
   const client = getClient()
   const model = client.getGenerativeModel({
@@ -96,7 +108,7 @@ export async function analyzeWithGemini(
     },
   })
 
-  const prompt = buildPrompt(rawAnswer, brandName, brandDomain)
+  const prompt = buildPrompt(rawAnswer, brandName, brandDomain, knownCompetitors)
   let lastError: unknown
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -119,6 +131,7 @@ export async function analyzeWithGemini(
           mentioned: Boolean(c.mentioned),
           recommended: Boolean(c.recommended),
           position: c.position != null ? Number(c.position) : null,
+          context_excerpt: c.context_excerpt ?? null,
         })),
       }
     } catch (err) {
