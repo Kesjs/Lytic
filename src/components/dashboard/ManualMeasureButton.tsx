@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Zap, Clock, Loader2 } from 'lucide-react'
-import { triggerMeasurementRun, processNextQuestion } from '~/lib/queries/measure'
+import { runFullMeasurement } from '~/lib/measurement-client'
 
 // Mesure manuelle (§26 du doc de conception).
 // Délai de 7 jours entre deux mesures manuelles — contrôle de coût.
@@ -39,43 +39,7 @@ export function ManualMeasureButton({
     setProgress(null)
 
     try {
-      // Étape 1 : créer le run
-      const { runId } = await triggerMeasurementRun({ data: { brandId } })
-      toast.info('Mesure en cours…', { id: 'measure-progress', duration: Infinity })
-
-      // Étape 2 : boucle séquentielle — une question par appel
-      let done = false
-      while (!done) {
-        const result = await processNextQuestion({ data: { runId } })
-        done = result.done
-
-        setProgress({
-          completed: result.run.questions_completed,
-          total: result.run.questions_total,
-        })
-
-        // Invalide les queries pour refléter la progression en temps réel
-        await queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
-        await queryClient.invalidateQueries({ queryKey: ['performance-overview'] })
-
-        if (done) {
-          toast.dismiss('measure-progress')
-
-          if (result.run.status === 'success') {
-            toast.success(
-              `Mesure terminée — score : ${result.run.score ?? '—'}/100`,
-              { duration: 6000 },
-            )
-          } else if (result.run.status === 'partial') {
-            toast.warning(
-              `Mesure partielle (${result.run.questions_completed}/${result.run.questions_total} questions réussies)`,
-              { duration: 6000 },
-            )
-          } else {
-            toast.error('La mesure a échoué — réessayez plus tard.', { duration: 6000 })
-          }
-        }
-      }
+      await runFullMeasurement(brandId, queryClient, (p) => setProgress(p))
     } catch (err) {
       toast.dismiss('measure-progress')
       const message = err instanceof Error ? err.message : 'Erreur inconnue'
