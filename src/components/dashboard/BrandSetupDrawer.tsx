@@ -188,7 +188,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
               </ShiningButton>
 
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 flex flex-col gap-5">
                 <AnimatePresence initial={false}>
                   {questions.map((q, i) => {
                     const overlong = q.length > QUESTION_MAX_LENGTH
