@@ -301,8 +301,15 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       // Étape A : appel OpenAI
       const { text: rawAnswer, citations } = await runOpenAIQuery(nextQuestion.text)
 
-      // Étape B : parsing Gemini
-      const parsed = await analyzeWithGemini(rawAnswer, brand.name, brandDomain)
+      // Étape B : parsing Gemini — on injecte les concurrents déjà connus pour
+      // éviter que l'IA en rate ou change légèrement leur nom d'un run à l'autre.
+      const { data: existingCompetitors } = await adminSupabase
+        .from('competitors')
+        .select('name')
+        .eq('brand_id', brand.id)
+      const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
+
+      const parsed = await analyzeWithGemini(rawAnswer, brand.name, brandDomain, knownCompetitorNames)
 
       // Étape C : cited déterministe (non utilisé dans la DB pour l'instant,
       // prévu pour la colonne brand_cited dans une future migration §DB-2)
@@ -377,7 +384,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
               mentioned: c.mentioned,
               recommended: c.recommended,
               position: c.position,
-              context_excerpt: null as string | null,
+              context_excerpt: c.context_excerpt ?? null,
             }
           })
           .filter((x): x is NonNullable<typeof x> => x !== null)
