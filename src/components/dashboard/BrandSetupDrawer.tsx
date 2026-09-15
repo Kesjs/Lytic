@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createBrandWithQuestions, generateQuestionsWithAI } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
+import { runFullMeasurement } from '~/lib/measurement-client'
 
 // Point d'entrée unique pour sortir de l'état "compte sans marque" — ouvert
 // depuis l'Accueil (État A) et depuis Paramètres → Site. Saisie manuelle
@@ -17,20 +18,35 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   const [name, setName] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [questions, setQuestions] = useState<string[]>(['', '', ''])
+  const [isMeasuring, setIsMeasuring] = useState(false)
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
 
   const mutation = useMutation({
     mutationFn: () =>
       createBrandWithQuestions({
         data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl), questions: questions.filter((q) => q.trim()) },
       }),
-    onSuccess: () => {
-      toast.success('Marque configurée — vous pouvez maintenant lancer une mesure.')
-      queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
-      queryClient.invalidateQueries({ queryKey: ['settings'] })
-      setName('')
-      setWebsiteUrl('')
-      setQuestions(['', '', ''])
-      onClose()
+    onSuccess: async (data) => {
+      if (data && data.brandId) {
+        setIsMeasuring(true)
+        toast.info('Marque configurée. Lancement de la première mesure...')
+        try {
+          await runFullMeasurement(data.brandId, queryClient, (p) => setProgress(p))
+          toast.success('Première mesure terminée !')
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Erreur inconnue'
+          toast.error(`Erreur lors de la mesure : ${message}`)
+        } finally {
+          setIsMeasuring(false)
+          setProgress(null)
+          queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
+          queryClient.invalidateQueries({ queryKey: ['settings'] })
+          setName('')
+          setWebsiteUrl('')
+          setQuestions(['', '', ''])
+          onClose()
+        }
+      }
     },
     onError: (err: Error) => toast.error(err.message || 'Impossible de configurer la marque.'),
   })
@@ -172,7 +188,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
               </ShiningButton>
 
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-4">
                 <AnimatePresence initial={false}>
                   {questions.map((q, i) => {
                     const overlong = q.length > QUESTION_MAX_LENGTH
@@ -246,10 +262,14 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
           <button
             type="button"
             onClick={() => mutation.mutate()}
-            disabled={!canSubmit}
+            disabled={!canSubmit || isMeasuring}
             className="w-full rounded-md bg-brand px-3 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover disabled:opacity-50"
           >
-            {mutation.isPending ? 'Configuration…' : 'Configurer ma marque'}
+            {isMeasuring 
+              ? `Mesure en cours (${progress ? `${progress.completed}/${progress.total}` : '...' })` 
+              : mutation.isPending 
+                ? 'Configuration…' 
+                : 'Configurer et lancer la mesure'}
           </button>
         </div>
       </aside>
