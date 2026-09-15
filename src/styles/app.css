@@ -49,8 +49,8 @@
   --color-ink-primary: 23 23 25;       /* #171719 */
   --color-ink-secondary: 82 82 91;     /* #52525b */
   --color-ink-muted: 133 133 141;      /* #85858d */
-  --color-brand: 153 122 10;           /* #997a0a — assombri pour contraste sur blanc */
-  --color-brand-hover: 128 102 8;      /* #806608 */
+  --color-brand: 201 171 30;           /* #c9ab1e — même jaune vibrant qu'en dark mode pour les boutons */
+  --color-brand-hover: 179 151 26;     /* #b3971a */
   --color-brand-text: 138 108 8;       /* #8a6c08 */
   --color-success: 22 163 74;          /* #16a34a */
   --color-danger: 220 38 38;           /* #dc2626 */

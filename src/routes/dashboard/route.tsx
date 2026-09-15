@@ -7,6 +7,7 @@ import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
 import { HeaderMeasureButton } from '~/components/dashboard/HeaderMeasureButton'
+import { ThemeToggle } from '~/components/ui/theme-toggle'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
@@ -184,6 +185,7 @@ function DashboardLayout() {
               </TooltipTrigger>
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
+            <ThemeToggle />
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />
