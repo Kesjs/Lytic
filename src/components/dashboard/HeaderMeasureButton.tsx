@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Zap, Clock, Loader2 } from 'lucide-react'
+import { Zap, Clock, Loader2, X } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { runFullMeasurement } from '~/lib/measurement-client'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
@@ -19,6 +19,7 @@ function daysRemaining(lastCompletedAt: string | null): number {
 export function HeaderMeasureButton() {
   const [pending, setPending] = useState(false)
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
@@ -37,15 +38,22 @@ export function HeaderMeasureButton() {
   const isMeasuring = pending || data.latestRun?.status === 'measuring' || data.latestRun?.status === 'pending'
 
   async function handleClick() {
-    if (pending) return
+    if (pending) {
+      // Annuler la mesure en cours
+      abortControllerRef.current?.abort()
+      return
+    }
     
     navigate({ to: '/dashboard' as any })
 
     setPending(true)
     setProgress(null)
+    
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     try {
-      await runFullMeasurement(data.brand.id, queryClient, (p) => setProgress(p))
+      await runFullMeasurement(data.brand.id, queryClient, (p) => setProgress(p), abortController.signal)
     } catch (err) {
       toast.dismiss('measure-progress')
       const message = err instanceof Error ? err.message : 'Erreur inconnue'
@@ -53,21 +61,31 @@ export function HeaderMeasureButton() {
     } finally {
       setPending(false)
       setProgress(null)
+      abortControllerRef.current = null
     }
   }
 
   if (isMeasuring && pending) {
     return (
-      <button
-        type="button"
-        disabled
-        className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md border border-brand/40 bg-brand/10 sm:px-3 text-[11px] font-semibold text-brand-text opacity-80"
-      >
-        <Loader2 className="size-3.5 animate-spin" />
-        <span className="hidden sm:inline">
-          {progress ? `${progress.completed}/${progress.total}` : 'Mesure…'}
-        </span>
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleClick}
+            className="group flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md border border-warning/40 bg-warning/10 sm:px-3 text-[11px] font-semibold text-warning transition-colors hover:bg-danger/10 hover:text-danger hover:border-danger/40"
+          >
+            <Loader2 className="size-3.5 animate-spin group-hover:hidden" />
+            <X className="size-3.5 hidden group-hover:block" />
+            <span className="hidden sm:inline group-hover:hidden">
+              {progress ? `${progress.completed}/${progress.total}` : 'Mesure…'}
+            </span>
+            <span className="hidden sm:group-hover:inline">
+              Annuler
+            </span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Annuler la mesure en cours</TooltipContent>
+      </Tooltip>
     )
   }
 

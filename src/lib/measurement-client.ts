@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import type { QueryClient } from '@tanstack/react-query'
-import { triggerMeasurementRun, processNextQuestion } from '~/lib/queries/measure'
+import { triggerMeasurementRun, processNextQuestion, cancelMeasurementRun } from '~/lib/queries/measure'
 
 // Logique de mesure partagée entre le bouton manuel (Dashboard) et le
 // déclenchement automatique en fin d'onboarding — même boucle
@@ -15,6 +15,7 @@ export async function runFullMeasurement(
   brandId: string,
   queryClient: QueryClient,
   onProgress?: (progress: MeasurementProgress) => void,
+  signal?: AbortSignal
 ) {
   const { runId } = await triggerMeasurementRun({ data: { brandId } })
   toast.info('Mesure en cours…', { id: 'measure-progress', duration: Infinity })
@@ -23,6 +24,14 @@ export async function runFullMeasurement(
   let lastResult: Awaited<ReturnType<typeof processNextQuestion>> | undefined
 
   while (!done) {
+    if (signal?.aborted) {
+      await cancelMeasurementRun({ data: { runId } })
+      toast.dismiss('measure-progress')
+      toast.error('Mesure annulée.')
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
+      return
+    }
+
     const result = await processNextQuestion({ data: { runId } })
     lastResult = result
     done = result.done

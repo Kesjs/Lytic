@@ -117,6 +117,58 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     return { runId: run.id }
   })
 
+export const cancelMeasurementRun = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    if (typeof data !== 'object' || data === null || typeof (data as Record<string, unknown>).runId !== 'string') {
+      throw new Error('runId manquant')
+    }
+    return data as { runId: string }
+  })
+  .handler(async ({ data }) => {
+    const adminSupabase = getSupabaseAdminClient()
+    const userSupabase = getSupabaseServerClient()
+    
+    const { data: auth } = await userSupabase.auth.getUser()
+    if (!auth.user) throw new Error('Non authentifié')
+
+    const { data: run, error: runError } = await adminSupabase
+      .from('measurement_runs')
+      .select('id, brand_id, status')
+      .eq('id', data.runId)
+      .single()
+
+    if (runError || !run) throw new Error('Run introuvable')
+
+    const { data: brand, error: brandError } = await adminSupabase
+      .from('brands')
+      .select('owner_id')
+      .eq('id', run.brand_id)
+      .single()
+
+    if (brandError || !brand || brand.owner_id !== auth.user.id) throw new Error('Accès refusé')
+
+    if (run.status === 'pending' || run.status === 'measuring') {
+      await adminSupabase
+        .from('measurement_runs')
+        .update({ status: 'failed', completed_at: new Date().toISOString() })
+        .eq('id', run.id)
+        
+      await adminSupabase.from('events').insert({
+        brand_id: run.brand_id,
+        type: 'warning',
+        title: 'Mesure annulée',
+        message: 'La mesure a été annulée par l\'utilisateur.',
+        source_type: 'measurement_run',
+        source_id: run.id,
+        show_toast: false,
+        show_notification: true,
+        show_history: true,
+        read: false,
+      })
+    }
+    return { success: true }
+  })
+
 // ─── Server Function 2 : traiter une question ─────────────────────────────────
 
 export interface ProcessNextResult {
