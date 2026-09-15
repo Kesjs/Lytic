@@ -318,7 +318,7 @@ function QuestionsPerfTable({
         <tbody>
           {questions.map((q) => (
             <tr key={q.id} className="border-b border-border/50 last:border-0">
-              <td className="max-w-xs truncate py-2 pr-4 text-ink-primary">{q.text}</td>
+              <td className="py-2 pr-4 text-ink-primary">{q.text}</td>
               <td className="py-2 pl-4 text-right">
                 <BoolDot value={q.mentioned} />
               </td>

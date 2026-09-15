@@ -132,7 +132,7 @@ function QuestionsTable({
               onClick={() => onOpen(q.id)}
               className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-elevated"
             >
-              <td className="max-w-md truncate py-2.5 pr-4 text-ink-primary">{q.text}</td>
+              <td className="py-2.5 pr-4 text-ink-primary">{q.text}</td>
               {!hasAnyRun || !q.hasObservation ? (
                 <td colSpan={3} className="py-2.5 pl-4 text-right text-xs text-ink-muted">
                   {hasAnyRun ? 'Pas de donnée pour la dernière mesure' : 'Pas encore mesurée'}

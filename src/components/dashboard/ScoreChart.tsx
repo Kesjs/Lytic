@@ -59,8 +59,6 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
           <ChartMessage text="Chargement du graphique…" />
         ) : points.length === 0 ? (
           <ChartMessage text={`Aucune mesure réussie sur cette période (${periodLabel(period)}).`} />
-        ) : points.length === 1 ? (
-          <ChartMessage text="Une seule mesure sur cette période — pas assez de points pour une courbe." />
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>

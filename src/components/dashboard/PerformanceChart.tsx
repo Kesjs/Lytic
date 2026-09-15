@@ -87,8 +87,6 @@ export function PerformanceChart({ hasAnyRun }: { hasAnyRun: boolean }) {
           <ChartMessage text="Chargement du graphique…" />
         ) : points.length === 0 ? (
           <ChartMessage text="Aucune donnée exploitable pour cet indicateur sur cette période." />
-        ) : points.length === 1 ? (
-          <ChartMessage text="Une seule mesure sur cette période — pas assez de points pour une courbe." />
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
