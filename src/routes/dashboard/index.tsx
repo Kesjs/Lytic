@@ -6,7 +6,6 @@ import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/li
 import { fetchBotAccess } from '~/lib/queries/bot-access'
 import { ScoreChart } from '~/components/dashboard/ScoreChart'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
-import { ManualMeasureButton } from '~/components/dashboard/ManualMeasureButton'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
@@ -115,42 +114,52 @@ function AccueilPage() {
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
-          <p className="mt-3 text-xs font-medium text-ink-muted">Visibilité IA</p>
-
-          {!latestRun ? (
-            <DashboardStateView state="no_data" compact />
-          ) : latestRun.status === 'success' && latestRun.score !== null ? (
+        <div className="flex min-h-[220px] flex-col justify-center rounded-lg border border-border bg-surface p-5">
+          {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
+            <RunStatusState status={latestRun.status} run={latestRun} />
+          ) : (
             <>
-              <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
-                {Math.round(latestRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
-              </div>
-              {latestRun.score_delta !== null && (
-                <p
-                  className={`mt-1 text-sm ${
-                    latestRun.score_delta >= 0 ? 'text-success' : 'text-danger'
-                  }`}
-                >
-                  {latestRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(latestRun.score_delta)} depuis
-                  la dernière mesure
-                </p>
-              )}
-              <p className="mt-2 text-xs text-ink-muted">
-                Dernière mesure :{' '}
-                {latestRun.completed_at
-                  ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR')
-                  : '—'}
-              </p>
-              {/* Distingue une mesure fraîche d'une mesure périmée — §36D.10 :
-                  "Aucun changement détecté" ne doit jamais se confondre avec
-                  une donnée simplement ancienne. */}
-              {deriveRunFreshness(latestRun.completed_at) === 'stale' && (
-                <DashboardStateView state="stale" compact className="mt-2 !py-0" />
+              <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
+              <p className="mt-3 text-xs font-medium text-ink-muted">Visibilité IA</p>
+
+              {!latestRun ? (
+                <DashboardStateView state="no_data" compact className="mt-4" />
+              ) : (
+                <>
+                  {latestRun.score !== null ? (
+                    <>
+                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
+                        {Math.round(latestRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
+                      </div>
+                      {latestRun.score_delta !== null && (
+                        <p
+                          className={`mt-1 text-sm ${
+                            latestRun.score_delta >= 0 ? 'text-success' : 'text-danger'
+                          }`}
+                        >
+                          {latestRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(latestRun.score_delta)} depuis
+                          la dernière mesure
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-ink-muted">
+                        Dernière mesure :{' '}
+                        {latestRun.completed_at
+                          ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR')
+                          : '—'}
+                      </p>
+                      {deriveRunFreshness(latestRun.completed_at) === 'stale' && (
+                        <DashboardStateView state="stale" compact className="mt-2 !py-0" />
+                      )}
+                      {latestRun.status === 'partial' && (
+                        <DashboardStateView state="partial" compact className="mt-2 !py-0" />
+                      )}
+                    </>
+                  ) : (
+                    <RunStatusState status={latestRun.status} run={latestRun} />
+                  )}
+                </>
               )}
             </>
-          ) : (
-            <RunStatusState status={latestRun.status} run={latestRun} />
           )}
         </div>
 
@@ -269,22 +278,6 @@ function AccueilPage() {
             </p>
           )}
         </div>
-      </section>
-
-      <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-ink-secondary">
-          Dernière mesure :{' '}
-          <span className="text-ink-primary">
-            {latestRun?.completed_at
-              ? new Date(latestRun.completed_at).toLocaleDateString('fr-FR', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                })
-              : 'aucune mesure effectuée'}
-          </span>
-        </p>
-        <ManualMeasureButton lastCompletedAt={latestRun?.completed_at ?? null} hasBrand brandId={brand.id} />
       </section>
     </div>
   )
@@ -481,15 +474,17 @@ function RunStatusState({
   // 'analyzing', dont le message générique reste cohérent pour ce court
   // instant avant que le premier processNextQuestion ne démarre.
   if (status === 'pending') {
-    return <DashboardStateView state="analyzing" compact title="Mesure en préparation…" />
+    return <DashboardStateView state="analyzing" card={false} className="min-h-0 !p-0" title="Mesure en préparation…" />
   }
 
   if (status === 'measuring') {
     return (
       <DashboardStateView
         state="measuring"
-        compact
-        title={`Mesure en cours (${run.questions_completed}/${run.questions_total})`}
+        card={false}
+        className="min-h-0 !p-0"
+        title="Mesure en cours"
+        description={`${run.questions_completed}/${run.questions_total} questions`}
       />
     )
   }
@@ -499,7 +494,7 @@ function RunStatusState({
       <DashboardStateView
         state="partial"
         compact
-        description={`${run.questions_completed}/${run.questions_total} questions mesurées avec succès.`}
+        description={`${run.questions_completed}/${run.questions_total} questions mesurées.`}
       />
     )
   }

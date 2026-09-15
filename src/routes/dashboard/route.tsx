@@ -6,6 +6,7 @@ import { Menu, PanelLeft, RefreshCw } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
+import { HeaderMeasureButton } from '~/components/dashboard/HeaderMeasureButton'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
@@ -167,7 +168,8 @@ function DashboardLayout() {
               aucune donnée réelle. Sur mobile, l'avatar donne un accès direct
               au compte/déconnexion sans ouvrir le tiroir puis scroller
               jusqu'en bas de la sidebar. */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <HeaderMeasureButton />
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
