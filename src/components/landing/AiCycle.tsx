@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { RiOpenaiFill, RiPerplexityFill, RiGeminiFill, RiMicrosoftCopilotFill, RiAnthropicFill } from 'react-icons/ri'
+import { RiOpenaiFill, RiPerplexityFill, RiMicrosoftCopilotFill, RiAnthropicFill } from 'react-icons/ri'
 
 export type AiEngine = {
   name: string
@@ -10,7 +10,6 @@ export type AiEngine = {
 const DEFAULT_ENGINES: AiEngine[] = [
   { name: 'ChatGPT', Icon: RiOpenaiFill },
   { name: 'Perplexity', Icon: RiPerplexityFill },
-  { name: 'Gemini', Icon: RiGeminiFill },
   { name: 'Copilot', Icon: RiMicrosoftCopilotFill },
   { name: 'Claude', Icon: RiAnthropicFill },
 ]

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { X, Plus, Trash2, Sparkles, Globe, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
+import { createBrandWithQuestions, generateQuestionsWithAI } from '~/lib/queries/settings'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
 
@@ -36,7 +36,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   })
 
   const generateQuestionsMutation = useMutation({
-    mutationFn: () => generateQuestionsWithGemini({ data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl) } }),
+    mutationFn: () => generateQuestionsWithAI({ data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl) } }),
     onSuccess: (data) => {
       setQuestions(data.length > 0 ? data : [''])
       toast.success('Questions générées par l\'IA !')

@@ -15,7 +15,7 @@ const featuresEnterprise = [
   'Multi-sites & multi-marques',
   'Questions illimitées',
   'Accès API complet',
-  'Multi-modèles (Gemini, Perplexity, Claude)',
+  'Multi-modèles (ChatGPT, Perplexity, Claude)',
   'Support dédié (Slack/Email)',
   'SSO & SLA garantis'
 ]

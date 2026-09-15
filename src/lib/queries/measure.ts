@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 import type { Database } from '~/lib/supabase/database.types'
 import { runOpenAIQuery } from '~/lib/openai'
-import { analyzeWithGemini } from '~/lib/gemini'
+import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
 
@@ -310,14 +310,19 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         .eq('brand_id', brand.id)
       const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
 
-      const parsed = await analyzeWithGemini(rawAnswer, brand.name, brandDomain, knownCompetitorNames)
+      const analysis = await analyzeAnswer(
+        rawAnswer,
+        brand.name,
+        brandDomain,
+        knownCompetitorNames,
+      )
 
       // Étape C : cited déterministe (non utilisé dans la DB pour l'instant,
       // prévu pour la colonne brand_cited dans une future migration §DB-2)
       const _brandCited = isBrandCited(citations, brandDomain)
 
       // Étape D : insert/upsert concurrents inconnus
-      for (const competitor of parsed.competitors) {
+      for (const competitor of analysis.competitors) {
         if (!competitor.mentioned) continue
 
         const { data: existing } = await adminSupabase

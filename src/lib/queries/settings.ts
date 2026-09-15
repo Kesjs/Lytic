@@ -359,7 +359,7 @@ export const updateNotificationPreferences = createServerFn({ method: 'POST' })
     return { success: true } as const
   })
 
-export const generateQuestionsWithGemini = createServerFn({ method: 'POST' })
+export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
   .validator((data: { name: string; websiteUrl: string }) => data)
   .handler(async ({ data }): Promise<string[]> => {
     const supabase = getSupabaseServerClient()
@@ -375,6 +375,6 @@ export const generateQuestionsWithGemini = createServerFn({ method: 'POST' })
     }
 
     // Dynamic import to avoid running gemini code on client side bundle if not split
-    const { generateBrandQuestions } = await import('~/lib/gemini')
+    const { generateBrandQuestions } = await import('~/lib/analysis')
     return await generateBrandQuestions(name, websiteUrl)
   })
