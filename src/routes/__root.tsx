@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
@@ -49,12 +49,24 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  const [toastPosition, setToastPosition] = useState<'top-center' | 'bottom-left'>('bottom-left')
+
   useEffect(() => {
     const handlePreloadError = () => {
       window.location.reload()
     }
     window.addEventListener('vite:preloadError', handlePreloadError)
-    return () => window.removeEventListener('vite:preloadError', handlePreloadError)
+
+    const checkMobile = () => {
+      setToastPosition(window.innerWidth < 768 ? 'top-center' : 'bottom-left')
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => {
+      window.removeEventListener('vite:preloadError', handlePreloadError)
+      window.removeEventListener('resize', checkMobile)
+    }
   }, [])
 
   return (
@@ -63,7 +75,7 @@ function RootComponent() {
         <Outlet />
         <Toaster
           theme="dark"
-          position="bottom-right"
+          position={toastPosition}
           toastOptions={{
             classNames: {
               toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
