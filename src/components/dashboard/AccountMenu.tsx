@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { Settings, LogOut, ChevronsUpDown } from 'lucide-react'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
@@ -100,27 +101,33 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
   const avatar = (
     <div className="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-elevated text-xs font-semibold text-ink-primary border border-border">
       {userInitial}
-      <span
-        className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success ring-2 ring-black"
-        title="En ligne"
-      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-success ring-2 ring-black" />
+        </TooltipTrigger>
+        <TooltipContent>En ligne</TooltipContent>
+      </Tooltip>
     </div>
   )
 
   if (variant === 'header') {
     return (
       <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setIsDropdownOpen((prev) => !prev)}
-          title={userEmail || 'Mon compte'}
-          className="flex items-center justify-center rounded-full transition-colors hover:opacity-80"
-          aria-expanded={isDropdownOpen}
-          aria-haspopup="true"
-          aria-label="Mon compte"
-        >
-          {avatar}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="flex items-center justify-center rounded-full transition-colors hover:opacity-80"
+              aria-expanded={isDropdownOpen}
+              aria-haspopup="true"
+              aria-label="Mon compte"
+            >
+              {avatar}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{userEmail || 'Mon compte'}</TooltipContent>
+        </Tooltip>
         {dropdown}
       </div>
     )
@@ -129,32 +136,42 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
   return (
     <div className="relative" ref={dropdownRef}>
       {dropdown}
-      <button
-        type="button"
-        onClick={() => setIsDropdownOpen((prev) => !prev)}
-        title={isCollapsed ? (userEmail || 'Mon compte') : undefined}
-        className={`flex w-full items-center rounded-lg transition-colors ${
-          isCollapsed ? 'justify-center p-2' : 'gap-2.5 px-2.5 py-2 text-left'
-        } ${
-          isDropdownOpen
-            ? 'bg-elevated text-ink-primary'
-            : 'hover:bg-elevated/60 text-ink-secondary hover:text-ink-primary'
-        }`}
-        aria-expanded={isDropdownOpen}
-        aria-haspopup="true"
-      >
-        {avatar}
-        {!isCollapsed && (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-ink-primary">
-                {userEmail || 'Mon compte'}
-              </p>
-            </div>
-            <ChevronsUpDown className="size-4 shrink-0 text-ink-muted" />
-          </>
-        )}
-      </button>
+      {isCollapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="flex w-full items-center rounded-lg transition-colors justify-center p-2 hover:bg-elevated/60 text-ink-secondary hover:text-ink-primary"
+              aria-expanded={isDropdownOpen}
+              aria-haspopup="true"
+            >
+              {avatar}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{userEmail || 'Mon compte'}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsDropdownOpen((prev) => !prev)}
+          className={`flex w-full items-center rounded-lg transition-colors gap-2.5 px-2.5 py-2 text-left ${
+            isDropdownOpen
+              ? 'bg-elevated text-ink-primary'
+              : 'hover:bg-elevated/60 text-ink-secondary hover:text-ink-primary'
+          }`}
+          aria-expanded={isDropdownOpen}
+          aria-haspopup="true"
+        >
+          {avatar}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-ink-primary">
+              {userEmail || 'Mon compte'}
+            </p>
+          </div>
+          <ChevronsUpDown className="size-4 shrink-0 text-ink-muted" />
+        </button>
+      )}
     </div>
   )
 }

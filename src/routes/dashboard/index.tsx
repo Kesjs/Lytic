@@ -150,7 +150,7 @@ function AccueilPage() {
               )}
             </>
           ) : (
-            <RunStatusBadge status={latestRun.status} run={latestRun} />
+            <RunStatusState status={latestRun.status} run={latestRun} />
           )}
         </div>
 
@@ -467,18 +467,42 @@ function PriorityBadge({ priority }: { priority: 'low' | 'medium' | 'high' }) {
   )
 }
 
-function RunStatusBadge({
+function RunStatusState({
   status,
   run,
 }: {
   status: 'pending' | 'measuring' | 'partial' | 'failed'
   run: { questions_total: number; questions_completed: number }
 }) {
-  const labels: Record<typeof status, string> = {
-    pending: 'Mesure en attente',
-    measuring: `Mesure en cours (${run.questions_completed}/${run.questions_total})`,
-    partial: `Mesure partielle (${run.questions_completed}/${run.questions_total} questions)`,
-    failed: 'La dernière mesure a échoué',
+  // Branche l'état visuel riche de DashboardState.tsx (icône animée,
+  // titre + description) au lieu d'un texte brut — même pattern que les
+  // autres pages du dashboard. 'pending' n'a pas d'entrée dédiée dans
+  // DashboardStateKind (transition trop brève pour ça) → mappé sur
+  // 'analyzing', dont le message générique reste cohérent pour ce court
+  // instant avant que le premier processNextQuestion ne démarre.
+  if (status === 'pending') {
+    return <DashboardStateView state="analyzing" compact title="Mesure en préparation…" />
   }
-  return <p className="mt-1 text-sm text-ink-secondary">{labels[status]}</p>
+
+  if (status === 'measuring') {
+    return (
+      <DashboardStateView
+        state="measuring"
+        compact
+        title={`Mesure en cours (${run.questions_completed}/${run.questions_total})`}
+      />
+    )
+  }
+
+  if (status === 'partial') {
+    return (
+      <DashboardStateView
+        state="partial"
+        compact
+        description={`${run.questions_completed}/${run.questions_total} questions mesurées avec succès.`}
+      />
+    )
+  }
+
+  return <DashboardStateView state="failed" compact />
 }

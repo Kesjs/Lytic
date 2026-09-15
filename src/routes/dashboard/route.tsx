@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { Menu, PanelLeft, RefreshCw } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
@@ -110,26 +111,34 @@ function DashboardLayout() {
         <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-black/80 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-3">
             {/* Bouton Menu sur mobile */}
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors lg:hidden"
-              aria-label="Ouvrir le menu"
-              title="Ouvrir le menu"
-            >
-              <Menu className="size-4" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors lg:hidden"
+                  aria-label="Ouvrir le menu"
+                >
+                  <Menu className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Ouvrir le menu</TooltipContent>
+            </Tooltip>
 
             {/* Bouton Collapse / Rétractation sur grand écran */}
-            <button
-              type="button"
-              onClick={() => setIsCollapsed((prev) => !prev)}
-              className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
-              title={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
-              aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
-            >
-              <PanelLeft className="size-4" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed((prev) => !prev)}
+                  className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
+                  aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
+                >
+                  <PanelLeft className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
+            </Tooltip>
 
             {/* Fil d'Ariane dynamique — "Reflet /" seulement sur mobile,
                 où la sidebar (donc le logo) est cachée derrière le hamburger ;
@@ -159,16 +168,20 @@ function DashboardLayout() {
               au compte/déconnexion sans ouvrir le tiroir puis scroller
               jusqu'en bas de la sidebar. */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isManualRefreshing}
-              title="Actualiser"
-              aria-label="Actualiser le tableau de bord"
-              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors disabled:opacity-60"
-            >
-              <RefreshCw className={cn('size-4', (isManualRefreshing || isFetching) && 'animate-spin')} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={isManualRefreshing}
+                  aria-label="Actualiser le tableau de bord"
+                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors disabled:opacity-60"
+                >
+                  <RefreshCw className={cn('size-4', (isManualRefreshing || isFetching) && 'animate-spin')} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Actualiser</TooltipContent>
+            </Tooltip>
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />

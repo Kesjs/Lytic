@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { TooltipProvider } from '~/components/ui/tooltip'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
@@ -72,16 +73,18 @@ function RootComponent() {
   return (
     <RootDocument>
       <QueryClientProvider client={queryClient}>
-        <Outlet />
-        <Toaster
-          theme="dark"
-          position={toastPosition}
-          toastOptions={{
-            classNames: {
-              toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
-            },
-          }}
-        />
+        <TooltipProvider>
+          <Outlet />
+          <Toaster
+            theme="dark"
+            position={toastPosition}
+            toastOptions={{
+              classNames: {
+                toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
+              },
+            }}
+          />
+        </TooltipProvider>
       </QueryClientProvider>
     </RootDocument>
   )

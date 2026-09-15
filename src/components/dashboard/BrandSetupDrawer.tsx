@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { X, Plus, Trash2, Sparkles, Globe, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createBrandWithQuestions, generateQuestionsWithGemini } from '~/lib/queries/settings'
@@ -198,14 +199,18 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                                 : 'border-border focus:border-brand/50',
                             )}
                           />
-                          <button
-                            type="button"
-                            onClick={() => removeQuestion(i)}
-                            className="flex size-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-danger/10 hover:text-danger"
-                            title="Retirer"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => removeQuestion(i)}
+                                className="flex size-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-danger/10 hover:text-danger"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Retirer</TooltipContent>
+                          </Tooltip>
                         </div>
                         {(overlong || nearLimit) && (
                           <p

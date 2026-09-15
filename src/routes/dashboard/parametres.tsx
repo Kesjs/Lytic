@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { toast } from 'sonner'
 import { Pencil, Plus, Check, X as XIcon, Globe } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
@@ -371,23 +372,31 @@ function QuestionsSection({
                       )}
                       autoFocus
                     />
-                    <button
-                      type="button"
-                      onClick={() => editMutation.mutate({ questionId: q.id, text: editingText })}
-                      disabled={editMutation.isPending || editingOverlong || !editingText.trim()}
-                      className="flex size-6 items-center justify-center rounded-sm text-success hover:bg-success/10 disabled:opacity-40"
-                      title="Valider"
-                    >
-                      <Check className="size-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-danger/10 hover:text-danger"
-                      title="Annuler"
-                    >
-                      <XIcon className="size-3.5" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => editMutation.mutate({ questionId: q.id, text: editingText })}
+                          disabled={editMutation.isPending || editingOverlong || !editingText.trim()}
+                          className="flex size-6 items-center justify-center rounded-sm text-success hover:bg-success/10 disabled:opacity-40"
+                        >
+                          <Check className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Valider</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-danger/10 hover:text-danger"
+                        >
+                          <XIcon className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Annuler</TooltipContent>
+                    </Tooltip>
                   </div>
                   {(editingOverlong || editingNearLimit) && (
                     <p
@@ -404,17 +413,21 @@ function QuestionsSection({
               ) : (
                 <div className="flex items-center gap-2">
                   <p className="flex-1 text-xs text-ink-secondary">« {q.text} »</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(q.id)
-                      setEditingText(q.text)
-                    }}
-                    className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-elevated hover:text-ink-primary"
-                    title="Modifier"
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(q.id)
+                          setEditingText(q.text)
+                        }}
+                        className="flex size-6 items-center justify-center rounded-sm text-ink-muted hover:bg-elevated hover:text-ink-primary"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Modifier</TooltipContent>
+                  </Tooltip>
                   <Toggle
                     checked={q.active}
                     onChange={(v) => toggleMutation.mutate({ questionId: q.id, active: v })}
@@ -439,20 +452,24 @@ function QuestionsSection({
                 : 'border-border focus:border-brand/50',
             )}
           />
-          <button
-            type="button"
-            onClick={() => newText.trim() && addMutation.mutate()}
-            disabled={
-              addMutation.isPending ||
-              questions.length >= 30 ||
-              !newText.trim() ||
-              newText.length > QUESTION_MAX_LENGTH
-            }
-            className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-elevated text-ink-secondary hover:text-ink-primary disabled:opacity-50"
-            title="Ajouter"
-          >
-            <Plus className="size-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => newText.trim() && addMutation.mutate()}
+                disabled={
+                  addMutation.isPending ||
+                  questions.length >= 30 ||
+                  !newText.trim() ||
+                  newText.length > QUESTION_MAX_LENGTH
+                }
+                className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-elevated text-ink-secondary hover:text-ink-primary disabled:opacity-50"
+              >
+                <Plus className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Ajouter</TooltipContent>
+          </Tooltip>
         </div>
         {newText.length > QUESTION_MAX_LENGTH * 0.9 && (
           <p

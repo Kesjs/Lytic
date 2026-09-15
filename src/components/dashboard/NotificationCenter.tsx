@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, CheckCheck, AlertTriangle, Info, XCircle, CheckCircle2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import {
   fetchNotifications,
   markNotificationRead,
@@ -72,20 +73,24 @@ export function NotificationCenter() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Notifications"
-        title="Notifications"
-        className="relative flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary transition-colors hover:bg-elevated hover:text-ink-primary"
-      >
-        <Bell className="size-4" />
-        {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Notifications"
+            className="relative flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary transition-colors hover:bg-elevated hover:text-ink-primary"
+          >
+            <Bell className="size-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Notifications</TooltipContent>
+      </Tooltip>
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-zinc-950 shadow-2xl">

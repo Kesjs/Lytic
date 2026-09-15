@@ -3,7 +3,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { ChevronDown, Check, X as XIcon, ArrowRight } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Filter, Search, X as XIcon, Lightbulb } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import {
   fetchOpportunities,
   fetchOpportunityEvidence,
@@ -211,24 +212,32 @@ function OpportunityCard({
 
         {opportunity.status === 'open' && (
           <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onResolve}
-              disabled={updating}
-              title="Marquer comme résolue"
-              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-success/40 hover:bg-success/5 hover:text-success disabled:opacity-50"
-            >
-              <Check className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onDismiss}
-              disabled={updating}
-              title="Ignorer cette opportunité"
-              className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"
-            >
-              <XIcon className="size-4" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onResolve}
+                  disabled={updating}
+                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-success/40 hover:bg-success/5 hover:text-success disabled:opacity-50"
+                >
+                  <Check className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Marquer comme résolue</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onDismiss}
+                  disabled={updating}
+                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-muted transition-colors hover:border-danger/40 hover:bg-danger/5 hover:text-danger disabled:opacity-50"
+                >
+                  <XIcon className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Ignorer cette opportunité</TooltipContent>
+            </Tooltip>
           </div>
         )}
       </div>

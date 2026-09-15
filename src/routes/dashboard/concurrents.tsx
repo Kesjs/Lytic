@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -141,15 +143,19 @@ function CompetitorRowLine({
         </td>
         <td className="py-2.5 pl-4 text-right text-ink-secondary">{competitor.coveragePct}%</td>
         <td className="py-2.5 pl-4 text-right">
-          <button
-            type="button"
-            onClick={onHide}
-            disabled={hiding}
-            title="Masquer ce concurrent"
-            className="text-ink-muted hover:text-danger disabled:opacity-50"
-          >
-            <EyeOff className="size-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onHide}
+                disabled={hiding}
+                className="text-ink-muted hover:text-danger disabled:opacity-50"
+              >
+                <EyeOff className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Masquer ce concurrent</TooltipContent>
+          </Tooltip>
         </td>
       </tr>
       {expanded && (
