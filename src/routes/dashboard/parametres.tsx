@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip
 import { toast } from 'sonner'
 import { Pencil, Plus, Check, X as XIcon, Globe, Trash2 } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
-import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import {
   fetchSettings,
@@ -150,7 +150,8 @@ function SaveButton({
   )
 }
 
-// L'ancien composant Toggle a été supprimé à la demande de l'utilisateur pour utiliser un checkbox standard.
+// L'ancien composant Toggle a été supprimé à la demande de l'utilisateur pour utiliser un checkbox standard
+// partout (Questions ET Notifications — la section Notifications avait été oubliée lors du remplacement).
 
 // --- Compte ---
 
@@ -331,7 +332,7 @@ function QuestionsSection({
   return (
     <SectionCard
       title="Questions"
-      description={`${questions.length}/30 questions suivies. Une question désactivée n'est plus mesurée mais reste visible.`}
+      description={`${questions.length}/${MAX_TRACKED_QUESTIONS} questions suivies. Une question désactivée n'est plus mesurée mais reste visible.`}
     >
       <div className="space-y-2">
         {questions.length === 0 && (
@@ -470,7 +471,7 @@ function QuestionsSection({
                 onClick={() => newText.trim() && addMutation.mutate()}
                 disabled={
                   addMutation.isPending ||
-                  questions.length >= 30 ||
+                  questions.length >= MAX_TRACKED_QUESTIONS ||
                   !newText.trim() ||
                   newText.length > QUESTION_MAX_LENGTH
                 }
@@ -551,12 +552,30 @@ function NotificationsSection({
   return (
     <SectionCard title="Notifications" description="Choisissez ce qui déclenche un email.">
       <div className="space-y-2.5">
-        {rows.map((r) => (
-          <div key={r.key} className="flex items-center justify-between gap-3">
-            <span className="text-xs text-ink-secondary">{r.label}</span>
-            <Toggle checked={prefs[r.key]} onChange={(v) => setPrefs((p) => ({ ...p, [r.key]: v }))} />
-          </div>
-        ))}
+        {rows.map((r) => {
+          // Les sous-options n'ont plus d'effet si l'interrupteur général est
+          // désactivé — grisées pour ne pas laisser croire qu'elles sont actives.
+          const isSubOption = r.key !== 'emailEnabled'
+          const disabled = isSubOption && !prefs.emailEnabled
+          return (
+            <label
+              key={r.key}
+              className={cn(
+                'flex items-center justify-between gap-3',
+                disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
+              )}
+            >
+              <span className="text-xs text-ink-secondary">{r.label}</span>
+              <input
+                type="checkbox"
+                checked={prefs[r.key]}
+                disabled={disabled}
+                onChange={(e) => setPrefs((p) => ({ ...p, [r.key]: e.target.checked }))}
+                className="size-4 cursor-pointer rounded border-border bg-canvas text-brand focus:ring-brand disabled:cursor-not-allowed"
+              />
+            </label>
+          )
+        })}
         <div className="flex justify-end pt-1">
           <SaveButton onClick={() => mutation.mutate()} saving={mutation.isPending} />
         </div>

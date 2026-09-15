@@ -46,6 +46,7 @@ function GrainGradientClient({ className }: GrainGradientShaderProps) {
       intensity={0.5}
       noise={0.22}
       shape="corners"
+      // Palette Reflet : noir profond → gris → gris chaud → blanc sourd
       colors={['#0b0b0b', '#2a2a2a', '#c9ab1e', '#0b0b0b']}
       colorBack="#00000000"
       className={`absolute inset-0 ${className ?? ''}`}

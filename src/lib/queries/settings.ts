@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
-import { isValidWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { isValidWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 
 // Toutes les lectures/écritures ci-dessous respectent le RLS par owner_id —
 // aucun accès admin. Rien n'est inventé : les sections sans backend réel
@@ -218,8 +218,8 @@ export const createBrandWithQuestions = createServerFn({ method: 'POST' })
     if (questions.length === 0) {
       throw new Error('Ajoutez au moins une question à suivre.')
     }
-    if (questions.length > 30) {
-      throw new Error('Limite de 30 questions suivies atteinte pour ce plan.')
+    if (questions.length > MAX_TRACKED_QUESTIONS) {
+      throw new Error(`Limite de ${MAX_TRACKED_QUESTIONS} questions suivies atteinte pour ce plan.`)
     }
     if (questions.some((q) => q.length > QUESTION_MAX_LENGTH)) {
       throw new Error(`Une question dépasse la limite de ${QUESTION_MAX_LENGTH} caractères.`)
@@ -267,8 +267,8 @@ export const addQuestion = createServerFn({ method: 'POST' })
       .select('id', { count: 'exact', head: true })
       .eq('brand_id', data.brandId)
 
-    if ((count ?? 0) >= 30) {
-      throw new Error('Limite de 30 questions suivies atteinte pour ce plan.')
+    if ((count ?? 0) >= MAX_TRACKED_QUESTIONS) {
+      throw new Error(`Limite de ${MAX_TRACKED_QUESTIONS} questions suivies atteinte pour ce plan.`)
     }
 
     const { error } = await supabase
@@ -339,8 +339,22 @@ export const deleteQuestion = createServerFn({ method: 'POST' })
     if (!question) throw new Error('Question introuvable')
     await requireOwnedBrand(supabase, user.id, question.brand_id)
 
-    // Note: observations related to this question might exist, but Supabase schema
-    // usually cascades deletion or we might need to handle it. Assuming ON DELETE CASCADE is set for question_id.
+    // Ne pas supposer un ON DELETE CASCADE en base : on supprime explicitement
+    // les lignes dépendantes avant la question, pour que la suppression marche
+    // même si la contrainte FK n'a pas de cascade (elle échouait silencieusement
+    // pour toute question déjà mesurée).
+    const { error: oppQError } = await supabase
+      .from('opportunity_questions')
+      .delete()
+      .eq('question_id', data.questionId)
+    if (oppQError) throw new Error(oppQError.message)
+
+    const { error: obsError } = await supabase
+      .from('observations')
+      .delete()
+      .eq('question_id', data.questionId)
+    if (obsError) throw new Error(obsError.message)
+
     const { error } = await supabase.from('questions').delete().eq('id', data.questionId)
     if (error) throw new Error(error.message)
     return { success: true } as const

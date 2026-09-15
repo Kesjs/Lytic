@@ -99,3 +99,7 @@ export function normalizeWebsiteUrl(value: string): string {
 }
 
 export const QUESTION_MAX_LENGTH = 300
+// Plan unique V2.1 : 50 questions suivies (revu de 30 à 50, doc de conception §47.1
+// — comparaison avec Profound à 50 prompts/99$). Constante centralisée pour éviter
+// que la limite serveur et l'affichage front divergent.
+export const MAX_TRACKED_QUESTIONS = 50

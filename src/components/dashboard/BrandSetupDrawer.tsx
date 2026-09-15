@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip
 import { X, Plus, Trash2, Sparkles, Globe, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createBrandWithQuestions, generateQuestionsWithAI } from '~/lib/queries/settings'
-import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { ShiningButton } from '~/components/ui/shining-button'
 import { runFullMeasurement } from '~/lib/measurement-client'
 
@@ -84,7 +84,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   }
 
   function addQuestionField() {
-    if (questions.length >= 30) return
+    if (questions.length >= MAX_TRACKED_QUESTIONS) return
     setQuestions((qs) => [...qs, ''])
   }
 
@@ -168,7 +168,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 <span className="text-xs font-medium text-ink-secondary">
                   Questions à suivre
                 </span>
-                <span className="text-[11px] text-ink-muted">{filledQuestions}/30</span>
+                <span className="text-[11px] text-ink-muted">{filledQuestions}/{MAX_TRACKED_QUESTIONS}</span>
               </div>
               <p className="mt-1 text-[11px] text-ink-muted">
                 Ce que vos prospects pourraient demander à ChatGPT — au moins une pour commencer.
@@ -248,7 +248,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
               <button
                 type="button"
                 onClick={addQuestionField}
-                disabled={questions.length >= 30}
+                disabled={questions.length >= MAX_TRACKED_QUESTIONS}
                 className="mt-2 flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
               >
                 <Plus className="size-3.5" />
