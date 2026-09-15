@@ -29,7 +29,9 @@ export function HeaderMeasureButton() {
 
   if (!data || !data.brand) return null
 
-  const remaining = daysRemaining(data.latestRun?.completed_at ?? null)
+  const remaining = data.latestRun?.status === 'success' 
+    ? daysRemaining(data.latestRun.completed_at) 
+    : 0
   const isAvailable = remaining === 0
 
   const isMeasuring = pending || data.latestRun?.status === 'measuring' || data.latestRun?.status === 'pending'
