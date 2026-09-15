@@ -100,42 +100,46 @@ export async function analyzeWithGemini(
   knownCompetitors: string[] = [],
 ): Promise<ParsedObservation> {
   const client = getClient()
-  const model = client.getGenerativeModel({
-    model: MODEL,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: RESPONSE_SCHEMA,
-    },
-  })
-
   const prompt = buildPrompt(rawAnswer, brandName, brandDomain, knownCompetitors)
   let lastError: unknown
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 1000))
-    }
+  const modelsToTry = [MODEL, 'gemini-1.5-flash']
 
-    try {
-      const result = await model.generateContent(prompt)
-      const text = result.response.text()
-      const parsed = JSON.parse(text) as ParsedObservation
+  for (const modelName of modelsToTry) {
+    const model = client.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: RESPONSE_SCHEMA,
+      },
+    })
 
-      // Normalisation défensive
-      return {
-        brand_mentioned: Boolean(parsed.brand_mentioned),
-        brand_recommended: Boolean(parsed.brand_recommended),
-        brand_position: parsed.brand_position != null ? Number(parsed.brand_position) : null,
-        competitors: (parsed.competitors ?? []).map((c) => ({
-          name: String(c.name),
-          mentioned: Boolean(c.mentioned),
-          recommended: Boolean(c.recommended),
-          position: c.position != null ? Number(c.position) : null,
-          context_excerpt: c.context_excerpt ?? null,
-        })),
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
       }
-    } catch (err) {
-      lastError = err
+
+      try {
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
+        const parsed = JSON.parse(text) as ParsedObservation
+
+        // Normalisation défensive
+        return {
+          brand_mentioned: Boolean(parsed.brand_mentioned),
+          brand_recommended: Boolean(parsed.brand_recommended),
+          brand_position: parsed.brand_position != null ? Number(parsed.brand_position) : null,
+          competitors: (parsed.competitors ?? []).map((c) => ({
+            name: String(c.name),
+            mentioned: Boolean(c.mentioned),
+            recommended: Boolean(c.recommended),
+            position: c.position != null ? Number(c.position) : null,
+            context_excerpt: c.context_excerpt ?? null,
+          })),
+        }
+      } catch (err) {
+        lastError = err
+      }
     }
   }
 
@@ -144,18 +148,7 @@ export async function analyzeWithGemini(
 
 export async function generateBrandQuestions(brandName: string, websiteUrl: string): Promise<string[]> {
   const client = getClient()
-  const model = client.getGenerativeModel({
-    model: MODEL,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: SchemaType.ARRAY,
-        items: { type: SchemaType.STRING },
-        description: 'Liste de 3 à 5 questions que les prospects posent à une IA concernant cette marque ou ce domaine.',
-      },
-    },
-  })
-
+  
   const prompt = `Génère 5 questions pertinentes qu'un utilisateur pourrait poser à ChatGPT concernant la marque "${brandName}" (Site web : ${websiteUrl}). Les questions doivent tester si l'IA connaît la marque et la recommande par rapport à ses concurrents.
 Exemples de questions attendues :
 - "Quels sont les meilleurs outils pour [domaine de la marque] ?"
@@ -166,8 +159,36 @@ Règles :
 - Pas plus de 300 caractères par question.
 - Retourne uniquement le tableau JSON.`
 
-  const result = await model.generateContent(prompt)
-  const text = result.response.text()
-  const parsed = JSON.parse(text) as string[]
-  return parsed.slice(0, 5)
+  let lastError: unknown
+  const modelsToTry = [MODEL, 'gemini-1.5-flash']
+
+  for (const modelName of modelsToTry) {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
+      }
+      try {
+        const model = client.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING },
+              description: 'Liste de 3 à 5 questions que les prospects posent à une IA concernant cette marque ou ce domaine.',
+            },
+          },
+        })
+
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
+        const parsed = JSON.parse(text) as string[]
+        return parsed.slice(0, 5)
+      } catch (err) {
+        lastError = err
+      }
+    }
+  }
+
+  throw lastError
 }
