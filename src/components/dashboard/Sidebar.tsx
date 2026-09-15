@@ -90,13 +90,13 @@ export function Sidebar({
                 to={item.to}
                 onClick={onClose}
                 title={isCollapsed ? item.label : undefined}
-                className={`flex items-center rounded-md text-sm transition-colors ${
+                className={`group flex items-center rounded-md text-sm transition-all duration-200 ${
                   isCollapsed
                     ? 'justify-center p-2.5'
                     : 'gap-3 px-3 py-2'
                 } ${
                   isActive
-                    ? 'bg-elevated text-ink-primary font-medium'
+                    ? 'bg-brand/10 text-brand-text font-semibold'
                     : 'text-ink-secondary hover:bg-elevated/60 hover:text-ink-primary'
                 }`}
               >
