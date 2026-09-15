@@ -39,14 +39,21 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
       setQuestions(data.length > 0 ? data : [''])
       toast.success('Questions générées par l\'IA !')
     },
-    onError: (err: Error) => toast.error(err.message || 'Impossible de générer les questions.'),
+    onError: (err: Error) => {
+      const msg = err.message || ''
+      if (msg.includes('503') || msg.includes('Service Unavailable') || msg.includes('high demand') || msg.includes('overloaded')) {
+        toast.error("L'IA est temporairement très sollicitée. Veuillez réessayer dans quelques instants.")
+      } else {
+        toast.error('Impossible de générer les questions.')
+      }
+    },
   })
 
   // urlValid doit être calculé avant tout early-return : sinon le nombre de
   // hooks appelés change entre le rendu fermé (open=false) et le rendu
   // ouvert (open=true), ce qui viole les Rules of Hooks et déclenche
   // React error #310 dès l'ouverture du tiroir.
-  const urlValid = useMemo(() => isValidWebsiteUrl(websiteUrl), [websiteUrl])
+  const urlValid = useMemo(() => isValidWebsiteUrl(normalizeWebsiteUrl(websiteUrl)), [websiteUrl])
 
   if (!open) return null
 
