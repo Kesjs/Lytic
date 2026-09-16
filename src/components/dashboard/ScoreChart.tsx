@@ -89,11 +89,14 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
               />
               <Tooltip
                 contentStyle={{
-                  background: '#1a1a1a',
-                  border: '1px solid #262626',
+                  background: 'rgb(var(--color-elevated))',
+                  border: '1px solid rgb(var(--color-border))',
                   borderRadius: 8,
                   fontSize: 12,
+                  color: 'rgb(var(--color-ink-primary))',
                 }}
+                itemStyle={{ color: 'rgb(var(--color-ink-primary))' }}
+                labelStyle={{ color: 'rgb(var(--color-ink-secondary))', marginBottom: 4 }}
                 labelFormatter={(v: string) => new Date(v).toLocaleDateString('fr-FR')}
                 formatter={(value: number) => [`${value} / 100`, 'Score']}
               />
