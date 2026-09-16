@@ -120,14 +120,14 @@ function AccueilPage() {
     data
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <motion.header 
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]"
+        className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr_340px]"
       >
-        <div className="flex min-h-[220px] flex-col justify-center rounded-lg border border-border bg-surface p-5">
+        <div className="flex flex-col justify-center rounded-lg border border-border bg-surface p-4">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
@@ -192,6 +192,35 @@ function AccueilPage() {
         </div>
 
         <ScoreChart hasAnyRun={!!latestRun} />
+
+        <div className="grid grid-cols-2 gap-3">
+          <KpiCard
+            label="Mentions"
+            value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
+            hint="Sur les questions suivies"
+            tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
+          />
+          <KpiCard
+            label="Recommandations"
+            value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
+            hint="Sur les questions suivies"
+            tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
+          />
+          <KpiCard
+            label="Pos. moyenne"
+            value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
+            hint="Quand mentionné"
+            tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
+          />
+          <KpiCard
+            label="Présence"
+            value={
+              kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
+            }
+            hint="Vs. concurrents détectés"
+            tooltip="Votre part de mentions par rapport à vos principaux concurrents."
+          />
+        </div>
       </motion.header>
 
       {isFreePlan(brand.plan) && latestRun && (
@@ -214,65 +243,39 @@ function AccueilPage() {
         </motion.div>
       )}
 
-      <motion.section 
-        initial={{ opacity: 0, y: 10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.3, delay: 0.15 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
-      >
-        <KpiCard
-          label="Mentions"
-          value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
-          hint="Sur les questions suivies"
-          tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
-        />
-        <KpiCard
-          label="Recommandations"
-          value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
-          hint="Sur les questions suivies"
-          tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
-        />
-        <KpiCard
-          label="Position moyenne"
-          value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
-          hint="Quand mentionné"
-          tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
-        />
-        <KpiCard
-          label="Présence concurrentielle"
-          value={
-            kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
-          }
-          hint="Vs. concurrents détectés"
-          tooltip="Votre part de mentions par rapport à vos principaux concurrents."
-        />
-      </motion.section>
-
       {displayRun && (
         <motion.section 
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
         >
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold text-ink-primary mb-4">Part de Voix (Top Concurrents)</h2>
-            <ShareOfVoiceChart data={shareOfVoice ?? []} />
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="text-sm font-semibold text-ink-primary mb-3">Part de Voix (Top Concurrents)</h2>
+            <div className="h-[240px]">
+              <ShareOfVoiceChart data={shareOfVoice ?? []} />
+            </div>
           </div>
           
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold text-ink-primary mb-4">Performance par Moteur IA</h2>
-            <EngineRadarChart data={enginePerformance ?? []} />
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="text-sm font-semibold text-ink-primary mb-3">Performance par Moteur IA</h2>
+            <div className="h-[240px]">
+              <EngineRadarChart data={enginePerformance ?? []} />
+            </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold text-ink-primary mb-4">Analyse de Tonalité</h2>
-            <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="text-sm font-semibold text-ink-primary mb-3">Analyse de Tonalité</h2>
+            <div className="h-[240px]">
+              <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
+            </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold text-ink-primary mb-4">Thèmes Abordés</h2>
-            <ThemesCloud data={topThemes ?? []} />
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="text-sm font-semibold text-ink-primary mb-3">Thèmes Abordés</h2>
+            <div className="h-[240px]">
+              <ThemesCloud data={topThemes ?? []} />
+            </div>
           </div>
         </motion.section>
       )}
