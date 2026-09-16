@@ -18,6 +18,7 @@ export const fetchCurrentBrand = createServerFn({ method: 'GET' }).handler(async
     .from('brands')
     .select('*')
     .eq('owner_id', auth.user.id)
+    .limit(1)
     .maybeSingle()
 
   if (error) throw new Error(error.message)
@@ -221,6 +222,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     .from('brands')
     .select('*')
     .eq('owner_id', auth.user.id)
+    .limit(1)
     .maybeSingle()
 
   if (!brand) return { brand: null } as const
@@ -258,7 +260,17 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
   let dataRun = validRuns[0] ?? null
   const previousRun = validRuns[1] ?? null
 
-  const { kpis, questionsPerf, topCompetitors, totalCompetitorsCount, actualStatus } = await computeLatestRunInsights(
+  const { 
+    kpis, 
+    questionsPerf, 
+    topCompetitors, 
+    totalCompetitorsCount, 
+    actualStatus,
+    shareOfVoice,
+    enginePerformance,
+    sentimentDistribution,
+    topThemes
+  } = await computeLatestRunInsights(
     supabase,
     brand.id,
     dataRun,
@@ -284,5 +296,9 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     questionsPerf,
     topCompetitors,
     totalCompetitorsCount,
+    shareOfVoice,
+    enginePerformance,
+    sentimentDistribution,
+    topThemes,
   } as const
 })

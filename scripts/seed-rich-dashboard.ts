@@ -91,7 +91,11 @@ async function main() {
       brand_id: brandId,
       status: 'success',
       started_at: new Date(Date.now() - 3600000).toISOString(),
-      completed_at: new Date().toISOString()
+      completed_at: new Date().toISOString(),
+      questions_total: questions.length,
+      questions_completed: questions.length,
+      score: 92,
+      score_delta: 14
     })
     .select('id')
     .single();
@@ -107,11 +111,12 @@ async function main() {
   
   for (const q of questions) {
     for (const engine of engines) {
-      let isMentioned = Math.random() > 0.3; 
-      let isRecommended = isMentioned && Math.random() > 0.4;
+      // Make it extremely convincing for the landing page screenshot
+      let isMentioned = Math.random() > 0.1; // 90% chance to be mentioned
+      let isRecommended = isMentioned && Math.random() > 0.2; // 80% chance to be recommended if mentioned
       
       if (engine === 'Claude') { isMentioned = true; isRecommended = true; }
-      if (engine === 'Copilot') { isMentioned = Math.random() > 0.7; isRecommended = false; }
+      if (engine === 'Copilot') { isMentioned = Math.random() > 0.3; isRecommended = Math.random() > 0.4; }
 
       let rawAnswer = "";
       if (isRecommended) {
