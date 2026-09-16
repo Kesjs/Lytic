@@ -52,9 +52,9 @@
   --color-ink-primary: 15 23 42;       /* #0f172a — contraste texte profond */
   --color-ink-secondary: 71 85 105;    /* #475569 */
   --color-ink-muted: 148 163 184;      /* #94a3b8 */
-  --color-brand: 201 171 30;           /* #c9ab1e */
-  --color-brand-hover: 179 151 26;     /* #b3971a */
-  --color-brand-text: 138 108 8;       /* #8a6c08 */
+  --color-brand: 234 179 8;            /* #eab308 — jaune plus vibrant pour le mode clair */
+  --color-brand-hover: 202 138 4;      /* #ca8a04 */
+  --color-brand-text: 161 98 7;        /* #a16207 */
   --color-success: 22 163 74;          /* #16a34a */
   --color-danger: 220 38 38;           /* #dc2626 */
   --color-info: 37 99 235;             /* #2563eb */

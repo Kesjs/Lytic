@@ -96,7 +96,7 @@ export function Sidebar({
                     : 'gap-3 px-3 py-2'
                 } ${
                   isActive
-                    ? 'bg-brand/10 text-brand-text font-semibold'
+                    ? 'bg-elevated text-ink-primary font-medium shadow-sm ring-1 ring-border/50'
                     : 'text-ink-secondary hover:bg-elevated/60 hover:text-ink-primary'
                 }`}
               >
