@@ -68,7 +68,7 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
                   <stop offset="95%" stopColor="#f2d94e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="#262626" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="#262626" strokeDasharray="3 3" vertical={false} horizontal={false} />
               <XAxis
                 dataKey="date"
                 tickFormatter={(v: string) =>
@@ -98,14 +98,13 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
                 formatter={(value: number) => [`${value} / 100`, 'Score']}
               />
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="score"
                 stroke="var(--color-brand, #c9ab1e)"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorScore)"
-                activeDot={{ r: 6, fill: "var(--color-brand, #c9ab1e)", stroke: "var(--color-surface, #141414)", strokeWidth: 2 }}
-                dot={{ r: 4, fill: "var(--color-surface, #141414)", stroke: "var(--color-brand, #c9ab1e)", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "var(--color-brand, #c9ab1e)", stroke: "var(--color-surface, #141414)", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
