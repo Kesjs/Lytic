@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequestHeader } from '@tanstack/react-start/server'
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 
 // Fenêtre glissante anti-abus : au-delà de ce nombre de comptes créés depuis
@@ -14,9 +14,9 @@ function getClientIp(): string {
   // Transmis par le proxy (Render) — jamais fiable à 100% mais c'est la seule
   // IP réelle accessible côté serveur ici (le SDK Supabase côté navigateur
   // n'a aucun accès à l'IP du visiteur).
-  const request = getWebRequest()
-  const forwardedFor = request?.headers.get('x-forwarded-for') ?? ''
-  return forwardedFor.split(',')[0]?.trim() || 'unknown'
+  const forwardedFor = getRequestHeader('x-forwarded-for') as string | undefined
+  const ipValue = forwardedFor ?? ''
+  return ipValue.split(',')[0]?.trim() || 'unknown'
 }
 
 export const signUpWithGuard = createServerFn({ method: 'POST' })
