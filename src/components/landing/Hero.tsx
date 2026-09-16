@@ -30,7 +30,14 @@ export function Hero({
   primaryCta = { label: 'Analyser mon site', to: '/login' },
   secondaryCta = { label: 'Voir le produit', href: '#produit' },
   engines,
-  preview = <ScreenshotFrame label="Dashboard Reflet — vue d'ensemble" aspect="aspect-[16/9]" />,
+  preview = (
+    <ScreenshotFrame
+      label="Dashboard Reflet — Vue d'ensemble"
+      src="/images/dashboard/overview.png"
+      urlPath="app.reflet.io/dashboard/accueil"
+      glow
+    />
+  ),
 }: HeroProps) {
   const { scrollY } = useScroll()
   const opacity = useTransform(scrollY, [0, 400], [1, 0])
@@ -149,7 +156,7 @@ export function Hero({
         initial={{ opacity: 0, y: 45, filter: 'blur(10px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ duration: 0.85, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 mx-auto mt-20 w-full max-w-1200"
+        className="relative z-10 mx-auto mt-20 w-full max-w-1200 px-4 sm:px-6"
       >
         {preview}
       </motion.div>

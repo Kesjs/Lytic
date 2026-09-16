@@ -55,14 +55,24 @@ export function Metrics() {
           })}
         </div>
 
-        {/* Punchline preuve + trace condensée (reprend l'argument d'Evidence.tsx, en une seule mise en page) */}
-        <p className="mx-auto mt-16 max-w-xl text-center text-sm leading-relaxed text-ink-secondary">
-          Chaque score remonte jusqu'à la question posée et la réponse brute de l'IA —
-          jamais un chiffre sans preuve.
-        </p>
+        {/* Benchmark Concurrentiel & Preuve réelle */}
+        <div className="mx-auto mt-20 max-w-3xl text-center">
+          <span className="text-xs font-mono uppercase tracking-wider text-brand-text">Benchmark en conditions réelles</span>
+          <h3 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
+            Comparez votre présence face à vos concurrents directs
+          </h3>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">
+            Chaque score remonte jusqu'à la question posée et la réponse brute de l'IA — observez vos écarts de mentions et de recommandations face aux alternatives du marché.
+          </p>
+        </div>
 
-        <div className="mx-auto mt-8 max-w-3xl">
-          <ScreenshotFrame label="Détail d'une preuve — page Opportunités" aspect="aspect-[16/9]" />
+        <div className="mx-auto mt-8 max-w-4xl">
+          <ScreenshotFrame
+            label="Benchmark concurrentiel — NovaPay vs Qonto"
+            src="/images/dashboard/competitors.png"
+            urlPath="app.reflet.io/dashboard/concurrents"
+            glow
+          />
         </div>
       </div>
     </section>

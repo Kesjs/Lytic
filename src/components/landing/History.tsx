@@ -27,17 +27,24 @@ export function History() {
     <section id="historique" className="border-t border-hairline border-border px-6 py-24">
       <div className="mx-auto grid max-w-1200 items-center gap-12 lg:grid-cols-2">
         <div>
-          <h2 className="text-3xl font-medium tracking-tight text-ink-primary">
+          <span className="text-xs font-mono uppercase tracking-wider text-brand-text">Surveillance continue</span>
+          <h2 className="mt-2 text-3xl font-medium tracking-tight text-ink-primary sm:text-4xl">
             Votre visibilité n'est pas un chiffre isolé.
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-secondary">
-            Reflet surveille automatiquement votre site. Vous n'avez pas besoin de déclarer chaque modification.
+            Reflet surveille automatiquement votre site et réinterroge les modèles à intervalle régulier. Chaque nouvelle mention, gain ou perte de position est archivé avec sa date et son impact.
           </p>
           <div className="mt-6 max-w-xs rounded-md border border-hairline border-border bg-surface p-4">
             <ScoreSparkline />
           </div>
         </div>
-        <ScreenshotFrame label="Fil d'événements — page Historique" aspect="aspect-square" />
+        <ScreenshotFrame
+          label="Fil d'événements — page Historique"
+          src="/images/dashboard/history.png"
+          urlPath="app.reflet.io/dashboard/historique"
+          aspect="aspect-auto"
+          glow
+        />
       </div>
     </section>
   )

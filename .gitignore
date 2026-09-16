@@ -38,3 +38,6 @@ next-env.d.ts
 
 # Next.js legacy build cache
 /.next/
+
+# Scratch & temporary scripts
+/scratch/

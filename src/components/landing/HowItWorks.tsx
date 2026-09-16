@@ -1,6 +1,7 @@
 import { cn } from "~/lib/utils"
 import { Settings, Activity, Lightbulb } from "lucide-react"
 import type React from "react"
+import { ScreenshotFrame } from "./ScreenshotFrame"
 
 interface HowItWorksProps extends React.HTMLAttributes<HTMLElement> {}
 
@@ -124,6 +125,25 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
               benefits={step.benefits}
             />
           ))}
+        </div>
+
+        {/* Showcase de l'écran Opportunités */}
+        <div className="mx-auto mt-20 max-w-5xl">
+          <div className="mb-8 text-center">
+            <span className="text-xs font-mono uppercase tracking-wider text-brand-text">Recommandations exploitables</span>
+            <h3 className="mt-2 text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
+              Transformez chaque écart en opportunité d'action
+            </h3>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">
+              Reflet ne se limite pas à constater les manques : chaque anomalie est convertie en recommandation priorisée avec indice de confiance.
+            </p>
+          </div>
+          <ScreenshotFrame
+            label="Page Opportunités — Recommandations concrètes"
+            src="/images/dashboard/opportunities.png"
+            urlPath="app.reflet.io/dashboard/opportunites"
+            glow
+          />
         </div>
       </div>
     </section>
