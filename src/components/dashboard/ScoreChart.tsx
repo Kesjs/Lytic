@@ -100,11 +100,12 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
               <Area
                 type="monotone"
                 dataKey="score"
-                stroke="#f2d94e"
+                stroke="var(--color-brand, #c9ab1e)"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorScore)"
-                activeDot={{ r: 5 }}
+                activeDot={{ r: 6, fill: "var(--color-brand, #c9ab1e)", stroke: "var(--color-surface, #141414)", strokeWidth: 2 }}
+                dot={{ r: 4, fill: "var(--color-surface, #141414)", stroke: "var(--color-brand, #c9ab1e)", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
