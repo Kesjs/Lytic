@@ -11,6 +11,7 @@ interface ScreenshotFrameProps {
   urlPath?: string
   glow?: boolean
   showControls?: boolean
+  fadeBottom?: boolean
 }
 
 export function ScreenshotFrame({
@@ -22,6 +23,7 @@ export function ScreenshotFrame({
   urlPath,
   glow = false,
   showControls = true,
+  fadeBottom = false,
 }: ScreenshotFrameProps) {
   if (src) {
     return (
@@ -73,6 +75,14 @@ export function ScreenshotFrame({
             />
             {/* Liseré interne pour un contour ultra précis */}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/[0.05]" />
+
+            {/* Fondu doux et flou au bas de l'image pour estomper la coupure */}
+            {fadeBottom && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-28 sm:h-44 bg-gradient-to-t from-[#09090b] via-[#09090b]/85 via-45% to-transparent backdrop-blur-[1.5px]"
+              />
+            )}
           </div>
         </div>
       </div>
