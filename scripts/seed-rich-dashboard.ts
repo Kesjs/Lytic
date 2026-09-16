@@ -84,25 +84,37 @@ async function main() {
   if (qError || !questions) throw qError;
   console.log("✅ Questions created");
 
-  // 6. Create Measurement Run
-  const { data: run, error: runError } = await supabase
-    .from('measurement_runs')
-    .insert({
+  // 6. Create Measurement Runs
+  const numRuns = 7;
+  let latestRunId = '';
+
+  for (let i = numRuns - 1; i >= 0; i--) {
+    const daysAgo = i * 5; // e.g. 30, 25, 20, 15, 10, 5, 0 days ago
+    const scoreBase = 65 + ((numRuns - i) * 4); // Score improves over time: 65 -> 93
+    const runScore = Math.min(100, scoreBase + Math.floor(Math.random() * 5));
+    
+    const { data: run, error: runError } = await supabase.from('measurement_runs').insert({
       brand_id: brandId,
       status: 'success',
-      started_at: new Date(Date.now() - 3600000).toISOString(),
-      completed_at: new Date().toISOString(),
+      started_at: new Date(Date.now() - (daysAgo * 86400000) - 3600000).toISOString(),
+      completed_at: new Date(Date.now() - (daysAgo * 86400000)).toISOString(),
       questions_total: questions.length,
       questions_completed: questions.length,
-      score: 92,
-      score_delta: 14
+      score: runScore,
+      score_delta: i === numRuns - 1 ? null : Math.floor(Math.random() * 5) + 1
     })
     .select('id')
     .single();
-  
-  if (runError || !run) throw runError;
-  const runId = run.id;
-  console.log("✅ Measurement Run created");
+
+    if (runError || !run) throw runError;
+
+    if (i === 0) {
+      latestRunId = run.id;
+    }
+  }
+
+  const runId = latestRunId;
+  console.log("✅ Measurement Runs created");
 
   // 7. Create Observations (Samples)
   const engines = ['ChatGPT', 'Claude', 'Perplexity', 'Copilot'];
