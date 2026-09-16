@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useRouterState, Link } from '@tanstack/react-r
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Menu, PanelLeft, RefreshCw, Home, ChevronRight } from 'lucide-react'
+import { Menu, PanelLeft, RefreshCw, Home, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
@@ -31,6 +31,7 @@ const pageTitles: Record<string, string> = {
 function DashboardLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isPersonalizationOpen, setIsPersonalizationOpen] = useState(false)
   const { sidebarState } = usePreferences()
   const [isCollapsed, setIsCollapsed] = useState(sidebarState === 'collapsed')
   const pathname = useRouterState({ select: (s) => s.location.pathname })
@@ -185,7 +186,19 @@ function DashboardLayout() {
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
             <ThemeToggle />
-            <PersonalizationDrawer />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setIsPersonalizationOpen(true)}
+                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
+                  aria-label="Personnaliser l'affichage"
+                >
+                  <SlidersHorizontal className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Personnalisation</TooltipContent>
+            </Tooltip>
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />
@@ -199,6 +212,10 @@ function DashboardLayout() {
         </main>
         </div>
       </div>
+      <PersonalizationDrawer 
+        isOpen={isPersonalizationOpen} 
+        onClose={() => setIsPersonalizationOpen(false)} 
+      />
     </div>
   )
 }

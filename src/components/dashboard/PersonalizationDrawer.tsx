@@ -1,34 +1,31 @@
 import * as React from 'react'
-import { SlidersHorizontal, X, LayoutTemplate, Sidebar, MonitorPlay } from 'lucide-react'
+import { X, LayoutTemplate, Sidebar, MonitorPlay } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { usePreferences } from '~/hooks/use-preferences'
 import { cn } from '~/lib/utils'
 import { ThemeToggle } from '~/components/ui/theme-toggle'
-import { createPortal } from 'react-dom'
 
-export function PersonalizationDrawer() {
-  const [open, setOpen] = React.useState(false)
+interface PersonalizationDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function PersonalizationDrawer({ isOpen, onClose }: PersonalizationDrawerProps) {
   const { sidebarState, setSidebarState, dashboardDensity, setDashboardDensity } = usePreferences()
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
-        aria-label="Personnaliser l'affichage"
-      >
-        <SlidersHorizontal className="size-4" />
-      </button>
-
+  return (
+    <>
       <AnimatePresence>
-        {open && typeof document !== 'undefined' && createPortal(
+        {isOpen && (
           <>
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
             />
             
@@ -43,7 +40,7 @@ export function PersonalizationDrawer() {
               <div className="flex items-center justify-between border-b border-border p-4">
                 <h2 className="text-sm font-semibold text-ink-primary">Personnalisation</h2>
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={onClose}
                   className="rounded-md p-1 text-ink-muted hover:bg-elevated hover:text-ink-primary"
                 >
                   <X className="size-4" />
@@ -131,8 +128,7 @@ export function PersonalizationDrawer() {
 
               </div>
             </motion.div>
-          </>,
-          document.body
+          </>
         )}
       </AnimatePresence>
     </>
