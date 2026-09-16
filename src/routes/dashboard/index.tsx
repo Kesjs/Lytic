@@ -5,6 +5,10 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/lib/queries/dashboard'
 import { fetchBotAccess } from '~/lib/queries/bot-access'
 import { ScoreChart } from '~/components/dashboard/ScoreChart'
+import { ShareOfVoiceChart } from '~/components/dashboard/charts/ShareOfVoiceChart'
+import { EngineRadarChart } from '~/components/dashboard/charts/EngineRadarChart'
+import { SentimentGauge } from '~/components/dashboard/charts/SentimentGauge'
+import { ThemesCloud } from '~/components/dashboard/charts/ThemesCloud'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
@@ -109,7 +113,7 @@ function AccueilPage() {
     )
   }
 
-  const { brand, latestRun, displayRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors } =
+  const { brand, latestRun, displayRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes } =
     data
 
   return (
@@ -211,6 +215,30 @@ function AccueilPage() {
           hint="Vs. concurrents détectés"
         />
       </section>
+
+      {displayRun && (
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold text-ink-primary mb-4">Part de Voix (Top Concurrents)</h2>
+            <ShareOfVoiceChart data={shareOfVoice ?? []} />
+          </div>
+          
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold text-ink-primary mb-4">Performance par Moteur IA</h2>
+            <EngineRadarChart data={enginePerformance ?? []} />
+          </div>
+
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold text-ink-primary mb-4">Analyse de Tonalité</h2>
+            <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
+          </div>
+
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold text-ink-primary mb-4">Thèmes Abordés</h2>
+            <ThemesCloud data={topThemes ?? []} />
+          </div>
+        </section>
+      )}
 
       <section>
         <BotAccessCard data={botAccess ?? null} brandId={brand.id} />

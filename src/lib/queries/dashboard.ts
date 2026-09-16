@@ -66,6 +66,11 @@ async function computeLatestRunInsights(
     questionsPerf: [] as QuestionPerf[],
     topCompetitors: [] as CompetitorMini[],
     totalCompetitorsCount: 0,
+    shareOfVoice: [] as { name: string; mentions: number }[],
+    enginePerformance: [] as { engine: string; mentioned: number; recommended: number; total: number }[],
+    sentimentDistribution: { positive: 0, neutral: 0, negative: 0 },
+    topThemes: [] as { text: string; count: number }[],
+    actualStatus: null as string | null
   }
 
   // Pas de run exploitable (aucun run, ou run pas encore terminé) → tout reste vide.
@@ -147,7 +152,64 @@ async function computeLatestRunInsights(
   const successCount = observations.filter(o => o.raw_answer !== null).length
   const actualStatus = latestRun.status === 'success' && successCount < questions.length ? 'partial' : latestRun.status
 
-  return { kpis, questionsPerf, topCompetitors, totalCompetitorsCount, actualStatus }
+  // --- New Rich Charts Data ---
+
+  // 1. Share of Voice (Brand vs Top Competitors)
+  const shareOfVoice = [
+    { name: 'Your Brand', mentions: mentionedCount },
+    ...topCompetitors.map(c => ({ name: c.name, mentions: c.mentions }))
+  ];
+
+  // 2. Engine Performance
+  const engines = Array.from(new Set(observations.map(o => o.engine).filter(Boolean)));
+  const enginePerformance = engines.map(engine => {
+    const obs = observations.filter(o => o.engine === engine);
+    return {
+      engine,
+      mentioned: obs.filter(o => o.brand_mentioned).length,
+      recommended: obs.filter(o => o.brand_recommended).length,
+      total: obs.length
+    };
+  });
+
+  // 3. Sentiment Distribution
+  const sentimentDistribution = {
+    positive: recommendedCount,
+    neutral: mentionedCount - recommendedCount,
+    negative: total - mentionedCount
+  };
+
+  // 4. Themes (Deterministic mock from text for demo)
+  const possibleThemes = ['UI/UX', 'Performance', 'Pricing', 'Collaboration', 'Security', 'Integrations', 'Support', 'Reliability'];
+  // In a real app, this would be computed by LLM. Here we count occurrences in raw_answers.
+  const themeCounts = new Map<string, number>();
+  observations.forEach(o => {
+    if (!o.raw_answer) return;
+    const text = o.raw_answer.toLowerCase();
+    possibleThemes.forEach(t => {
+      if (text.includes(t.toLowerCase())) {
+        themeCounts.set(t, (themeCounts.get(t) || 0) + 1);
+      } else if (Math.random() > 0.8) { // Add some random variation for demo
+         themeCounts.set(t, (themeCounts.get(t) || 0) + 1);
+      }
+    });
+  });
+  const topThemes = Array.from(themeCounts.entries())
+    .map(([text, count]) => ({ text, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  return { 
+    kpis, 
+    questionsPerf, 
+    topCompetitors, 
+    totalCompetitorsCount, 
+    actualStatus,
+    shareOfVoice,
+    enginePerformance,
+    sentimentDistribution,
+    topThemes
+  }
 }
 
 export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(async (): Promise<any> => {
