@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { AiCycle } from './AiCycle'
-import { DashboardPreview } from './DashboardPreview'
+import { ScreenshotFrame } from './ScreenshotFrame'
 
 import { GrainGradientShader } from '../shared/grain-gradient-shader'
 
@@ -30,7 +30,7 @@ export function Hero({
   primaryCta = { label: 'Analyser mon site', to: '/login' },
   secondaryCta = { label: 'Voir le produit', href: '#produit' },
   engines,
-  preview = <DashboardPreview />,
+  preview = <ScreenshotFrame label="Dashboard Reflet — vue d'ensemble" aspect="aspect-[16/9]" />,
 }: HeroProps) {
   const { scrollY } = useScroll()
   const opacity = useTransform(scrollY, [0, 400], [1, 0])
@@ -76,7 +76,7 @@ export function Hero({
           initial={{ opacity: 0, y: 22, filter: 'blur(12px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.75, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-7 font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
+          className="mt-7 font-display text-4xl font-medium leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
         >
           {title}
         </motion.h1>
@@ -111,7 +111,7 @@ export function Hero({
           {/* Bouton Shimmer CTA animé */}
           <Link
             to={primaryCta.to}
-            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-brand px-6 py-3.5 text-sm font-semibold text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(201,171,30,0.45)] active:scale-[0.98]"
+            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-md bg-brand px-6 py-3.5 text-sm font-medium text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(201,171,30,0.45)] active:scale-[0.98]"
           >
             {/* Rayon de lumière shimmer traversant */}
             <span
@@ -125,7 +125,7 @@ export function Hero({
           {/* Bouton secondaire sleek glassmorphic */}
           <a
             href={secondaryCta.href}
-            className="inline-flex items-center rounded-lg border border-border/80 bg-surface/50 px-5 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 hover:border-brand/40 hover:bg-surface hover:text-white"
+            className="inline-flex items-center rounded-md border border-hairline border-border/80 bg-surface/50 px-5 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 hover:border-brand/40 hover:bg-surface hover:text-white"
           >
             {secondaryCta.label}
           </a>

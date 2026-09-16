@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 
 export function CTAFinal() {
   return (
-    <section className="relative overflow-hidden border-t border-border px-6 py-28 md:py-36">
+    <section className="relative overflow-hidden border-t border-hairline border-border px-6 py-28 md:py-36">
       {/* Background Texture avec fondu radial pour toute la section */}
       <div
         className="pointer-events-none absolute inset-0 z-0 select-none bg-[url('/dark-texture.jpg')] bg-cover bg-center opacity-35 mix-blend-screen"
@@ -15,7 +15,7 @@ export function CTAFinal() {
       />
 
       {/* Carte CTA centrale avec texture intégrée et relief */}
-      <div className="relative z-10 mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border/80 bg-surface/85 p-10 sm:p-16 text-center shadow-2xl backdrop-blur-xl">
+      <div className="relative z-10 mx-auto max-w-3xl overflow-hidden rounded-xl border border-hairline border-border/80 bg-surface/85 p-10 sm:p-16 text-center shadow-2xl backdrop-blur-xl">
         {/* Glow discret au sommet de la carte */}
         <div
           className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-44 w-96 rounded-full bg-brand/15 blur-[90px]"
@@ -24,7 +24,7 @@ export function CTAFinal() {
 
         {/* Texture interne subtile pour donner du grain à la carte */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-2xl bg-[url('/dark-texture.jpg')] bg-cover bg-center opacity-25 mix-blend-overlay"
+          className="pointer-events-none absolute inset-0 rounded-xl bg-[url('/dark-texture.jpg')] bg-cover bg-center opacity-25 mix-blend-overlay"
           aria-hidden="true"
         />
 
@@ -46,7 +46,7 @@ export function CTAFinal() {
           {/* Bouton Shimmer CTA animé */}
           <Link
             to="/login"
-            className="group relative mt-9 inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-lg bg-brand px-7 py-3.5 text-sm font-semibold text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(201,171,30,0.5)] active:scale-[0.98]"
+            className="group relative mt-9 inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-md bg-brand px-7 py-3.5 text-sm font-medium text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(201,171,30,0.5)] active:scale-[0.98]"
           >
             {/* Shimmer sweep effect */}
             <span

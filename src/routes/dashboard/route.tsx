@@ -1,8 +1,8 @@
-import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useRouterState, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Menu, PanelLeft, RefreshCw } from 'lucide-react'
+import { Menu, PanelLeft, RefreshCw, Home, ChevronRight } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
@@ -142,18 +142,19 @@ function DashboardLayout() {
               <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
             </Tooltip>
 
-            {/* Fil d'Ariane dynamique — "Reflet /" seulement sur mobile,
-                où la sidebar (donc le logo) est cachée derrière le hamburger ;
-                sur desktop le logo est déjà visible juste à côté, "Reflet /"
-                y est redondant. */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="flex items-center gap-2 lg:hidden">
-                <span className="font-display font-semibold text-ink-primary">Reflet</span>
-                <span className="text-border-strong">/</span>
-              </span>
-              <span className="text-ink-secondary font-medium lg:text-sm lg:font-semibold lg:text-ink-primary">
-                {currentTitle}
-              </span>
+            {/* Fil d'Ariane — icône maison (lien vers l'Accueil) + chevron +
+                page courante, dans une pill, cohérent partout (desktop et
+                mobile) au lieu du "Reflet /" texte simple d'avant. */}
+            <div className="flex items-center gap-1.5 rounded-md border border-border bg-elevated px-2.5 py-1.5 text-xs">
+              <Link
+                to="/dashboard"
+                className="flex items-center text-ink-muted transition-colors hover:text-ink-primary"
+                aria-label="Accueil"
+              >
+                <Home className="size-3.5" />
+              </Link>
+              <ChevronRight className="size-3.5 text-ink-muted" />
+              <span className="font-medium text-ink-primary lg:text-sm lg:font-semibold">{currentTitle}</span>
 
               {/* Repère visuel constant tant que la marque n'est pas créée */}
               {isBrandConfigured === false && (

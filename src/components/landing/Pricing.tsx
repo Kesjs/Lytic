@@ -73,7 +73,7 @@ export function Pricing() {
 
         <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-6xl lg:grid-cols-3 lg:gap-8">
           {/* Free Plan */}
-          <div className="flex flex-col rounded-3xl border border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
+          <div className="flex flex-col rounded-xl border border-hairline border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
             <div className="mb-6">
               <h3 className="font-display text-2xl font-semibold text-ink-primary">Free</h3>
               <p className="mt-2 text-sm text-ink-secondary">
@@ -82,7 +82,7 @@ export function Pricing() {
             </div>
 
             <div className="mb-1 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-bold tracking-tight text-ink-primary">0 €</span>
+              <span className="font-display text-5xl font-semibold tracking-tight text-ink-primary">0 €</span>
             </div>
             <p className="mb-6 text-sm text-ink-muted">Sans carte bancaire</p>
 
@@ -106,7 +106,7 @@ export function Pricing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="relative flex flex-col rounded-3xl border border-brand/50 bg-surface p-8 shadow-2xl shadow-brand/10 ring-1 ring-brand/50">
+          <div className="relative flex flex-col rounded-xl border border-brand/50 bg-surface p-8 shadow-2xl shadow-brand/10 ring-1 ring-brand/50">
             <div className="absolute -top-4 left-0 right-0 flex justify-center">
               <span className="flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
                 <Sparkles className="size-3.5" /> Plan recommandé
@@ -121,7 +121,7 @@ export function Pricing() {
             </div>
             
             <div className="mb-6 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-bold tracking-tight text-ink-primary">
+              <span className="font-display text-5xl font-semibold tracking-tight text-ink-primary">
                 {annual ? '60 €' : '75 €'}
               </span>
               <span className="text-sm font-medium text-ink-muted">/mois</span>
@@ -150,9 +150,9 @@ export function Pricing() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="flex flex-col rounded-3xl border border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
+          <div className="flex flex-col rounded-xl border border-hairline border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
             <div className="mb-6">
-              <div className="mb-4 flex size-10 items-center justify-center rounded-lg border border-border bg-elevated text-ink-primary">
+              <div className="mb-4 flex size-10 items-center justify-center rounded-md border border-hairline border-border bg-elevated text-ink-primary">
                 <Building2 className="size-5" />
               </div>
               <h3 className="font-display text-2xl font-semibold text-ink-primary">Enterprise</h3>

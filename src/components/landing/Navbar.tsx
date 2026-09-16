@@ -49,7 +49,7 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-border bg-elevated p-1.5 shadow-xl shadow-black/40"
+            className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-hairline border-border bg-elevated p-1.5 shadow-xl shadow-black/40"
           >
             {items.map((item) => (
               <a
@@ -101,7 +101,7 @@ export function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
-        scrolled ? 'border-b border-border bg-canvas/80 backdrop-blur-md' : 'border-b border-transparent bg-transparent'
+        scrolled ? 'border-b border-hairline border-border bg-canvas/80 backdrop-blur-md' : 'border-b border-transparent bg-transparent'
       }`}
     >
       <div

@@ -1,10 +1,5 @@
-import { Target, ThumbsUp, Trophy, Users, MessageSquare, Bot, Link2, ChevronRight } from 'lucide-react'
-
-const trace = [
-  { label: 'Question posée', icon: MessageSquare, sample: '« Logiciel de facturation pour artisan au Bénin ? »' },
-  { label: 'Réponse observée', icon: Bot, sample: '« Je recommande Wave, QuickBooks ou SIKKA... »' },
-  { label: 'Preuve retenue', icon: Link2, sample: 'sikka.bj/produit — cité en 3ᵉ position' },
-]
+import { Target, ThumbsUp, Trophy, Users } from 'lucide-react'
+import { ScreenshotFrame } from './ScreenshotFrame'
 
 const metrics = [
   {
@@ -48,9 +43,9 @@ export function Metrics() {
             return (
               <div
                 key={m.title}
-                className="group flex flex-col rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:border-brand/30 hover:bg-elevated hover:shadow-lg hover:shadow-black/20"
+                className="group flex flex-col rounded-xl border border-hairline border-border bg-surface p-6 transition-all duration-300 hover:border-brand/30 hover:bg-elevated hover:shadow-lg hover:shadow-black/20"
               >
-                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-elevated border border-border text-ink-muted transition-colors group-hover:text-brand-text group-hover:border-brand/20">
+                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-md bg-elevated border border-border text-ink-muted transition-colors group-hover:text-brand-text group-hover:border-brand/20">
                   <Icon className="size-5" />
                 </div>
                 <h3 className="mb-2 text-base font-semibold text-ink-primary">{m.title}</h3>
@@ -66,24 +61,8 @@ export function Metrics() {
           jamais un chiffre sans preuve.
         </p>
 
-        <div className="mx-auto mt-8 flex max-w-4xl flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          {trace.map((step, i) => {
-            const Icon = step.icon
-            return (
-              <div key={step.label} className="flex flex-1 items-center gap-2">
-                <div className="flex flex-1 items-start gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-                  <Icon className="mt-0.5 size-4 shrink-0 text-brand-text" />
-                  <div>
-                    <p className="text-xs font-medium text-ink-primary">{step.label}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">{step.sample}</p>
-                  </div>
-                </div>
-                {i < trace.length - 1 && (
-                  <ChevronRight className="hidden size-4 shrink-0 text-border-strong sm:block" />
-                )}
-              </div>
-            )
-          })}
+        <div className="mx-auto mt-8 max-w-3xl">
+          <ScreenshotFrame label="Détail d'une preuve — page Opportunités" aspect="aspect-[16/9]" />
         </div>
       </div>
     </section>

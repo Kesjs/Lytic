@@ -19,11 +19,11 @@ const StepCard: React.FC<StepCardProps> = ({
 }) => (
   <div
     className={cn(
-      "relative rounded-2xl border border-border bg-surface p-6 text-ink-primary transition-all duration-300 ease-in-out",
+      "relative rounded-xl border border-hairline border-border bg-surface p-6 text-ink-primary transition-all duration-300 ease-in-out",
       "hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 hover:border-brand/30 hover:bg-elevated"
     )}
   >
-    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-elevated text-brand-text border border-border">
+    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-elevated text-brand-text border border-border">
       {icon}
     </div>
     <h3 className="mb-2 text-xl font-semibold text-ink-primary">{title}</h3>

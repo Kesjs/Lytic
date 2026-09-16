@@ -40,7 +40,7 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="border-t border-border px-6 py-24">
+    <section className="border-t border-hairline border-border px-6 py-24">
       <div className="mx-auto max-w-2xl">
         <h2 className="text-center text-3xl font-medium tracking-tight text-ink-primary">Questions fréquentes</h2>
         <div className="mt-12 divide-y divide-border border-b border-t border-border">

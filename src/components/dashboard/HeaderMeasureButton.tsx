@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Zap, Clock, Loader2, X } from 'lucide-react'
+import { Gauge, Clock, Loader2, X } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { runFullMeasurement } from '~/lib/measurement-client'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
@@ -111,9 +111,9 @@ export function HeaderMeasureButton() {
     <button
       type="button"
       onClick={handleClick}
-      className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md border border-brand/40 bg-brand/10 sm:px-3 text-[11px] font-semibold text-brand-text transition-colors hover:bg-brand/20"
+      className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md bg-brand sm:px-3 text-[11px] font-semibold text-black transition-colors hover:bg-brand-hover"
     >
-      <Zap className="size-3.5" />
+      <Gauge className="size-3.5" />
       <span className="hidden sm:inline">Mesurer</span>
     </button>
   )
