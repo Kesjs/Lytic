@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -61,7 +61,13 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
           <ChartMessage text={`Aucune mesure réussie sur cette période (${periodLabel(period)}).`} />
         ) : (
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+            <AreaChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f2d94e" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f2d94e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="#262626" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -91,15 +97,16 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
                 labelFormatter={(v: string) => new Date(v).toLocaleDateString('fr-FR')}
                 formatter={(value: number) => [`${value} / 100`, 'Score']}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="score"
                 stroke="#f2d94e"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#f2d94e' }}
+                fillOpacity={1}
+                fill="url(#colorScore)"
                 activeDot={{ r: 5 }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
