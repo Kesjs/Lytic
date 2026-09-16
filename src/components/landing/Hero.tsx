@@ -35,6 +35,8 @@ export function Hero({
       urlPath="app.reflet.io/dashboard/accueil"
       glow
       fadeBottom
+      annotation="Le tableau de bord Reflet"
+      badge="Score en direct · 72/100"
     />
   ),
 }: HeroProps) {

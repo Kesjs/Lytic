@@ -143,6 +143,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
             src="/images/dashboard/opportunities.png"
             urlPath="app.reflet.io/dashboard/opportunites"
             glow
+            badge="Opportunités prioritaires"
           />
         </div>
       </div>

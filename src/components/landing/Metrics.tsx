@@ -72,6 +72,7 @@ export function Metrics() {
             src="/images/dashboard/competitors.png"
             urlPath="app.reflet.io/dashboard/concurrents"
             glow
+            badge="Benchmark vs Qonto"
           />
         </div>
       </div>

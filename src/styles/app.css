@@ -15,6 +15,7 @@
 :root,
 .dark {
   --color-canvas: 15 15 15;            /* #0f0f0f */
+  --color-sidebar: 15 15 15;           /* #0f0f0f */
   --color-surface: 20 20 20;           /* #141414 */
   --color-elevated: 26 26 26;          /* #1a1a1a */
   --color-border: 38 38 38;            /* #262626 */
@@ -36,20 +37,22 @@
   --font-display: 'Plus Jakarta Sans', 'Space Grotesk', var(--font-sans);
 }
 
-/* Mode clair — mêmes rôles sémantiques, couleurs de statut légèrement
-   assombries pour garder un contraste AA sur fond blanc. La couleur de
-   marque reste la même identité (jaune soufre), juste assombrie pour
-   rester lisible en texte sur fond clair. */
+/* Mode clair — Inspiré des meilleurs standards SaaS modernes (Lumail, Linear, Stripe).
+   Canvas : fond neutre doux (#f4f5f8).
+   Sidebar : fond teinté subtil (#f8f9fb) avec délimitation nette.
+   Cartes (Surface) : blanc pur (#ffffff) qui ressort nettement avec bordure fine et ombre douce.
+   Elevated : fond légèrement teinté (#f3f4f7) pour les pills et sélecteurs. */
 .light {
-  --color-canvas: 255 255 255;         /* #ffffff */
-  --color-surface: 247 247 248;        /* #f7f7f8 */
-  --color-elevated: 240 240 242;       /* #f0f0f2 */
-  --color-border: 224 224 227;         /* #e0e0e3 */
-  --color-border-strong: 204 204 209;  /* #ccccd1 */
-  --color-ink-primary: 23 23 25;       /* #171719 */
-  --color-ink-secondary: 82 82 91;     /* #52525b */
-  --color-ink-muted: 133 133 141;      /* #85858d */
-  --color-brand: 201 171 30;           /* #c9ab1e — même jaune vibrant qu'en dark mode pour les boutons */
+  --color-canvas: 244 245 248;         /* #f4f5f8 — fond doux et moderne */
+  --color-sidebar: 248 249 251;        /* #f8f9fb — sidebar légèrement teintée */
+  --color-surface: 255 255 255;        /* #ffffff — cartes blanc pur qui ressortent */
+  --color-elevated: 243 244 247;       /* #f3f4f7 — pills & hover states */
+  --color-border: 226 230 236;         /* #e2e6ec — bordures nettes et bien définies */
+  --color-border-strong: 203 210 220;  /* #cbd2dc */
+  --color-ink-primary: 15 23 42;       /* #0f172a — contraste texte profond */
+  --color-ink-secondary: 71 85 105;    /* #475569 */
+  --color-ink-muted: 148 163 184;      /* #94a3b8 */
+  --color-brand: 201 171 30;           /* #c9ab1e */
   --color-brand-hover: 179 151 26;     /* #b3971a */
   --color-brand-text: 138 108 8;       /* #8a6c08 */
   --color-success: 22 163 74;          /* #16a34a */
@@ -57,8 +60,13 @@
   --color-info: 37 99 235;             /* #2563eb */
   --color-warning: 217 119 6;          /* #d97706 */
 
-  --background: 255 255 255;
-  --foreground: 23 23 25;
+  --background: 244 245 248;
+  --foreground: 15 23 42;
+}
+
+/* En mode clair, donner aux cartes un relief subtil pour les faire ressortir comme Lumail */
+.light .bg-surface {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
 }
 
 body {

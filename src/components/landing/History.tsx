@@ -44,6 +44,7 @@ export function History() {
           urlPath="app.reflet.io/dashboard/historique"
           aspect="aspect-auto"
           glow
+          badge="Audit en continu"
         />
       </div>
     </section>

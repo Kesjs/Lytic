@@ -14,6 +14,7 @@ export default {
         // rgb(var(--x) / <alpha-value>) préserve les modificateurs
         // d'opacité Tailwind (bg-brand/10, border-info/30, etc.).
         canvas: 'rgb(var(--color-canvas) / <alpha-value>)',
+        sidebar: 'rgb(var(--color-sidebar) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         elevated: 'rgb(var(--color-elevated) / <alpha-value>)',
         border: {
