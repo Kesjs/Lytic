@@ -15,8 +15,6 @@ export function PersonalizationDrawer({ isOpen, onClose }: PersonalizationDrawer
 
   return (
     <>
-  return (
-    <>
       <AnimatePresence>
         {isOpen && (
           <>
