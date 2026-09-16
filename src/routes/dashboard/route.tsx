@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useRouterState, Link } from '@tanstack/react-r
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Menu, PanelLeft, RefreshCw, Home, ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { Menu, PanelLeft, RefreshCw, Home, ChevronRight } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
 import { NotificationCenter } from '~/components/dashboard/NotificationCenter'
 import { AccountMenu } from '~/components/dashboard/AccountMenu'
@@ -31,9 +31,7 @@ const pageTitles: Record<string, string> = {
 function DashboardLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isPersonalizationOpen, setIsPersonalizationOpen] = useState(false)
-  const { sidebarState } = usePreferences()
-  const [isCollapsed, setIsCollapsed] = useState(sidebarState === 'collapsed')
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const queryClient = useQueryClient()
   const isFetching = useIsFetching() > 0
@@ -95,19 +93,17 @@ function DashboardLayout() {
       )}
 
       {/* Sidebar (rétractable avec animation fluide sur desktop, tiroir sur mobile) */}
-      {sidebarState !== 'hidden' && (
-        <Sidebar
-          isOpen={isMobileMenuOpen}
-          onClose={() => setIsMobileMenuOpen(false)}
-          isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-        />
-      )}
+      <Sidebar
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+      />
 
       {/* Conteneur principal (décalé selon la largeur de la sidebar avec transition animée) */}
       <div
         className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out ${
-          sidebarState === 'hidden' ? 'lg:pl-0' : isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
+          isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
         }`}
       >
         {/* La "Carte" du Dashboard style Lumail */}
@@ -131,21 +127,19 @@ function DashboardLayout() {
             </Tooltip>
 
             {/* Bouton Collapse / Rétractation sur grand écran */}
-            {sidebarState !== 'hidden' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setIsCollapsed((prev) => !prev)}
-                    className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
-                    aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
-                  >
-                    <PanelLeft className="size-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
-              </Tooltip>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed((prev) => !prev)}
+                  className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
+                  aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
+                >
+                  <PanelLeft className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
+            </Tooltip>
 
             {/* Fil d'Ariane */}
             <div className="flex items-center gap-1.5 rounded-md border border-border bg-elevated px-2.5 py-1.5 text-xs">
@@ -186,19 +180,6 @@ function DashboardLayout() {
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
             <ThemeToggle />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setIsPersonalizationOpen(true)}
-                  className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
-                  aria-label="Personnaliser l'affichage"
-                >
-                  <SlidersHorizontal className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Personnalisation</TooltipContent>
-            </Tooltip>
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />
@@ -212,10 +193,6 @@ function DashboardLayout() {
         </main>
         </div>
       </div>
-      <PersonalizationDrawer 
-        isOpen={isPersonalizationOpen} 
-        onClose={() => setIsPersonalizationOpen(false)} 
-      />
     </div>
   )
 }

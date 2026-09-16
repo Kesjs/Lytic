@@ -15,7 +15,6 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 import { isFreePlan } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { usePreferences } from '~/hooks/use-preferences'
 import { cn } from '~/lib/utils'
 import { HelpCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -26,7 +25,6 @@ export const Route = createFileRoute('/dashboard/')({
 
 function AccueilPage() {
   const [setupOpen, setSetupOpen] = useState(false)
-  const { dashboardDensity } = usePreferences()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
@@ -128,17 +126,9 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className={cn(
-          "gap-4",
-          dashboardDensity === 'compact' 
-            ? "flex flex-col lg:flex-row" 
-            : "grid grid-cols-1 xl:grid-cols-[260px_1fr_340px]"
-        )}
+        className="flex flex-col lg:flex-row gap-4"
       >
-        <div className={cn(
-          "flex flex-col justify-center rounded-lg border border-border bg-surface p-4",
-          dashboardDensity === 'compact' ? "w-full lg:w-[280px] shrink-0" : ""
-        )}>
+        <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
@@ -202,14 +192,7 @@ function AccueilPage() {
           )}
         </div>
 
-        {dashboardDensity === 'spacious' && <ScoreChart hasAnyRun={!!latestRun} />}
-
-        <div className={cn(
-          "gap-3",
-          dashboardDensity === 'compact' 
-            ? "flex-1 grid grid-cols-2 lg:grid-cols-4" 
-            : "grid grid-cols-2"
-        )}>
+        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
@@ -239,16 +222,14 @@ function AccueilPage() {
         </div>
       </motion.header>
 
-      {dashboardDensity === 'compact' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="h-[220px]"
-        >
-          <ScoreChart hasAnyRun={!!latestRun} />
-        </motion.div>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="h-[220px]"
+      >
+        <ScoreChart hasAnyRun={!!latestRun} />
+      </motion.div>
 
       {isFreePlan(brand.plan) && latestRun && (
         <motion.div 
@@ -560,9 +541,9 @@ function AccueilSkeleton() {
 
 function KpiCard({ label, value, hint, tooltip }: { label: string; value: string | null; hint: string; tooltip?: string }) {
   return (
-    <div className="flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-surface p-3 xl:p-4">
+    <div className="flex flex-col justify-center p-4 xl:p-5">
       <div className="flex items-center gap-1.5">
-        <p className="truncate text-[11px] text-ink-secondary xl:text-xs" title={label}>{label}</p>
+        <p className="truncate text-xs text-ink-secondary" title={label}>{label}</p>
         {tooltip && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -574,8 +555,8 @@ function KpiCard({ label, value, hint, tooltip }: { label: string; value: string
           </Tooltip>
         )}
       </div>
-      <p className="mt-1 truncate font-display text-xl font-semibold tabular-nums text-ink-primary xl:text-2xl">{value ?? '—'}</p>
-      <p className="mt-1 truncate text-[10px] text-ink-muted xl:text-xs" title={hint}>{hint}</p>
+      <p className="mt-2 truncate font-display text-2xl font-semibold tabular-nums text-ink-primary">{value ?? '—'}</p>
+      <p className="mt-1 truncate text-[11px] text-ink-muted" title={hint}>{hint}</p>
     </div>
   )
 }
