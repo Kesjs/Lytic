@@ -20,7 +20,7 @@ export interface HeroProps {
 }
 
 export function Hero({
-  eyebrow = 'Soyez recommandé par les IA',
+  eyebrow = 'Nouveau : le plan Free est disponible',
   title = (
     <>
       Voyez comment les <span className="text-brand-text">IA</span> parlent de votre marque.
@@ -54,6 +54,22 @@ export function Hero({
       <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6 pt-20">
         <motion.div style={{ opacity, y }} className="flex flex-col items-center text-center">
 
+
+        {/* Badge d'annonce, façon pill — relié au plan Free */}
+        <motion.a
+          href="#tarifs"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+          className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/60 px-4 py-1.5 text-xs text-ink-secondary backdrop-blur-md transition-colors hover:border-brand/40"
+        >
+          <Sparkles className="size-3.5 text-brand-text" />
+          {eyebrow}
+          <span className="inline-flex items-center gap-1 text-brand-text">
+            En savoir plus
+            <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </span>
+        </motion.a>
 
         {/* Titre principal avec apparition en fondu et léger flou cinématique (21st.dev blur-in) */}
         <motion.h1
@@ -122,7 +138,7 @@ export function Hero({
           transition={{ duration: 0.7, delay: 0.5 }}
           className="mt-6 text-xs text-ink-muted"
         >
-          1 site, jusqu'à 30 questions, mesure continue
+          Gratuit pour commencer. Sans carte bancaire.
         </motion.p>
       </motion.div>
       </div>

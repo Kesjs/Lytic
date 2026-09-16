@@ -1,4 +1,10 @@
-import { Target, ThumbsUp, Trophy, Users } from 'lucide-react'
+import { Target, ThumbsUp, Trophy, Users, MessageSquare, Bot, Link2, ChevronRight } from 'lucide-react'
+
+const trace = [
+  { label: 'Question posée', icon: MessageSquare, sample: '« Logiciel de facturation pour artisan au Bénin ? »' },
+  { label: 'Réponse observée', icon: Bot, sample: '« Je recommande Wave, QuickBooks ou SIKKA... »' },
+  { label: 'Preuve retenue', icon: Link2, sample: 'sikka.bj/produit — cité en 3ᵉ position' },
+]
 
 const metrics = [
   {
@@ -49,6 +55,32 @@ export function Metrics() {
                 </div>
                 <h3 className="mb-2 text-base font-semibold text-ink-primary">{m.title}</h3>
                 <p className="text-sm leading-relaxed text-ink-secondary">{m.body}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Punchline preuve + trace condensée (reprend l'argument d'Evidence.tsx, en une seule mise en page) */}
+        <p className="mx-auto mt-16 max-w-xl text-center text-sm leading-relaxed text-ink-secondary">
+          Chaque score remonte jusqu'à la question posée et la réponse brute de l'IA —
+          jamais un chiffre sans preuve.
+        </p>
+
+        <div className="mx-auto mt-8 flex max-w-4xl flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          {trace.map((step, i) => {
+            const Icon = step.icon
+            return (
+              <div key={step.label} className="flex flex-1 items-center gap-2">
+                <div className="flex flex-1 items-start gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+                  <Icon className="mt-0.5 size-4 shrink-0 text-brand-text" />
+                  <div>
+                    <p className="text-xs font-medium text-ink-primary">{step.label}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">{step.sample}</p>
+                  </div>
+                </div>
+                {i < trace.length - 1 && (
+                  <ChevronRight className="hidden size-4 shrink-0 text-border-strong sm:block" />
+                )}
               </div>
             )
           })}

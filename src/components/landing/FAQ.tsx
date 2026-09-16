@@ -27,6 +27,10 @@ const faqs = [
     a: "Non, la surveillance est automatique — vous n'avez rien à déclarer.",
   },
   {
+    q: 'Puis-je essayer Reflet gratuitement ?',
+    a: 'Oui, le plan Free permet de mesurer une question et de voir un aperçu réel de votre visibilité, sans carte bancaire.',
+  },
+  {
     q: 'Reflet garantit-il une position dans ChatGPT ?',
     a: "Non. Reflet mesure et explique votre visibilité actuelle et vous aide à l'améliorer, mais ne peut garantir une position spécifique dans un modèle génératif.",
   },
