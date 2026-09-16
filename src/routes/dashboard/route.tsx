@@ -81,7 +81,6 @@ function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen w-full bg-canvas text-ink-primary font-sans">
-      <CommandPalette />
       {/* Overlay Backdrop sombre sur mobile quand la sidebar est ouverte */}
       {isMobileMenuOpen && (
         <div
@@ -159,17 +158,7 @@ function DashboardLayout() {
               )}
             </div>
             
-            {/* Faux champ de recherche pour ouvrir la Command Palette */}
-            <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-              className="hidden sm:flex items-center gap-2 rounded-md border border-border bg-elevated px-3 py-1.5 text-xs text-ink-muted transition-colors hover:bg-surface hover:text-ink-primary w-48 md:w-64 lg:ml-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <span>Search...</span>
-              <kbd className="ml-auto flex h-5 items-center gap-1 rounded border border-border bg-surface px-1.5 font-mono text-[10px] font-medium text-ink-muted">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </button>
+            <CommandPalette />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
