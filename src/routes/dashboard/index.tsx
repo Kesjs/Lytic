@@ -14,6 +14,9 @@ import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/D
 import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 import { isFreePlan } from '~/lib/plan'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+import { HelpCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export const Route = createFileRoute('/dashboard/')({
   component: AccueilPage,
@@ -118,14 +121,29 @@ function AccueilPage() {
 
   return (
     <div className="space-y-6">
-      <header className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+      <motion.header 
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3 }}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]"
+      >
         <div className="flex min-h-[220px] flex-col justify-center rounded-lg border border-border bg-surface p-5">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
             <>
               <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
-              <p className="mt-3 text-xs font-medium text-ink-muted">Visibilité IA</p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <p className="text-xs font-medium text-ink-muted">Visibilité IA</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-ink-muted hover:text-ink-primary transition-colors">
+                      <HelpCircle className="size-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
+                </Tooltip>
+              </div>
 
               {!displayRun ? (
                 <DashboardStateView state="no_data" compact className="mt-4" />
@@ -174,10 +192,15 @@ function AccueilPage() {
         </div>
 
         <ScoreChart hasAnyRun={!!latestRun} />
-      </header>
+      </motion.header>
 
       {isFreePlan(brand.plan) && latestRun && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3"
+        >
           <p className="text-sm text-ink-secondary">
             <span className="font-medium text-ink-primary">Plan Free — 1 mesure utilisée.</span>{' '}
             Passez au plan Pro pour remesurer et débloquer toutes les fonctionnalités.
@@ -188,24 +211,32 @@ function AccueilPage() {
           >
             Passer Pro
           </Link>
-        </div>
+        </motion.div>
       )}
 
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <motion.section 
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3, delay: 0.15 }}
+        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+      >
         <KpiCard
           label="Mentions"
           value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
           hint="Sur les questions suivies"
+          tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
         />
         <KpiCard
           label="Recommandations"
           value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
           hint="Sur les questions suivies"
+          tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
         />
         <KpiCard
           label="Position moyenne"
           value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
           hint="Quand mentionné"
+          tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
         />
         <KpiCard
           label="Présence concurrentielle"
@@ -213,11 +244,17 @@ function AccueilPage() {
             kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
           }
           hint="Vs. concurrents détectés"
+          tooltip="Votre part de mentions par rapport à vos principaux concurrents."
         />
-      </section>
+      </motion.section>
 
       {displayRun && (
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <motion.section 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+        >
           <div className="rounded-lg border border-border bg-surface p-5">
             <h2 className="text-sm font-semibold text-ink-primary mb-4">Part de Voix (Top Concurrents)</h2>
             <ShareOfVoiceChart data={shareOfVoice ?? []} />
@@ -237,12 +274,16 @@ function AccueilPage() {
             <h2 className="text-sm font-semibold text-ink-primary mb-4">Thèmes Abordés</h2>
             <ThemesCloud data={topThemes ?? []} />
           </div>
-        </section>
+        </motion.section>
       )}
 
-      <section>
+      <motion.section 
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.4, delay: 0.25 }}
+      >
         <BotAccessCard data={botAccess ?? null} brandId={brand.id} />
-      </section>
+      </motion.section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-5">
@@ -487,10 +528,22 @@ function AccueilSkeleton() {
   )
 }
 
-function KpiCard({ label, value, hint }: { label: string; value: string | null; hint: string }) {
+function KpiCard({ label, value, hint, tooltip }: { label: string; value: string | null; hint: string; tooltip?: string }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
-      <p className="text-xs text-ink-secondary">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs text-ink-secondary">{label}</p>
+        {tooltip && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="text-ink-muted hover:text-ink-primary transition-colors">
+                <HelpCircle className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
       <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink-primary">{value ?? '—'}</p>
       <p className="mt-1 text-xs text-ink-muted">{hint}</p>
     </div>

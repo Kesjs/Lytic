@@ -11,6 +11,7 @@ import { ThemeToggle } from '~/components/ui/theme-toggle'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
+import { CommandPalette } from '~/components/dashboard/CommandPalette'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardLayout,
@@ -47,12 +48,6 @@ function DashboardLayout() {
       setIsManualRefreshing(false)
     }
   }
-
-  const currentTitle = pageTitles[pathname] || 'Tableau de bord'
-
-  // Requête légère (juste l'existence d'une marque) pour afficher le badge
-  // "Non configuré" dans le header tant que l'onboarding n'est pas fait —
-  // repère visuel constant, quelle que soit la page du dashboard consultée.
   const { data: brand, isLoading: isBrandLoading } = useQuery({
     queryKey: ['current-brand'],
     queryFn: () => fetchCurrentBrand(),
@@ -85,7 +80,8 @@ function DashboardLayout() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="flex min-h-screen w-full bg-canvas text-ink-primary font-sans">
+      <CommandPalette />
       {/* Overlay Backdrop sombre sur mobile quand la sidebar est ouverte */}
       {isMobileMenuOpen && (
         <div
@@ -105,12 +101,14 @@ function DashboardLayout() {
 
       {/* Conteneur principal (décalé selon la largeur de la sidebar avec transition animée) */}
       <div
-        className={`flex min-h-screen flex-col transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'lg:ml-[68px]' : 'lg:ml-60'
+        className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
         }`}
       >
-        {/* VRAI Header Permanent (Desktop ET Mobile) */}
-        <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-canvas/80 px-4 sm:px-6 backdrop-blur-md">
+        {/* La "Carte" du Dashboard style Lumail */}
+        <div className="flex-1 flex flex-col bg-surface lg:m-2 lg:rounded-2xl border border-border overflow-hidden shadow-sm relative">
+          {/* VRAI Header Permanent (Desktop ET Mobile) */}
+          <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-surface/90 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-3">
             {/* Bouton Menu sur mobile */}
             <Tooltip>
@@ -142,9 +140,7 @@ function DashboardLayout() {
               <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
             </Tooltip>
 
-            {/* Fil d'Ariane — icône maison (lien vers l'Accueil) + chevron +
-                page courante, dans une pill, cohérent partout (desktop et
-                mobile) au lieu du "Reflet /" texte simple d'avant. */}
+            {/* Fil d'Ariane */}
             <div className="flex items-center gap-1.5 rounded-md border border-border bg-elevated px-2.5 py-1.5 text-xs">
               <Link
                 to="/dashboard"
@@ -154,22 +150,28 @@ function DashboardLayout() {
                 <Home className="size-3.5" />
               </Link>
               <ChevronRight className="size-3.5 text-ink-muted" />
-              <span className="font-medium text-ink-primary lg:text-sm lg:font-semibold">{currentTitle}</span>
+              <span className="font-medium text-ink-primary lg:text-sm lg:font-semibold">{pageTitles[pathname] || 'Tableau de bord'}</span>
 
-              {/* Repère visuel constant tant que la marque n'est pas créée */}
               {isBrandConfigured === false && (
                 <span className="ml-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
                   Non configuré
                 </span>
               )}
             </div>
+            
+            {/* Faux champ de recherche pour ouvrir la Command Palette */}
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+              className="hidden sm:flex items-center gap-2 rounded-md border border-border bg-elevated px-3 py-1.5 text-xs text-ink-muted transition-colors hover:bg-surface hover:text-ink-primary w-48 md:w-64 lg:ml-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>Search...</span>
+              <kbd className="ml-auto flex h-5 items-center gap-1 rounded border border-border bg-surface px-1.5 font-mono text-[10px] font-medium text-ink-muted">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </button>
           </div>
 
-          {/* Section droite du Header — centre de notifications (§36D.8),
-              remplace l'ancien badge "En ligne" qui n'était adossé à
-              aucune donnée réelle. Sur mobile, l'avatar donne un accès direct
-              au compte/déconnexion sans ouvrir le tiroir puis scroller
-              jusqu'en bas de la sidebar. */}
           <div className="flex items-center gap-2 sm:gap-3">
             <HeaderMeasureButton />
             <Tooltip>
@@ -198,6 +200,7 @@ function DashboardLayout() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
+        </div>
       </div>
     </div>
   )
