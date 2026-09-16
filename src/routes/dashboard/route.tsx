@@ -12,6 +12,8 @@ import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
 import { CommandPalette } from '~/components/dashboard/CommandPalette'
+import { usePreferences } from '~/hooks/use-preferences'
+import { PersonalizationDrawer } from '~/components/dashboard/PersonalizationDrawer'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardLayout,
@@ -29,7 +31,8 @@ const pageTitles: Record<string, string> = {
 function DashboardLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const { sidebarState } = usePreferences()
+  const [isCollapsed, setIsCollapsed] = useState(sidebarState === 'collapsed')
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const queryClient = useQueryClient()
   const isFetching = useIsFetching() > 0
@@ -91,17 +94,19 @@ function DashboardLayout() {
       )}
 
       {/* Sidebar (rétractable avec animation fluide sur desktop, tiroir sur mobile) */}
-      <Sidebar
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-      />
+      {sidebarState !== 'hidden' && (
+        <Sidebar
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        />
+      )}
 
       {/* Conteneur principal (décalé selon la largeur de la sidebar avec transition animée) */}
       <div
         className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
+          sidebarState === 'hidden' ? 'lg:pl-0' : isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
         }`}
       >
         {/* La "Carte" du Dashboard style Lumail */}
@@ -125,19 +130,21 @@ function DashboardLayout() {
             </Tooltip>
 
             {/* Bouton Collapse / Rétractation sur grand écran */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setIsCollapsed((prev) => !prev)}
-                  className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
-                  aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
-                >
-                  <PanelLeft className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
-            </Tooltip>
+            {sidebarState !== 'hidden' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setIsCollapsed((prev) => !prev)}
+                    className="hidden lg:flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors"
+                    aria-label={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
+                  >
+                    <PanelLeft className="size-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}</TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Fil d'Ariane */}
             <div className="flex items-center gap-1.5 rounded-md border border-border bg-elevated px-2.5 py-1.5 text-xs">
@@ -178,6 +185,7 @@ function DashboardLayout() {
               <TooltipContent>Actualiser</TooltipContent>
             </Tooltip>
             <ThemeToggle />
+            <PersonalizationDrawer />
             <NotificationCenter />
             <div className="lg:hidden">
               <AccountMenu variant="header" />

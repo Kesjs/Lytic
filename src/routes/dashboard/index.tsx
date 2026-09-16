@@ -15,6 +15,8 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 import { isFreePlan } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+import { usePreferences } from '~/hooks/use-preferences'
+import { cn } from '~/lib/utils'
 import { HelpCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -24,6 +26,7 @@ export const Route = createFileRoute('/dashboard/')({
 
 function AccueilPage() {
   const [setupOpen, setSetupOpen] = useState(false)
+  const { dashboardDensity } = usePreferences()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
@@ -125,9 +128,17 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className="flex flex-col lg:flex-row gap-4"
+        className={cn(
+          "gap-4",
+          dashboardDensity === 'compact' 
+            ? "flex flex-col lg:flex-row" 
+            : "grid grid-cols-1 xl:grid-cols-[260px_1fr_340px]"
+        )}
       >
-        <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
+        <div className={cn(
+          "flex flex-col justify-center rounded-lg border border-border bg-surface p-4",
+          dashboardDensity === 'compact' ? "w-full lg:w-[280px] shrink-0" : ""
+        )}>
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
@@ -191,7 +202,14 @@ function AccueilPage() {
           )}
         </div>
 
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {dashboardDensity === 'spacious' && <ScoreChart hasAnyRun={!!latestRun} />}
+
+        <div className={cn(
+          "gap-3",
+          dashboardDensity === 'compact' 
+            ? "flex-1 grid grid-cols-2 lg:grid-cols-4" 
+            : "grid grid-cols-2"
+        )}>
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
@@ -221,14 +239,16 @@ function AccueilPage() {
         </div>
       </motion.header>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="h-[220px]"
-      >
-        <ScoreChart hasAnyRun={!!latestRun} />
-      </motion.div>
+      {dashboardDensity === 'compact' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="h-[220px]"
+        >
+          <ScoreChart hasAnyRun={!!latestRun} />
+        </motion.div>
+      )}
 
       {isFreePlan(brand.plan) && latestRun && (
         <motion.div 
