@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: 'Est-ce que Reflet utilise ChatGPT directement ?',
-    a: "Oui, Reflet interroge ChatGPT avec les questions que vos prospects pourraient réellement poser, puis analyse les réponses obtenues.",
+    a: 'Oui, Reflet interroge ChatGPT avec les questions que vos prospects pourraient réellement poser, puis analyse les réponses obtenues.',
   },
   {
     q: 'Pourquoi les réponses peuvent-elles varier ?',
@@ -40,30 +40,45 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="border-t border-hairline border-border px-6 py-24">
-      <div className="mx-auto max-w-2xl">
-        <h2 className="text-center text-3xl font-medium tracking-tight text-ink-primary">Questions fréquentes</h2>
-        <div className="mt-12 divide-y divide-border border-b border-t border-border">
-          {faqs.map((item, i) => (
-            <div key={item.q}>
-              <button
-                type="button"
-                onClick={() => setOpen(open === i ? null : i)}
-                className="flex w-full items-center justify-between py-5 text-left text-sm font-medium text-ink-primary"
-              >
-                {item.q}
-                <ChevronDown className={`size-4 shrink-0 text-ink-muted transition-transform duration-200 ${open === i ? 'rotate-180' : ''}`} />
-              </button>
-              <div
-                className="grid overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-                style={{ gridTemplateRows: open === i ? '1fr' : '0fr' }}
-              >
-                <div className="overflow-hidden">
-                  <p className="pb-5 text-sm leading-relaxed text-ink-secondary">{item.a}</p>
+    <section className="border-t border-hairline border-border bg-canvas">
+      <div className="mx-auto grid w-full max-w-5xl grid-cols-1 border-x-0 border-border md:grid-cols-2 md:border-x">
+        {/* Colonne intro */}
+        <div className="flex flex-col gap-4 border-b border-border px-6 pt-16 pb-8 md:border-b-0 md:border-e md:px-10 md:py-20">
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-muted">FAQ</span>
+          <h2 className="font-display text-4xl font-medium leading-[1.04] tracking-tight text-ink-primary md:text-5xl">
+            Questions, réponses.
+          </h2>
+          <p className="max-w-sm text-sm text-ink-secondary">
+            Les questions qu'on nous pose le plus souvent. Toujours bloqué ? Contactez-nous.
+          </p>
+        </div>
+
+        {/* Colonne accordéon */}
+        <div className="flex flex-col justify-center px-6 py-6 md:px-8">
+          <div className="divide-y divide-border">
+            {faqs.map((item, i) => (
+              <div key={item.q}>
+                <button
+                  type="button"
+                  onClick={() => setOpen(open === i ? null : i)}
+                  className="flex w-full items-center justify-between py-5 text-left text-sm font-medium text-ink-primary"
+                >
+                  {item.q}
+                  <ChevronDown
+                    className={`size-4 shrink-0 text-ink-muted transition-transform duration-200 ${open === i ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <div
+                  className="grid overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                  style={{ gridTemplateRows: open === i ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden">
+                    <p className="pb-5 text-sm leading-relaxed text-ink-secondary">{item.a}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

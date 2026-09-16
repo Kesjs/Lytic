@@ -1,32 +1,64 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Check, Sparkles, Building2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 
-const featuresFree = [
-  '1 site suivi',
-  '1 question suivie',
-  '1 mesure (aperçu unique)',
-  'Score + 1 concurrent visible',
-  'Accès Bots IA',
+type Feature = { label: string; detail?: string }
+
+const featuresFree: Feature[] = [
+  { label: '1 site suivi' },
+  { label: '1 question suivie' },
+  { label: '1 mesure (aperçu unique)' },
+  { label: 'Score + 1 concurrent visible' },
+  {
+    label: 'Accès Bots IA',
+    detail: 'Autorisation de crawl pour GPTBot, ClaudeBot et PerplexityBot sur votre contenu indexable.',
+  },
 ]
 
-const featuresPro = [
-  '1 site suivi',
-  "Jusqu'à 30 questions",
-  'Mesure continue automatique',
-  'Interrogation de ChatGPT',
-  'Analyse de positionnement',
-  'Détection des opportunités'
+const featuresPro: Feature[] = [
+  { label: '1 site suivi' },
+  { label: "Jusqu'à 30 questions" },
+  {
+    label: 'Mesure continue automatique',
+    detail: 'Vérification automatique de votre visibilité une fois par semaine, sans action de votre part.',
+  },
+  { label: 'Interrogation de ChatGPT' },
+  { label: 'Analyse de positionnement' },
+  { label: 'Détection des opportunités' },
 ]
 
-const featuresEnterprise = [
-  'Multi-sites & multi-marques',
-  'Questions illimitées',
-  'Accès API complet',
-  'Multi-modèles (ChatGPT, Perplexity, Claude)',
-  'Support dédié (Slack/Email)',
-  'SSO & SLA garantis'
+const featuresEnterprise: Feature[] = [
+  { label: 'Multi-sites & multi-marques' },
+  { label: 'Questions illimitées' },
+  { label: 'Accès API complet' },
+  { label: 'Multi-modèles (ChatGPT, Perplexity, Claude)' },
+  { label: 'Support dédié (Slack/Email)' },
+  {
+    label: 'SSO & SLA garantis',
+    detail: 'Connexion unique (SSO/SAML) et engagement contractuel de disponibilité (SLA), avec support prioritaire.',
+  },
 ]
+
+function FeatureItem({ feature }: { feature: Feature }) {
+  return (
+    <li className="flex items-start gap-3 text-sm text-ink-secondary">
+      <Check className="mt-0.5 size-4 shrink-0 text-ink-muted" />
+      {feature.detail ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-default underline decoration-ink-muted/50 decoration-dotted underline-offset-4">
+              {feature.label}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[240px] text-left">{feature.detail}</TooltipContent>
+        </Tooltip>
+      ) : (
+        feature.label
+      )}
+    </li>
+  )
+}
 
 export function Pricing() {
   const [annual, setAnnual] = useState(false)
@@ -88,12 +120,7 @@ export function Pricing() {
 
             <ul className="mb-8 flex-1 space-y-4">
               {featuresFree.map((feature) => (
-                <li key={feature} className="flex items-start gap-3 text-sm text-ink-secondary">
-                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-border text-ink-primary">
-                    <Check className="size-3.5" />
-                  </div>
-                  {feature}
-                </li>
+                <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
 
@@ -132,12 +159,7 @@ export function Pricing() {
 
             <ul className="mb-8 flex-1 space-y-4">
               {featuresPro.map((feature) => (
-                <li key={feature} className="flex items-start gap-3 text-sm text-ink-secondary">
-                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand">
-                    <Check className="size-3.5" />
-                  </div>
-                  {feature}
-                </li>
+                <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
 
@@ -169,12 +191,7 @@ export function Pricing() {
 
             <ul className="mb-8 flex-1 space-y-4">
               {featuresEnterprise.map((feature) => (
-                <li key={feature} className="flex items-start gap-3 text-sm text-ink-secondary">
-                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-border text-ink-primary">
-                    <Check className="size-3.5" />
-                  </div>
-                  {feature}
-                </li>
+                <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
 
