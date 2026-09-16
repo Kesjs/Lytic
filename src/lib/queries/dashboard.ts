@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
+import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
 
 // Toutes les requêtes ci-dessous lisent les vraies tables Supabase
 // (brands, measurement_runs, opportunities, events, site_pages…).
@@ -52,6 +53,7 @@ async function computeLatestRunInsights(
   supabase: ReturnType<typeof getSupabaseServerClient>,
   brandId: string,
   latestRun: { id: string; status: string } | null,
+  opts: { isFree?: boolean } = {},
 ) {
   const empty = {
     kpis: {
@@ -63,6 +65,7 @@ async function computeLatestRunInsights(
     } as HomeKpis,
     questionsPerf: [] as QuestionPerf[],
     topCompetitors: [] as CompetitorMini[],
+    totalCompetitorsCount: 0,
   }
 
   // Pas de run exploitable (aucun run, ou run pas encore terminé) → tout reste vide.
@@ -104,10 +107,13 @@ async function computeLatestRunInsights(
   }
 
   const competitorById = new Map((competitors ?? []).map((c) => [c.id, c.name]))
-  const topCompetitors: CompetitorMini[] = [...competitorMentions.entries()]
+  const sortedCompetitors = [...competitorMentions.entries()]
     .filter(([id]) => competitorById.has(id))
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
+  const totalCompetitorsCount = sortedCompetitors.length
+  const visibleLimit = opts.isFree ? FREE_MAX_COMPETITORS_VISIBLE : 3
+  const topCompetitors: CompetitorMini[] = sortedCompetitors
+    .slice(0, visibleLimit)
     .map(([id, mentions]) => ({ id, name: competitorById.get(id)!, mentions }))
 
   const observationByQuestion = new Map(observations.map((o) => [o.question_id, o]))
@@ -141,7 +147,7 @@ async function computeLatestRunInsights(
   const successCount = observations.filter(o => o.raw_answer !== null).length
   const actualStatus = latestRun.status === 'success' && successCount < questions.length ? 'partial' : latestRun.status
 
-  return { kpis, questionsPerf, topCompetitors, actualStatus }
+  return { kpis, questionsPerf, topCompetitors, totalCompetitorsCount, actualStatus }
 }
 
 export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(async (): Promise<any> => {
@@ -190,10 +196,11 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
   let dataRun = validRuns[0] ?? null
   const previousRun = validRuns[1] ?? null
 
-  const { kpis, questionsPerf, topCompetitors, actualStatus } = await computeLatestRunInsights(
+  const { kpis, questionsPerf, topCompetitors, totalCompetitorsCount, actualStatus } = await computeLatestRunInsights(
     supabase,
     brand.id,
     dataRun,
+    { isFree: isFreePlan(brand.plan) },
   )
 
   if (latestRun && actualStatus && latestRun.id === dataRun?.id && latestRun.status !== actualStatus) {
@@ -214,5 +221,6 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     kpis,
     questionsPerf,
     topCompetitors,
+    totalCompetitorsCount,
   } as const
 })

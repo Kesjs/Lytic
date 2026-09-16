@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
+import { signUpWithGuard } from '~/lib/queries/auth'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
@@ -134,12 +135,7 @@ function LoginPage() {
     }
     setIsLoading(true)
     try {
-      const supabase = getSupabaseBrowserClient()
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: password || '',
-      })
-      if (error) throw error
+      await signUpWithGuard({ data: { email, password: password || '' } })
       toast.success('Compte créé ! Vérifiez vos emails pour valider votre inscription.')
     } catch (err: any) {
       toast.error(err?.message || "Erreur lors de l'inscription")

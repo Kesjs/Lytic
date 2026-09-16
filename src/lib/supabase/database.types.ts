@@ -28,7 +28,7 @@ export interface Database {
           owner_id: string
           name: string
           website_url: string | null
-          plan: 'trial' | 'active' | 'past_due' | 'canceled'
+          plan: 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
           created_at: string
           updated_at: string
         }
@@ -37,7 +37,7 @@ export interface Database {
           owner_id: string
           name: string
           website_url?: string | null
-          plan?: 'trial' | 'active' | 'past_due' | 'canceled'
+          plan?: 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
           created_at?: string
           updated_at?: string
         }
@@ -425,6 +425,23 @@ export interface Database {
           notify_billing?: boolean
           created_at?: string
           updated_at?: string
+        }
+        Update: { [key: string]: any }
+      }
+      signup_attempts: {
+        Row: {
+          id: string
+          ip_address: string
+          email: string
+          user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ip_address: string
+          email: string
+          user_id?: string | null
+          created_at?: string
         }
         Update: { [key: string]: any }
       }

@@ -9,6 +9,7 @@ import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
+import { isFreePlan } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/')({
   component: AccueilPage,
@@ -170,6 +171,21 @@ function AccueilPage() {
 
         <ScoreChart hasAnyRun={!!latestRun} />
       </header>
+
+      {isFreePlan(brand.plan) && latestRun && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3">
+          <p className="text-sm text-ink-secondary">
+            <span className="font-medium text-ink-primary">Plan Free — 1 mesure utilisée.</span>{' '}
+            Passez au plan Pro pour remesurer et débloquer toutes les fonctionnalités.
+          </p>
+          <Link
+            to="/dashboard/parametres"
+            className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+          >
+            Passer Pro
+          </Link>
+        </div>
+      )}
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard

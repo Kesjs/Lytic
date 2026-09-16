@@ -4,10 +4,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ChevronDown, EyeOff } from 'lucide-react'
+import { ChevronDown, EyeOff, Lock } from 'lucide-react'
 import { fetchCompetitorsOverview, hideCompetitor, type CompetitorRow } from '~/lib/queries/competitors'
 import { CompetitorsChart } from '~/components/dashboard/CompetitorsChart'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
+import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/concurrents')({
   component: ConcurrentsPage,
@@ -42,6 +43,9 @@ function ConcurrentsPage() {
   }
 
   const { brand, latestRun, ownStats, competitors } = data
+  const free = isFreePlan(brand.plan)
+  const visibleCompetitors = free ? competitors.slice(0, FREE_MAX_COMPETITORS_VISIBLE) : competitors
+  const lockedCount = free ? Math.max(0, competitors.length - FREE_MAX_COMPETITORS_VISIBLE) : 0
 
   async function handleHide(id: string, name: string) {
     setHidingId(id)
@@ -84,7 +88,7 @@ function ConcurrentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {competitors.map((c: any) => (
+                {visibleCompetitors.map((c: any) => (
                   <CompetitorRowLine
                     key={c.id}
                     competitor={c}
@@ -97,6 +101,28 @@ function ConcurrentsPage() {
                 ))}
               </tbody>
             </table>
+
+            {lockedCount > 0 && (
+              <div className="relative mt-3 overflow-hidden rounded-lg border border-border">
+                <div aria-hidden="true" className="space-y-2 p-3 blur-sm select-none">
+                  {Array.from({ length: Math.min(lockedCount, 3) }).map((_, i) => (
+                    <div key={i} className="h-8 rounded bg-elevated" />
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-canvas/70 px-4 text-center">
+                  <Lock className="size-4 text-ink-muted" />
+                  <p className="text-sm text-ink-secondary">
+                    + {lockedCount} autre{lockedCount > 1 ? 's' : ''} concurrent{lockedCount > 1 ? 's' : ''}
+                  </p>
+                  <a
+                    href="/dashboard/parametres"
+                    className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+                  >
+                    Débloquer tous vos concurrents avec Pro
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

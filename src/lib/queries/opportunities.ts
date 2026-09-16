@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
+import { isFreePlan } from '~/lib/plan'
 
 export type OpportunityStatus = 'open' | 'resolved' | 'dismissed' | 'no_longer_observed'
 export type OpportunityPriority = 'low' | 'medium' | 'high'
@@ -36,6 +37,14 @@ export interface EvidenceStep {
   content: string | null
 }
 
+// Plan Free : pas de vraie Opportunity générée par IA (pas d'appel à
+// generateOpportunities) — juste un insight construit directement depuis
+// observations de la mesure unique.
+export interface FreeInsight {
+  questionText: string
+  notRecommended: true
+}
+
 const priorityWeight: Record<OpportunityPriority, number> = { high: 0, medium: 1, low: 2 }
 
 // Liste des opportunités de la marque, questions concernées incluses.
@@ -55,13 +64,52 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
 
   if (!brand) return { brand: null } as const
 
+  if (isFreePlan(brand.plan)) {
+    // Pas de génération IA d'opportunités pour le plan Free — un insight
+    // simple, construit directement depuis observations, sans coût OpenAI.
+    const { data: latestRun } = await supabase
+      .from('measurement_runs')
+      .select('id')
+      .eq('brand_id', brand.id)
+      .or('status.eq.success,status.eq.partial')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!latestRun) {
+      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null } as const
+    }
+
+    const { data: notRecommended } = await supabase
+      .from('observations')
+      .select('question_id')
+      .eq('run_id', latestRun.id)
+      .eq('brand_recommended', false)
+      .limit(1)
+      .maybeSingle()
+
+    if (!notRecommended) {
+      // Marque bien recommandée sur son unique question → état vide inchangé.
+      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null } as const
+    }
+
+    const { data: question } = await supabase
+      .from('questions')
+      .select('text')
+      .eq('id', notRecommended.question_id)
+      .maybeSingle()
+
+    const freeInsight: FreeInsight = { questionText: question?.text ?? '', notRecommended: true }
+    return { brand, opportunities: [] as OpportunityRow[], freeInsight } as const
+  }
+
   const { data: opportunities } = await supabase
     .from('opportunities')
     .select('*')
     .eq('brand_id', brand.id)
 
   if (!opportunities || opportunities.length === 0) {
-    return { brand, opportunities: [] as OpportunityRow[] } as const
+    return { brand, opportunities: [] as OpportunityRow[], freeInsight: null } as const
   }
 
   const opportunityIds = opportunities.map((o) => o.id)
@@ -106,7 +154,7 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
       return b.confidence - a.confidence
     })
 
-  return { brand, opportunities: rows } as const
+  return { brand, opportunities: rows, freeInsight: null } as const
 })
 
 // Chaîne de preuves d'une opportunité, chargée à la demande au clic sur

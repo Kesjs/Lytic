@@ -2,6 +2,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
 import { isValidWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
+import { FREE_MAX_QUESTIONS, isFreePlan } from '~/lib/plan'
 
 // Toutes les lectures/écritures ci-dessous respectent le RLS par owner_id —
 // aucun accès admin. Rien n'est inventé : les sections sans backend réel
@@ -18,7 +19,7 @@ export interface SettingsBrand {
   id: string
   name: string
   websiteUrl: string | null
-  plan: 'trial' | 'active' | 'past_due' | 'canceled'
+  plan: 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
   createdAt: string
 }
 
@@ -59,7 +60,7 @@ async function requireOwnedBrand(
 ) {
   const { data: brand } = await supabase
     .from('brands')
-    .select('id')
+    .select('id, plan')
     .eq('id', brandId)
     .eq('owner_id', userId)
     .maybeSingle()
@@ -218,8 +219,14 @@ export const createBrandWithQuestions = createServerFn({ method: 'POST' })
     if (questions.length === 0) {
       throw new Error('Ajoutez au moins une question à suivre.')
     }
-    if (questions.length > MAX_TRACKED_QUESTIONS) {
-      throw new Error(`Limite de ${MAX_TRACKED_QUESTIONS} questions suivies atteinte pour ce plan.`)
+    // Toute nouvelle marque démarre en plan Free (pas de facturation à la
+    // création — le passage en Pro se fait ailleurs, une fois Stripe branché).
+    // La limite Free (1 question) s'applique donc systématiquement ici, pas
+    // la limite générale MAX_TRACKED_QUESTIONS réservée aux comptes déjà Pro.
+    if (questions.length > FREE_MAX_QUESTIONS) {
+      throw new Error(
+        `Le plan Free est limité à ${FREE_MAX_QUESTIONS} question suivie — passez au plan Pro pour en suivre jusqu'à ${MAX_TRACKED_QUESTIONS}.`,
+      )
     }
     if (questions.some((q) => q.length > QUESTION_MAX_LENGTH)) {
       throw new Error(`Une question dépasse la limite de ${QUESTION_MAX_LENGTH} caractères.`)
@@ -227,7 +234,7 @@ export const createBrandWithQuestions = createServerFn({ method: 'POST' })
 
     const { data: brand, error: brandError } = await supabase
       .from('brands')
-      .insert({ owner_id: user.id, name, website_url: websiteUrl })
+      .insert({ owner_id: user.id, name, website_url: websiteUrl, plan: 'free' })
       .select('id')
       .single()
     if (brandError) throw new Error(brandError.message)
@@ -254,7 +261,7 @@ export const addQuestion = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<any> => {
     const supabase = getSupabaseServerClient()
     const user = await requireUser(supabase)
-    await requireOwnedBrand(supabase, user.id, data.brandId)
+    const brand = await requireOwnedBrand(supabase, user.id, data.brandId)
 
     const text = data.text.trim()
     if (!text) throw new Error('La question ne peut pas être vide.')
@@ -267,8 +274,17 @@ export const addQuestion = createServerFn({ method: 'POST' })
       .select('id', { count: 'exact', head: true })
       .eq('brand_id', data.brandId)
 
-    if ((count ?? 0) >= MAX_TRACKED_QUESTIONS) {
-      throw new Error(`Limite de ${MAX_TRACKED_QUESTIONS} questions suivies atteinte pour ce plan.`)
+    // Pas dans le texte littéral de la spec (qui ne couvre que la création de
+    // marque), mais nécessaire pour que la limite Free tienne : sans ce garde,
+    // un compte Free pourrait ajouter des questions après coup et dépasser
+    // FREE_MAX_QUESTIONS.
+    const maxQuestions = isFreePlan(brand.plan) ? FREE_MAX_QUESTIONS : MAX_TRACKED_QUESTIONS
+    if ((count ?? 0) >= maxQuestions) {
+      throw new Error(
+        isFreePlan(brand.plan)
+          ? `Le plan Free est limité à ${FREE_MAX_QUESTIONS} question suivie — passez au plan Pro pour en suivre davantage.`
+          : `Limite de ${MAX_TRACKED_QUESTIONS} questions suivies atteinte pour ce plan.`,
+      )
     }
 
     const { error } = await supabase

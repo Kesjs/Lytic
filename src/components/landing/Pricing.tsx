@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Check, Sparkles, Building2 } from 'lucide-react'
 
+const featuresFree = [
+  '1 site suivi',
+  '1 question suivie',
+  '1 mesure (aperçu unique)',
+  'Score + 1 concurrent visible',
+  'Accès Bots IA',
+]
+
 const featuresPro = [
   '1 site suivi',
   "Jusqu'à 30 questions",
@@ -63,7 +71,40 @@ export function Pricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-2 lg:gap-12">
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-6xl lg:grid-cols-3 lg:gap-8">
+          {/* Free Plan */}
+          <div className="flex flex-col rounded-3xl border border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
+            <div className="mb-6">
+              <h3 className="font-display text-2xl font-semibold text-ink-primary">Free</h3>
+              <p className="mt-2 text-sm text-ink-secondary">
+                Pour voir un aperçu réel de votre visibilité, sans engagement.
+              </p>
+            </div>
+
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="font-display text-5xl font-bold tracking-tight text-ink-primary">0 €</span>
+            </div>
+            <p className="mb-6 text-sm text-ink-muted">Sans carte bancaire</p>
+
+            <ul className="mb-8 flex-1 space-y-4">
+              {featuresFree.map((feature) => (
+                <li key={feature} className="flex items-start gap-3 text-sm text-ink-secondary">
+                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-border text-ink-primary">
+                    <Check className="size-3.5" />
+                  </div>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              to="/signup"
+              className="mt-auto flex w-full items-center justify-center rounded-xl border border-border bg-transparent py-3 text-sm font-medium text-ink-primary transition-all hover:border-border-strong hover:bg-elevated"
+            >
+              Commencer gratuitement
+            </Link>
+          </div>
+
           {/* Pro Plan */}
           <div className="relative flex flex-col rounded-3xl border border-brand/50 bg-surface p-8 shadow-2xl shadow-brand/10 ring-1 ring-brand/50">
             <div className="absolute -top-4 left-0 right-0 flex justify-center">

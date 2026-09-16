@@ -2,22 +2,23 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { X, Plus, Trash2, Sparkles, Globe, Loader2 } from 'lucide-react'
+import { X, Trash2, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createBrandWithQuestions, generateQuestionsWithAI } from '~/lib/queries/settings'
-import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
-import { ShiningButton } from '~/components/ui/shining-button'
+import { createBrandWithQuestions } from '~/lib/queries/settings'
+import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH } from '~/lib/utils'
+import { FREE_MAX_QUESTIONS } from '~/lib/plan'
 import { runFullMeasurement } from '~/lib/measurement-client'
 
 // Point d'entrée unique pour sortir de l'état "compte sans marque" — ouvert
-// depuis l'Accueil (État A) et depuis Paramètres → Site. Saisie manuelle
-// des questions : pas de génération/scraping auto dans cette version
-// (cf. décision prise avec l'utilisateur sur le reste-a-faire.md).
+// depuis l'Accueil (État A) et depuis Paramètres → Site. Toute nouvelle marque
+// démarre en plan Free (settings.ts, createBrandWithQuestions) : ce tiroir
+// n'a donc jamais à distinguer les plans, il applique directement la limite
+// Free (1 question, pas de génération IA — reflet-plan-free-spec.md §5).
 export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
-  const [questions, setQuestions] = useState<string[]>(['', '', ''])
+  const [questions, setQuestions] = useState<string[]>([''])
   const [isMeasuring, setIsMeasuring] = useState(false)
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
 
@@ -54,22 +55,6 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
     onError: (err: Error) => toast.error(err.message || 'Impossible de configurer la marque.'),
   })
 
-  const generateQuestionsMutation = useMutation({
-    mutationFn: () => generateQuestionsWithAI({ data: { name, websiteUrl: normalizeWebsiteUrl(websiteUrl) } }),
-    onSuccess: (data) => {
-      setQuestions(data.length > 0 ? data : [''])
-      toast.success('Questions générées par l\'IA !')
-    },
-    onError: (err: Error) => {
-      const msg = err.message || ''
-      if (msg.includes('503') || msg.includes('Service Unavailable') || msg.includes('high demand') || msg.includes('overloaded')) {
-        toast.error("L'IA est temporairement très sollicitée. Veuillez réessayer dans quelques instants.")
-      } else {
-        toast.error('Impossible de générer les questions.')
-      }
-    },
-  })
-
   // urlValid doit être calculé avant tout early-return : sinon le nombre de
   // hooks appelés change entre le rendu fermé (open=false) et le rendu
   // ouvert (open=true), ce qui viole les Rules of Hooks et déclenche
@@ -84,11 +69,6 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
 
   function removeQuestion(i: number) {
     setQuestions((qs) => qs.filter((_, idx) => idx !== i))
-  }
-
-  function addQuestionField() {
-    if (questions.length >= MAX_TRACKED_QUESTIONS) return
-    setQuestions((qs) => [...qs, ''])
   }
 
   const filledQuestions = questions.filter((q) => q.trim()).length
@@ -171,25 +151,11 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                 <span className="text-xs font-medium text-ink-secondary">
                   Questions à suivre
                 </span>
-                <span className="text-[11px] text-ink-muted">{filledQuestions}/{MAX_TRACKED_QUESTIONS}</span>
+                <span className="text-[11px] text-ink-muted">{filledQuestions}/{FREE_MAX_QUESTIONS}</span>
               </div>
               <p className="mt-1 text-[11px] text-ink-muted">
-                Ce que vos prospects pourraient demander à ChatGPT — au moins une pour commencer.
+                Ce que vos prospects pourraient demander à ChatGPT.
               </p>
-              
-              <ShiningButton
-                type="button"
-                onClick={() => generateQuestionsMutation.mutate()}
-                disabled={!name.trim() || !urlValid || generateQuestionsMutation.isPending}
-                className="mt-3 w-full gap-1.5"
-              >
-                {generateQuestionsMutation.isPending ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="size-3.5" />
-                )}
-                {generateQuestionsMutation.isPending ? 'Génération en cours...' : 'Générer avec l\'IA'}
-              </ShiningButton>
 
               <div className="mt-4 flex flex-col gap-5">
                 <AnimatePresence initial={false}>
@@ -247,16 +213,6 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
                   })}
                 </AnimatePresence>
               </div>
-
-              <button
-                type="button"
-                onClick={addQuestionField}
-                disabled={questions.length >= MAX_TRACKED_QUESTIONS}
-                className="mt-2 flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
-              >
-                <Plus className="size-3.5" />
-                Ajouter une question
-              </button>
             </div>
           </div>
         </div>

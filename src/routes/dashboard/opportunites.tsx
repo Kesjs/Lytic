@@ -13,6 +13,7 @@ import {
   type OpportunityStatus,
   type OpportunityPriority,
   type EvidenceStepType,
+  type FreeInsight,
 } from '~/lib/queries/opportunities'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 
@@ -89,6 +90,12 @@ function OpportunitesPage() {
   const opportunities = data.opportunities
 
   if (opportunities.length === 0) {
+    // Plan Free : un insight simple construit depuis observations plutôt que
+    // l'état vide générique, si la marque n'est pas recommandée sur son
+    // unique question suivie. Sinon (bien recommandée) : état vide inchangé.
+    if (data.freeInsight) {
+      return <FreeInsightCard insight={data.freeInsight} />
+    }
     return <DashboardStateView state="no_opportunity" />
   }
 
@@ -148,6 +155,32 @@ function OpportunitesPage() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function FreeInsightCard({ insight }: { insight: FreeInsight }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-elevated border border-border text-ink-muted">
+          <Lightbulb className="size-4" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-ink-primary">Une question sans recommandation</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+            Sur « {insight.questionText} », votre marque n'a pas été recommandée dans la réponse
+            observée.
+          </p>
+        </div>
+      </div>
+      <a
+        href="/dashboard/parametres"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+      >
+        Débloquez le plan d'action détaillé avec Reflet Pro
+        <ArrowRight className="size-3.5" />
+      </a>
     </div>
   )
 }

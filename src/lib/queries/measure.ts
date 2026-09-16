@@ -7,6 +7,7 @@ import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
 import { aggregateSamples } from '~/lib/aggregate'
+import { isFreePlan, FREE_SAMPLES_PER_QUESTION, PRO_SAMPLES_PER_QUESTION } from '~/lib/plan'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
 // Architecturé en deux server functions distinctes pour rester dans les
@@ -69,19 +70,35 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     // Vérifie que la marque appartient à l'utilisateur (RLS)
     const { data: brand, error: brandError } = await supabase
       .from('brands')
-      .select('id, name, website_url')
+      .select('id, name, website_url, plan')
       .eq('id', data.brandId)
       .eq('owner_id', auth.user.id)
       .maybeSingle()
 
     if (brandError || !brand) throw new Error('Marque introuvable ou accès refusé')
 
-    // Vérifie le délai de 7 jours
-    const { allowed, daysRemaining } = await checkMeasurementDelay(supabase, brand.id)
-    if (!allowed) {
-      throw new Error(
-        `Prochaine mesure manuelle disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
-      )
+    if (isFreePlan(brand.plan)) {
+      // Plan Free : jamais de remesure, quel que soit le délai — une seule
+      // mesure "aperçu" à vie tant que le compte n'est pas passé en Pro.
+      const { data: existingRun } = await supabase
+        .from('measurement_runs')
+        .select('id')
+        .eq('brand_id', brand.id)
+        .or('status.eq.success,status.eq.partial')
+        .limit(1)
+        .maybeSingle()
+
+      if (existingRun) {
+        throw new Error('Mesure gratuite déjà utilisée — passez au plan Pro pour remesurer.')
+      }
+    } else {
+      // Vérifie le délai entre deux mesures (plans payants uniquement)
+      const { allowed, daysRemaining } = await checkMeasurementDelay(supabase, brand.id)
+      if (!allowed) {
+        throw new Error(
+          `Prochaine mesure manuelle disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
+        )
+      }
     }
 
     // Compte les questions actives
@@ -215,7 +232,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     // Charge la marque séparément pour éviter la jointure non typée
     const { data: brand, error: brandError } = await adminSupabase
       .from('brands')
-      .select('id, name, website_url, owner_id')
+      .select('id, name, website_url, owner_id, plan')
       .eq('id', run.brand_id)
       .single()
 
@@ -363,7 +380,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     // par vote majoritaire — jamais une conclusion sur un seul appel.
     // Voir doc de refonte §3.2/3.3 et src/lib/aggregate.ts.
     const brandDomain = brand.website_url ? extractBrandDomain(brand.website_url) : ''
-    const SAMPLES_PER_QUESTION = 3
+    const SAMPLES_PER_QUESTION = isFreePlan(brand.plan) ? FREE_SAMPLES_PER_QUESTION : PRO_SAMPLES_PER_QUESTION
 
     try {
       // Étape A : SAMPLES_PER_QUESTION appels ChatGPT indépendants, en parallèle

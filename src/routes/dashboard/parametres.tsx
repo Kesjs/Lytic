@@ -21,6 +21,7 @@ import {
   type SettingsData,
 } from '~/lib/queries/settings'
 import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
+import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/parametres')({
   component: ParametresPage,
@@ -31,6 +32,7 @@ const PLAN_LABEL: Record<string, string> = {
   active: 'Actif',
   past_due: 'Paiement en retard',
   canceled: 'Résilié',
+  free: 'Free',
 }
 
 const PLAN_CLASS: Record<string, string> = {
@@ -38,6 +40,7 @@ const PLAN_CLASS: Record<string, string> = {
   active: 'bg-success/10 text-success border-success/30',
   past_due: 'bg-warning/10 text-warning border-warning/30',
   canceled: 'bg-danger/10 text-danger border-danger/30',
+  free: 'bg-brand/10 text-brand-text border-brand/30',
 }
 
 function ParametresPage() {
@@ -341,10 +344,12 @@ function QuestionsSection({
     )
   }
 
+  const maxQuestions = isFreePlan(brand.plan) ? FREE_MAX_QUESTIONS : MAX_TRACKED_QUESTIONS
+
   return (
     <SectionCard
       title="Questions"
-      description={`${questions.length}/${MAX_TRACKED_QUESTIONS} questions suivies. Une question désactivée n'est plus mesurée mais reste visible.`}
+      description={`${questions.length}/${maxQuestions} questions suivies. Une question désactivée n'est plus mesurée mais reste visible.`}
     >
       <div className="space-y-2">
         {questions.length === 0 && (
@@ -483,7 +488,7 @@ function QuestionsSection({
                 onClick={() => newText.trim() && addMutation.mutate()}
                 disabled={
                   addMutation.isPending ||
-                  questions.length >= MAX_TRACKED_QUESTIONS ||
+                  questions.length >= maxQuestions ||
                   !newText.trim() ||
                   newText.length > QUESTION_MAX_LENGTH
                 }
@@ -597,8 +602,10 @@ function NotificationsSection({
 }
 
 // --- Abonnement ---
-// Lecture seule : aucun système de facturation réel n'existe encore.
-// Pas de faux bouton "changer de plan" tant que ça n'est pas branché.
+// Lecture seule : aucun système de facturation réel n'existe encore, donc pas
+// de bouton "changer de plan" qui prétendrait déclencher une vraie action de
+// facturation. Le lien "Passer Pro" ci-dessous n'en est pas un : il renvoie
+// simplement vers la page tarifs, comme n'importe quel lien marketing.
 
 function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
   if (!brand) {
@@ -608,6 +615,8 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
       </SectionCard>
     )
   }
+
+  const free = isFreePlan(brand.plan)
 
   return (
     <SectionCard title="Abonnement">
@@ -627,9 +636,27 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
           {PLAN_LABEL[brand.plan]}
         </span>
       </div>
-      <p className="mt-3 text-xs text-ink-muted">
-        La gestion de la facturation n'est pas encore disponible dans cette version.
-      </p>
+
+      {free ? (
+        <div className="mt-4 rounded-md border border-border bg-elevated p-3">
+          <p className="text-xs font-medium text-ink-primary">Limites du plan Free</p>
+          <ul className="mt-2 space-y-1 text-xs text-ink-muted">
+            <li>• {FREE_MAX_QUESTIONS} question suivie</li>
+            <li>• 1 mesure (aperçu unique, pas de remesure)</li>
+            <li>• {FREE_MAX_COMPETITORS_VISIBLE} concurrent visible</li>
+          </ul>
+          <a
+            href="/#tarifs"
+            className="mt-3 inline-flex items-center rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+          >
+            Passer Pro
+          </a>
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-ink-muted">
+          La gestion de la facturation n'est pas encore disponible dans cette version.
+        </p>
+      )}
     </SectionCard>
   )
 }
