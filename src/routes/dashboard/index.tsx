@@ -560,13 +560,13 @@ function AccueilSkeleton() {
 
 function KpiCard({ label, value, hint, tooltip }: { label: string; value: string | null; hint: string; tooltip?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4">
+    <div className="flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-surface p-3 xl:p-4">
       <div className="flex items-center gap-1.5">
-        <p className="text-xs text-ink-secondary">{label}</p>
+        <p className="truncate text-[11px] text-ink-secondary xl:text-xs" title={label}>{label}</p>
         {tooltip && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="text-ink-muted hover:text-ink-primary transition-colors">
+              <button className="shrink-0 text-ink-muted transition-colors hover:text-ink-primary">
                 <HelpCircle className="size-3.5" />
               </button>
             </TooltipTrigger>
@@ -574,8 +574,8 @@ function KpiCard({ label, value, hint, tooltip }: { label: string; value: string
           </Tooltip>
         )}
       </div>
-      <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink-primary">{value ?? '—'}</p>
-      <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+      <p className="mt-1 truncate font-display text-xl font-semibold tabular-nums text-ink-primary xl:text-2xl">{value ?? '—'}</p>
+      <p className="mt-1 truncate text-[10px] text-ink-muted xl:text-xs" title={hint}>{hint}</p>
     </div>
   )
 }

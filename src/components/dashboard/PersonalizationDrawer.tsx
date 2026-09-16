@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { usePreferences } from '~/hooks/use-preferences'
 import { cn } from '~/lib/utils'
 import { ThemeToggle } from '~/components/ui/theme-toggle'
+import { createPortal } from 'react-dom'
 
 export function PersonalizationDrawer() {
   const [open, setOpen] = React.useState(false)
@@ -20,7 +21,7 @@ export function PersonalizationDrawer() {
       </button>
 
       <AnimatePresence>
-        {open && (
+        {open && typeof document !== 'undefined' && createPortal(
           <>
             {/* Backdrop */}
             <motion.div
@@ -130,7 +131,8 @@ export function PersonalizationDrawer() {
 
               </div>
             </motion.div>
-          </>
+          </>,
+          document.body
         )}
       </AnimatePresence>
     </>
