@@ -125,9 +125,9 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr_340px]"
+        className="flex flex-col lg:flex-row gap-4"
       >
-        <div className="flex flex-col justify-center rounded-lg border border-border bg-surface p-4">
+        <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
@@ -191,9 +191,7 @@ function AccueilPage() {
           )}
         </div>
 
-        <ScoreChart hasAnyRun={!!latestRun} />
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
@@ -222,6 +220,15 @@ function AccueilPage() {
           />
         </div>
       </motion.header>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="h-[220px]"
+      >
+        <ScoreChart hasAnyRun={!!latestRun} />
+      </motion.div>
 
       {isFreePlan(brand.plan) && latestRun && (
         <motion.div 
