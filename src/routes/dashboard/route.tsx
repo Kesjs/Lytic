@@ -12,8 +12,7 @@ import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
 import { CommandPalette } from '~/components/dashboard/CommandPalette'
-import { usePreferences } from '~/hooks/use-preferences'
-import { PersonalizationDrawer } from '~/components/dashboard/PersonalizationDrawer'
+
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardLayout,
