@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+import { SectionCard } from '~/components/ui/section-card'
 import { toast } from 'sonner'
 import { Pencil, Plus, Check, X as XIcon, Globe, Trash2, Clock } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
@@ -78,23 +79,7 @@ function ParametresPage() {
   )
 }
 
-function SectionCard({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-lg border border-border bg-surface p-5">
-      <h2 className="font-display text-sm font-semibold text-ink-primary">{title}</h2>
-      {description && <p className="mt-1 text-xs text-ink-muted">{description}</p>}
-      <div className="mt-4">{children}</div>
-    </section>
-  )
-}
+
 
 function TextField({
   label,

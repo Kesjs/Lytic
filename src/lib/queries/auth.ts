@@ -30,7 +30,7 @@ export const signUpWithGuard = createServerFn({ method: 'POST' })
 
     if (ip !== 'unknown') {
       const since = new Date(Date.now() - SIGNUP_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
-      const { count } = await admin
+      const { count } = await (admin as any)
         .from('signup_attempts')
         .select('id', { count: 'exact', head: true })
         .eq('ip_address', ip)
@@ -52,7 +52,7 @@ export const signUpWithGuard = createServerFn({ method: 'POST' })
     })
     if (error) throw error
 
-    const { error: attemptError } = await admin.from('signup_attempts').insert({
+    const { error: attemptError } = await (admin as any).from('signup_attempts').insert({
       ip_address: ip,
       email,
       user_id: signUpData.user?.id ?? null,

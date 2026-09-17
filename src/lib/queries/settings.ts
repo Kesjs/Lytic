@@ -441,5 +441,22 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
 
     // Dynamic import to avoid running gemini code on client side bundle if not split
     const { generateBrandQuestions } = await import('~/lib/analysis')
-    return await generateBrandQuestions(name, websiteUrl)
+    const { calculateCost } = await import('~/lib/openai-pricing')
+    const { getSupabaseAdminClient } = await import('~/lib/supabase/server')
+    
+    const { questions, usage, model: actualModel } = await generateBrandQuestions(name, websiteUrl, 'free')
+    
+    if (usage.inputTokens > 0 || usage.outputTokens > 0) {
+      const adminSupabase = getSupabaseAdminClient()
+      await adminSupabase.from('api_usage_log').insert({
+        brand_id: null,
+        call_type: 'question_generation',
+        model: actualModel,
+        tokens_input: usage.inputTokens,
+        tokens_output: usage.outputTokens,
+        estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
+      })
+    }
+    
+    return questions
   })

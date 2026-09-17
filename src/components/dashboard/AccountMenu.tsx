@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Settings, LogOut, ChevronsUpDown } from 'lucide-react'
+import { Settings, LogOut, ChevronsUpDown, Shield } from 'lucide-react'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 
 // Menu profil partagé — utilisé dans le pied de la Sidebar (variant "sidebar")
@@ -17,13 +17,24 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) setUserEmail(data.user.email)
+      if (data?.user?.email) {
+        setUserEmail(data.user.email)
+        supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile?.is_admin) setIsAdmin(true)
+          })
+      }
     })
   }, [])
 
@@ -80,6 +91,24 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
           <Settings className="size-4 text-ink-muted" />
           Paramètres
         </Link>
+
+        {isAdmin && (
+          <Link
+            to="/admin"
+            onClick={() => {
+              setIsDropdownOpen(false)
+              onNavigate?.()
+            }}
+            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
+              pathname.startsWith('/admin')
+                ? 'bg-elevated text-ink-primary'
+                : 'text-ink-secondary hover:bg-elevated/80 hover:text-ink-primary'
+            }`}
+          >
+            <Shield className="size-4 text-ink-muted" />
+            Dashboard Admin
+          </Link>
+        )}
 
         <div className="my-1 border-t border-border/60" />
 

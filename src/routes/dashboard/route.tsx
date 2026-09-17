@@ -12,7 +12,15 @@ import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
 import { CommandPalette } from '~/components/dashboard/CommandPalette'
+import { LayoutDashboard, LineChart, Users, Lightbulb, History } from 'lucide-react'
 
+const navItems = [
+  { label: 'Accueil', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Performance', to: '/dashboard/performance', icon: LineChart },
+  { label: 'Concurrents', to: '/dashboard/concurrents', icon: Users },
+  { label: 'Opportunités', to: '/dashboard/opportunites', icon: Lightbulb },
+  { label: 'Historique', to: '/dashboard/historique', icon: History },
+] as const
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardLayout,
@@ -97,6 +105,7 @@ function DashboardLayout() {
         onClose={() => setIsMobileMenuOpen(false)}
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        navItems={navItems}
       />
 
       {/* Conteneur principal (décalé selon la largeur de la sidebar avec transition animée) */}

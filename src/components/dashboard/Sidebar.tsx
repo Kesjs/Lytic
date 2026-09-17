@@ -12,21 +12,19 @@ import logoDarkUrl from '~/assets/reflet-horizontal-dark.svg'
 import logoLightUrl from '~/assets/reflet-horizontal-light.svg'
 import iconUrl from '~/assets/reflet-icon.svg'
 
-// Items réels du dashboard Reflet (reflet-prompt-dashboard.md §3).
-// Jamais de jargon interne ici (Run, Measurement Engine, Observation…).
-const navItems = [
-  { label: 'Accueil', to: '/dashboard', icon: LayoutDashboard },
-  { label: 'Performance', to: '/dashboard/performance', icon: LineChart },
-  { label: 'Concurrents', to: '/dashboard/concurrents', icon: Users },
-  { label: 'Opportunités', to: '/dashboard/opportunites', icon: Lightbulb },
-  { label: 'Historique', to: '/dashboard/historique', icon: History },
-] as const
+export interface NavItem {
+  label: string
+  to: string
+  icon: React.ElementType
+}
 
 interface SidebarProps {
   isOpen?: boolean
   onClose?: () => void
   isCollapsed?: boolean
   onToggleCollapse?: () => void
+  navItems: readonly NavItem[]
+  homeUrl?: string
 }
 
 export function Sidebar({
@@ -34,6 +32,8 @@ export function Sidebar({
   onClose,
   isCollapsed = false,
   onToggleCollapse,
+  navItems,
+  homeUrl = '/dashboard',
 }: SidebarProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
@@ -55,13 +55,13 @@ export function Sidebar({
           }`}
         >
           <div className="flex items-center overflow-hidden">
-            <Link to="/dashboard" className="flex items-center">
+            <Link to={homeUrl} className="flex items-center">
               {isCollapsed ? (
                 <img src={iconUrl} alt="Reflet" className="h-7 w-7 ml-0.5" />
               ) : (
                 <>
-                  <img src={logoDarkUrl} alt="Reflet" className="h-10 hidden dark:block" />
-                  <img src={logoLightUrl} alt="Reflet" className="h-10 block dark:hidden" />
+                  <img src={logoLightUrl} alt="Reflet" className="hidden h-7 dark:block" />
+                  <img src={logoDarkUrl} alt="Reflet" className="block h-7 dark:hidden" />
                 </>
               )}
             </Link>

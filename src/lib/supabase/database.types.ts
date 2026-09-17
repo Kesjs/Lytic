@@ -13,12 +13,14 @@ export interface Database {
           email: string
           full_name: string | null
           created_at: string
+          is_admin: boolean
         }
         Insert: {
           id: string
           email: string
           full_name?: string | null
           created_at?: string
+          is_admin?: boolean
         }
         Update: { [key: string]: any }
       }
@@ -368,6 +370,29 @@ export interface Database {
           pages_changed?: number
           crawl_delay_ms?: number | null
           version_number?: number | null
+          created_at?: string
+        }
+        Update: { [key: string]: any }
+      }
+      api_usage_log: {
+        Row: {
+          id: string
+          brand_id: string | null
+          call_type: string
+          model: string
+          tokens_input: number
+          tokens_output: number
+          estimated_cost_usd: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          brand_id?: string | null
+          call_type: string
+          model: string
+          tokens_input: number
+          tokens_output: number
+          estimated_cost_usd: number
           created_at?: string
         }
         Update: { [key: string]: any }

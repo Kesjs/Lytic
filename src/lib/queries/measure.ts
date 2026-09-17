@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 import type { Database } from '~/lib/supabase/database.types'
 import { runOpenAIQuery } from '~/lib/openai'
+import { calculateCost } from '~/lib/openai-pricing'
 import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
@@ -408,7 +409,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       // Étape A : SAMPLES_PER_QUESTION appels ChatGPT indépendants, en parallèle
       // (sinon le temps de traitement par question est multiplié par 3)
       const rawResults = await Promise.all(
-        Array.from({ length: SAMPLES_PER_QUESTION }, () => runOpenAIQuery(nextQuestion.text)),
+        Array.from({ length: SAMPLES_PER_QUESTION }, () => runOpenAIQuery(nextQuestion.text, brand.plan as 'free' | 'pro')),
       )
 
       // Étape B : concurrents déjà connus, injectés dans chaque parsing pour
@@ -419,10 +420,32 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         .eq('brand_id', brand.id)
       const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
 
-      // Étape C : chaque échantillon est analysé séparément (pas de moyenne sur le texte brut)
       const analyses = await Promise.all(
-        rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames)),
+        rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames, brand.plan as 'free' | 'pro')),
       )
+
+      // Logging des coûts IA
+      let totalInput = 0
+      let totalOutput = 0
+      rawResults.forEach(r => {
+        totalInput += r.usage.inputTokens
+        totalOutput += r.usage.outputTokens
+      })
+      analyses.forEach(a => {
+        totalInput += a.usage.inputTokens
+        totalOutput += a.usage.outputTokens
+      })
+      if (totalInput > 0 || totalOutput > 0) {
+        const actualModel = rawResults[0]?.model || 'gpt-4o-mini'
+        await adminSupabase.from('api_usage_log').insert({
+          brand_id: brand.id,
+          call_type: 'measurement',
+          model: actualModel,
+          tokens_input: totalInput,
+          tokens_output: totalOutput,
+          estimated_cost_usd: calculateCost(actualModel, totalInput, totalOutput),
+        })
+      }
 
       // cited déterministe par échantillon (non utilisé dans la DB pour l'instant,
       // prévu pour la colonne brand_cited dans une future migration §DB-2)
@@ -431,14 +454,14 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       // Étape D : agrégation par vote majoritaire (voir aggregate.ts)
       const aggregated = aggregateSamples(
         analyses.map((a) => ({
-          brand_mentioned: a.brand_mentioned,
-          brand_recommended: a.brand_recommended,
-          brand_position: a.brand_position,
+          brand_mentioned: a.parsed.brand_mentioned,
+          brand_recommended: a.parsed.brand_recommended,
+          brand_position: a.parsed.brand_position,
         })),
       )
 
       // Étape E : insert/upsert concurrents inconnus, vus sur n'importe quel échantillon
-      const allMentionedCompetitors = analyses.flatMap((a) => a.competitors).filter((c) => c.mentioned)
+      const allMentionedCompetitors = analyses.flatMap((a) => a.parsed.competitors).filter((c) => c.mentioned)
       for (const competitor of allMentionedCompetitors) {
         const { data: existing } = await adminSupabase
           .from('competitors')

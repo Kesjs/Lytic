@@ -102,8 +102,9 @@ export async function analyzeAnswer(
   brandName: string,
   brandDomain: string,
   knownCompetitors: string[] = [],
-): Promise<ParsedObservation> {
-  const client = getClient()
+  plan: 'free' | 'pro' = 'pro',
+): Promise<{ parsed: ParsedObservation; usage: { inputTokens: number; outputTokens: number }; model: string }> {
+  const client = getClient(plan)
   const prompt = buildPrompt(rawAnswer, brandName, brandDomain, knownCompetitors)
   let lastError: unknown
 
@@ -128,7 +129,11 @@ export async function analyzeAnswer(
 
       const text = extractText(response)
       const parsed = JSON.parse(text) as ParsedObservation
-      return parsed
+      const usage = {
+        inputTokens: response.usage?.input_tokens ?? 0,
+        outputTokens: response.usage?.output_tokens ?? 0,
+      }
+      return { parsed, usage, model: response.model }
     } catch (err) {
       lastError = err
       if (err instanceof OpenAI.APIError && err.status >= 400 && err.status < 500) {
@@ -153,8 +158,8 @@ const QUESTIONS_SCHEMA = {
   additionalProperties: false
 }
 
-export async function generateBrandQuestions(brandName: string, websiteUrl: string): Promise<string[]> {
-  const client = getClient()
+export async function generateBrandQuestions(brandName: string, websiteUrl: string, plan: 'free' | 'pro' = 'pro'): Promise<{ questions: string[]; usage: { inputTokens: number; outputTokens: number }; model: string }> {
+  const client = getClient(plan)
   
   let websiteContext = ''
   try {
@@ -211,7 +216,11 @@ Règles :
         .slice(0, 5)
         
       if (questions.length === 0) throw new Error('OpenAI n\'a retourné aucune question exploitable.')
-      return questions
+      const usage = {
+        inputTokens: response.usage?.input_tokens ?? 0,
+        outputTokens: response.usage?.output_tokens ?? 0,
+      }
+      return { questions, usage, model: response.model }
     } catch (err) {
       lastError = err
       if (err instanceof OpenAI.APIError && err.status >= 400 && err.status < 500) {
@@ -254,8 +263,8 @@ const OPPORTUNITIES_SCHEMA = {
   additionalProperties: false
 }
 
-export async function generateOpportunities(context: string, brandName: string, websiteUrl: string): Promise<ParsedOpportunity[]> {
-  const client = getClient()
+export async function generateOpportunities(context: string, brandName: string, websiteUrl: string, plan: 'free' | 'pro' = 'pro'): Promise<{ opportunities: ParsedOpportunity[]; usage: { inputTokens: number; outputTokens: number }; model: string }> {
+  const client = getClient(plan)
   const prompt = `Tu es un expert en SEO (Optimisation pour Moteurs de Recherche) spécialisé dans les IA génératives (AIO).
 Ton client est la marque "${brandName}" (Site web: ${websiteUrl}).
 Nous avons posé plusieurs questions à ChatGPT et notre marque n'a pas été recommandée.
@@ -288,7 +297,11 @@ Chaque opportunité doit être une recommandation actionnable : quelle page modi
 
       const text = extractText(response)
       const parsed = JSON.parse(text) as { opportunities: ParsedOpportunity[] }
-      return parsed.opportunities || []
+      const usage = {
+        inputTokens: response.usage?.input_tokens ?? 0,
+        outputTokens: response.usage?.output_tokens ?? 0,
+      }
+      return { opportunities: parsed.opportunities || [], usage, model: response.model }
     } catch (err) {
       lastError = err
       if (err instanceof OpenAI.APIError && err.status >= 400 && err.status < 500) {

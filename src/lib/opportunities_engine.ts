@@ -1,6 +1,7 @@
 import { getSupabaseAdminClient } from '~/lib/supabase/server'
 import type { Database } from '~/lib/supabase/database.types'
 import { generateOpportunities } from '~/lib/analysis'
+import { calculateCost } from '~/lib/openai-pricing'
 
 // Refonte v2 (Evidence Engine) — une opportunité n'est plus générée sur la base
 // d'un seul run isolé. Deux garde-fous avant tout appel LLM de génération :
@@ -73,7 +74,18 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirm
 `).join('\n\n')
 
   try {
-    const parsed = await generateOpportunities(context, brand.name, brand.website_url || 'inconnu')
+    const { opportunities: parsed, usage, model: actualModel } = await generateOpportunities(context, brand.name, brand.website_url || 'inconnu', brand.plan as 'free' | 'pro')
+
+    if (usage.inputTokens > 0 || usage.outputTokens > 0) {
+      await supabase.from('api_usage_log').insert({
+        brand_id: brandId,
+        call_type: 'opportunity_generation',
+        model: actualModel,
+        tokens_input: usage.inputTokens,
+        tokens_output: usage.outputTokens,
+        estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
+      })
+    }
 
     for (const opp of parsed) {
       const { data: insertedOpp } = await (supabase as any)
