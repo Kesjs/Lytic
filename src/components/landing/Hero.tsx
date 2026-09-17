@@ -21,8 +21,7 @@ export function Hero({
   eyebrow = 'Nouveau : Testez votre marque gratuitement',
   title = (
     <>
-      Découvrez ce que les IA racontent à vos futurs clients.<br />
-      Faites de votre marque l'unique <span className="text-brand-text">réponse des IA.</span>
+      Faites de votre marque l'unique réponse des <span className="text-brand">IA.</span>
     </>
   ),
   description = "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
@@ -41,10 +40,6 @@ export function Hero({
     />
   ),
 }: HeroProps) {
-  const { scrollY } = useScroll()
-  const opacity = useTransform(scrollY, [0, 400], [1, 0])
-  const y = useTransform(scrollY, [0, 400], [0, 60])
-
   return (
     <section className="relative overflow-hidden">
       {/* Halo d'ambiance ultra-fluide en CSS pur (GPU accéléré, 0 lag) */}
@@ -58,7 +53,7 @@ export function Hero({
 
       {/* Contenu textuel Hero : parfaitement centré au chargement dans la hauteur de l'écran */}
       <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6 pt-20">
-        <motion.div style={{ opacity, y }} className="flex flex-col items-center text-center">
+        <motion.div className="flex flex-col items-center text-center">
 
 
         {/* Badge d'annonce, façon pill — relié au plan Free */}
@@ -69,9 +64,9 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
           className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/60 px-4 py-1.5 text-xs text-ink-secondary backdrop-blur-md transition-colors hover:border-brand/40"
         >
-          <Sparkles className="size-3.5 text-brand-text" />
+          <Sparkles className="size-3.5 text-brand" />
           {eyebrow}
-          <span className="inline-flex items-center gap-1 text-brand-text">
+          <span className="inline-flex items-center gap-1 text-brand">
             En savoir plus
             <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
           </span>
