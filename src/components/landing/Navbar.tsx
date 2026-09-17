@@ -5,21 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import logoUrl from '~/assets/reflet-horizontal-dark.svg'
 import { LanguageSwitcher } from '~/components/ui/LanguageSwitcher'
-
-const productLinks = [
-  { label: 'Vue d’ensemble', href: '/#produit' },
-  { label: 'Visibilité IA', href: '/#produit' },
-  { label: 'Questions et mesures', href: '/#questions' },
-  { label: 'Preuves et opportunités', href: '/#preuves' },
-  { label: 'Historique du site', href: '/#historique' },
-]
-
-const resourceLinks = [
-  { label: 'Blog', href: '#' },
-  { label: 'Guides', href: '#' },
-  { label: 'Études', href: '#' },
-  { label: 'Glossaire', href: '#' },
-]
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 
 function NavDropdown({ label, items }: { label: string; items: { label: string; href: string }[] }) {
   const [open, setOpen] = useState(false)
@@ -69,6 +55,7 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
 }
 
 export function Navbar() {
+  const { t } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
@@ -115,10 +102,21 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
-          <NavDropdown label="Produit" items={productLinks} />
-          <NavDropdown label="Ressources" items={resourceLinks} />
+          <NavDropdown label={t.navbar.product} items={[
+            { label: t.navbar.productOverview, href: '/#produit' },
+            { label: t.navbar.productAiVisibility, href: '/#produit' },
+            { label: t.navbar.productQuestions, href: '/#questions' },
+            { label: t.navbar.productEvidence, href: '/#preuves' },
+            { label: t.navbar.productHistory, href: '/#historique' },
+          ]} />
+          <NavDropdown label={t.navbar.resources} items={[
+            { label: t.navbar.resourcesBlog, href: '#' },
+            { label: t.navbar.resourcesGuides, href: '#' },
+            { label: t.navbar.resourcesStudies, href: '#' },
+            { label: t.navbar.resourcesGlossary, href: '#' },
+          ]} />
           <a href="#tarifs" className="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
-            Tarifs
+            {t.navbar.pricing}
           </a>
         </nav>
 
@@ -129,19 +127,19 @@ export function Navbar() {
               to="/dashboard"
               className="flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
             >
-              Dashboard
+              {t.navbar.dashboard}
               <ArrowRight className="size-3.5" />
             </Link>
           ) : (
             <>
               <Link to="/login" className="px-3 py-2 text-sm text-ink-secondary transition-colors hover:text-ink-primary">
-                Connexion
+                {t.navbar.login}
               </Link>
               <Link
                 to="/login"
                 className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-brand-hover"
               >
-                Commencer
+                {t.navbar.start}
               </Link>
             </>
           )}
@@ -165,13 +163,23 @@ export function Navbar() {
               <div className="mb-4">
                 <LanguageSwitcher />
               </div>
-              {[...productLinks, ...resourceLinks].map((item) => (
+              {[
+                { label: t.navbar.productOverview, href: '/#produit' },
+                { label: t.navbar.productAiVisibility, href: '/#produit' },
+                { label: t.navbar.productQuestions, href: '/#questions' },
+                { label: t.navbar.productEvidence, href: '/#preuves' },
+                { label: t.navbar.productHistory, href: '/#historique' },
+                { label: t.navbar.resourcesBlog, href: '#' },
+                { label: t.navbar.resourcesGuides, href: '#' },
+                { label: t.navbar.resourcesStudies, href: '#' },
+                { label: t.navbar.resourcesGlossary, href: '#' },
+              ].map((item) => (
                 <a key={item.label} href={item.href} className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
                   {item.label}
                 </a>
               ))}
               <a href="#tarifs" className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
-                Tarifs
+                {t.navbar.pricing}
               </a>
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
                 {isAuthenticated ? (
@@ -179,16 +187,16 @@ export function Navbar() {
                     to="/dashboard"
                     className="flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-center text-sm font-semibold text-black"
                   >
-                    Accéder au Dashboard
+                    {t.navbar.goToDashboard}
                     <ArrowRight className="size-4" />
                   </Link>
                 ) : (
                   <>
                     <Link to="/login" className="text-sm text-ink-secondary hover:text-ink-primary">
-                      Connexion
+                      {t.navbar.login}
                     </Link>
                     <Link to="/login" className="rounded-md bg-brand px-4 py-2 text-center text-sm font-medium text-black">
-                      Commencer
+                      {t.navbar.start}
                     </Link>
                   </>
                 )}

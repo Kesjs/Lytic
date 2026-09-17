@@ -1,8 +1,4 @@
-const items = [
-  { title: 'Invisible', body: "Votre marque n'apparaît pas dans les recommandations pertinentes." },
-  { title: 'Mal positionnée', body: "Elle apparaît derrière d'autres solutions." },
-  { title: 'Mal comprise', body: "Votre site exprime une offre claire, mais les réponses observées ne la reflètent pas correctement." },
-]
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 
 // Illustration conceptuelle, pas un mockup d'UI : un cube manque dans le
 // cluster (contour pointillé) — la marque absente de la réponse. Pure
@@ -41,15 +37,17 @@ function MissingPieceIllustration() {
 }
 
 export function Problem() {
+  const { t } = useTranslation()
+
   return (
     <section className="border-t border-hairline border-border px-6 py-24">
       <div className="mx-auto grid max-w-1200 items-center gap-12 lg:grid-cols-2">
         <div>
           <h2 className="text-3xl font-medium tracking-tight text-ink-primary">
-            Votre site sait ce que vous vendez. ChatGPT, lui, peut en dire autre chose.
+            {t.problem.heading}
           </h2>
           <div className="mt-8 space-y-4">
-            {items.map((item) => (
+            {t.problem.items.map((item) => (
               <div key={item.title} className="rounded-xl border border-hairline border-border bg-surface p-5">
                 <p className="text-sm font-medium text-ink-primary">{item.title}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{item.body}</p>
@@ -57,7 +55,7 @@ export function Problem() {
             ))}
           </div>
           <p className="mt-6 text-sm text-ink-muted">
-            Reflet mesure cet écart au lieu de vous demander de le deviner.
+            {t.problem.footer}
           </p>
         </div>
 
