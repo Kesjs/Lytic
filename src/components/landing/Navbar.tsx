@@ -4,6 +4,7 @@ import { ChevronDown, Menu, X, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import logoUrl from '~/assets/reflet-horizontal-dark.svg'
+import { LanguageSwitcher } from '~/components/ui/LanguageSwitcher'
 
 const productLinks = [
   { label: 'Vue d’ensemble', href: '/#produit' },
@@ -122,6 +123,7 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <LanguageSwitcher />
           {isAuthenticated ? (
             <Link
               to="/dashboard"
@@ -160,6 +162,9 @@ export function Navbar() {
             className="overflow-hidden border-t border-border bg-canvas md:hidden"
           >
             <div className="flex flex-col gap-1 px-6 py-4">
+              <div className="mb-4">
+                <LanguageSwitcher />
+              </div>
               {[...productLinks, ...resourceLinks].map((item) => (
                 <a key={item.label} href={item.href} className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
                   {item.label}

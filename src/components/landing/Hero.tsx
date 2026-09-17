@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { AiCycle } from './AiCycle'
 import { ScreenshotFrame } from './ScreenshotFrame'
 
@@ -28,18 +29,21 @@ export function Hero({
   primaryCta = { label: 'Analyser mon site', to: '/login' },
   secondaryCta = { label: 'Voir le produit', href: '#produit' },
   engines,
-  preview = (
+}: HeroProps) {
+  const { t } = useTranslation()
+
+  const defaultPreview = (
     <ScreenshotFrame
-      label="Dashboard Reflet — Vue d'ensemble"
+      label={t.hero.previewLabel}
       src="/images/dashboard/overview.png"
       urlPath="app.reflet.io/dashboard/accueil"
       glow
       fadeBottom
-      annotation="Le tableau de bord Reflet"
-      badge="Score en direct · 72/100"
+      annotation={t.hero.previewAnnotation}
+      badge={t.hero.previewBadge}
     />
-  ),
-}: HeroProps) {
+  )
+
   return (
     <section className="relative overflow-hidden">
       {/* Halo d'ambiance ultra-fluide en CSS pur (GPU accéléré, 0 lag) */}
@@ -64,7 +68,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
           className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/60 px-4 py-1.5 text-xs text-ink-secondary backdrop-blur-md transition-colors hover:border-brand/40"
         >
-          {eyebrow}
+          {t.hero.eyebrow}
         </motion.a>
 
         {/* Titre principal avec apparition en fondu */}
@@ -74,7 +78,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="mt-7 font-display text-4xl font-medium leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
         >
-          {title}
+          {t.hero.title.part1}<span className="text-brand">{t.hero.title.highlight}</span>
         </motion.h1>
 
         {/* Cycle des IA animées */}
@@ -94,7 +98,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="mx-auto mt-6 max-w-[560px] text-base leading-relaxed text-ink-secondary sm:text-lg"
         >
-          {description}
+          {t.hero.description}
         </motion.p>
 
         {/* Boutons d'action avec effet shimmer sur le CTA principal */}
@@ -114,7 +118,7 @@ export function Hero({
               className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
               aria-hidden="true"
             />
-            <span className="relative z-10">{primaryCta.label}</span>
+            <span className="relative z-10">{t.hero.primaryCta}</span>
             <ArrowRight className="relative z-10 size-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
 
@@ -123,7 +127,7 @@ export function Hero({
             href={secondaryCta.href}
             className="inline-flex items-center rounded-md border border-hairline border-border/80 bg-surface/50 px-5 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 hover:border-brand/40 hover:bg-surface hover:text-white"
           >
-            {secondaryCta.label}
+            {t.hero.secondaryCta}
           </a>
         </motion.div>
 
@@ -134,7 +138,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-6 text-xs text-ink-muted"
         >
-          Gratuit pour commencer. Sans carte bancaire.
+          {t.hero.freeToStart}
         </motion.p>
       </motion.div>
       </div>
@@ -147,7 +151,7 @@ export function Hero({
         transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 mx-auto mt-16 mb-28 sm:mb-36 w-full max-w-1200 px-4 sm:px-6"
       >
-        {preview}
+        {defaultPreview}
       </motion.div>
     </section>
   )

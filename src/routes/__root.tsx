@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
 import { ThemeProvider, THEME_STORAGE_KEY, useTheme } from '~/components/theme-provider'
+import { LanguageProvider } from '~/lib/i18n/LanguageContext'
 import appCss from '~/styles/app.css?url'
 
 const queryClient = new QueryClient()
@@ -73,14 +74,16 @@ function RootComponent() {
 
   return (
     <RootDocument>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Outlet />
-            <ThemedToaster toastPosition={toastPosition} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Outlet />
+              <ThemedToaster toastPosition={toastPosition} />
+            </TooltipProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </RootDocument>
   )
 }
