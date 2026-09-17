@@ -18,7 +18,7 @@ export interface HeroProps {
 }
 
 export function Hero({
-  eyebrow = 'Nouveau : Testez votre marque gratuitement',
+  eyebrow = 'Testez votre marque',
   title = (
     <>
       Faites de votre marque l'unique réponse des <span className="text-brand">IA.</span>
@@ -64,12 +64,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
           className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/60 px-4 py-1.5 text-xs text-ink-secondary backdrop-blur-md transition-colors hover:border-brand/40"
         >
-          <Sparkles className="size-3.5 text-brand" />
           {eyebrow}
-          <span className="inline-flex items-center gap-1 text-brand">
-            En savoir plus
-            <ArrowRight className="size-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </span>
         </motion.a>
 
         {/* Titre principal avec apparition en fondu */}
