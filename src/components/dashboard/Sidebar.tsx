@@ -60,8 +60,8 @@ export function Sidebar({
                 <img src={iconUrl} alt="Reflet" className="h-7 w-7 ml-0.5" />
               ) : (
                 <>
-                  <img src={logoLightUrl} alt="Reflet" className="hidden h-7 dark:block" />
-                  <img src={logoDarkUrl} alt="Reflet" className="block h-7 dark:hidden" />
+                  <img src={logoLightUrl} alt="Reflet" className="block h-7 dark:hidden" />
+                  <img src={logoDarkUrl} alt="Reflet" className="hidden h-7 dark:block" />
                 </>
               )}
             </Link>
