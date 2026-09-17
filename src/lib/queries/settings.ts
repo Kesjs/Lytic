@@ -563,7 +563,7 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
 
     // Garde-fou 3 : Filet de sécurité IP basé sur getClientIp() et signup_attempts
     try {
-      const { getClientIp } = await import('~/lib/queries/auth')
+      const { getClientIp } = await import('~/lib/ip.server')
       const ip = getClientIp()
 
       if (ip && ip !== 'unknown') {
