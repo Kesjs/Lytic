@@ -119,9 +119,6 @@ export function Navbar() {
           <a href="#tarifs" className="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
             Tarifs
           </a>
-          <Link to="/dashboard" className="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
-            Dashboard
-          </Link>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -171,9 +168,6 @@ export function Navbar() {
               <a href="#tarifs" className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
                 Tarifs
               </a>
-              <Link to="/dashboard" className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
-                Dashboard
-              </Link>
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
                 {isAuthenticated ? (
                   <Link

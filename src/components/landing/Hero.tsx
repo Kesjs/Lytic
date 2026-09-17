@@ -18,10 +18,11 @@ export interface HeroProps {
 }
 
 export function Hero({
-  eyebrow = 'Nouveau : le plan Free est disponible',
+  eyebrow = 'Nouveau : Testez votre marque gratuitement',
   title = (
     <>
-      Voyez comment les <span className="text-brand-text">IA</span> parlent de votre marque.
+      Découvrez ce que les IA racontent à vos futurs clients.<br />
+      Devenez la seule marque qu'elles <span className="text-brand-text">recommandent.</span>
     </>
   ),
   description = "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",

@@ -17,7 +17,6 @@ import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 import { isFreePlan } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
-import { HelpCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const Route = createFileRoute('/dashboard/')({
