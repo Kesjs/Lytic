@@ -1,18 +1,21 @@
 import logoUrl from '~/assets/reflet-horizontal-dark.svg'
-
-const columns = [
-  { title: 'Produit', links: ['Vue d’ensemble', 'Visibilité IA', 'Questions et mesures', 'Preuves et opportunités', 'Historique du site'] },
-  { title: 'Ressources', links: ['Blog', 'Guides', 'Études', 'Glossaire'] },
-  { title: 'Entreprise', links: ['À propos', 'Contact'] },
-  { title: 'Légal', links: ['Confidentialité', 'Conditions'] },
-]
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 
 export function Footer() {
+  const { t } = useTranslation()
+  
+  const columnsData = [
+    t.footer.columns.product,
+    t.footer.columns.resources,
+    t.footer.columns.company,
+    t.footer.columns.legal,
+  ]
+
   return (
     <footer className="border-t border-hairline border-border px-6 py-16">
       <div className="mx-auto max-w-1200">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {columns.map((col) => (
+          {columnsData.map((col) => (
             <div key={col.title}>
               <p className="text-sm font-medium text-ink-primary">{col.title}</p>
               <ul className="mt-4 space-y-2.5">
@@ -29,7 +32,7 @@ export function Footer() {
         </div>
         <div className="mt-16 border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <img src={logoUrl} alt="Reflet" className="h-7" />
-          <p className="text-xs text-ink-muted">© 2026 Reflet — Mesurer. Comprendre. Améliorer.</p>
+          <p className="text-xs text-ink-muted">{t.footer.copyright}</p>
         </div>
       </div>
     </footer>

@@ -90,5 +90,129 @@ export const en = {
       previewLabel: "Competitive Benchmark — NovaPay vs Qonto",
       previewBadge: "Benchmark vs Qonto"
     }
+  },
+  history: {
+    tag: "Continuous Monitoring",
+    heading: "Your visibility isn't a static number.",
+    description: "Reflet automatically monitors your site and queries AI models at regular intervals. Every new mention, rank gain, or loss is archived with its date and impact.",
+    previewLabel: "Event feed — History page",
+    previewBadge: "Continuous Audit"
+  },
+  pricing: {
+    heading: "Simple pricing, no surprises",
+    subheading: "Start measuring your real AI impact today.",
+    monthly: "Monthly",
+    annual: "Annually",
+    free: {
+      name: "Free",
+      description: "To get a real glimpse of your visibility, no strings attached.",
+      price: "€0",
+      noCard: "No credit card required",
+      cta: "Start for free",
+      features: [
+        { label: '1 tracked site' },
+        { label: '1 tracked question' },
+        { label: '1 measurement (one-time snapshot)' },
+        { label: 'Score + 1 competitor visible' },
+        { label: 'AI Bots Access', detail: 'Crawl authorization for GPTBot, ClaudeBot, and PerplexityBot on your indexable content.' }
+      ]
+    },
+    pro: {
+      name: "Pro",
+      recommended: "Recommended plan",
+      description: "Ideal for brands wanting to master their visibility.",
+      priceMonthly: "€75",
+      priceAnnual: "€60",
+      perMonth: "/month",
+      billedAnnually: "Billed €720 yearly (save 20%)",
+      cta: "Start with Pro",
+      features: [
+        { label: '1 tracked site' },
+        { label: "Up to 50 questions" },
+        { label: 'Automatic continuous tracking', detail: 'Automated check of your visibility once a week, without any manual action.' },
+        { label: 'ChatGPT probing' },
+        { label: 'Positioning analysis' },
+        { label: 'Opportunity detection' }
+      ]
+    },
+    enterprise: {
+      name: "Enterprise",
+      description: "For agencies and large organizations with complex needs.",
+      price: "Custom",
+      cta: "Contact sales",
+      features: [
+        { label: 'Multi-site & multi-brand' },
+        { label: 'Unlimited questions' },
+        { label: 'Full API access' },
+        { label: 'Multi-engine AI (on roadmap)' },
+        { label: 'Dedicated support (Slack/Email)' },
+        { label: 'SSO & SLA guaranteed', detail: 'Single Sign-On (SSO/SAML) and contractual Service Level Agreement (SLA), with priority support.' }
+      ]
+    }
+  },
+  faq: {
+    tag: "FAQ",
+    heading: "Questions, answers.",
+    description: "The questions we get asked the most. Still stuck? Contact us.",
+    items: [
+      {
+        q: "What exactly does Reflet measure?",
+        a: "Reflet measures your brand's presence, recommendation rate, and ranking in AI-generated responses (like ChatGPT), as well as your competitors' presence."
+      },
+      {
+        q: "Does Reflet use ChatGPT directly?",
+        a: "Yes, Reflet prompts ChatGPT with the exact questions your prospects would actually ask, and then analyzes the answers."
+      },
+      {
+        q: "Why do AI responses vary?",
+        a: "Generative models can produce different answers from one prompt to the next. Reflet measures these variations over time rather than just taking a single snapshot."
+      },
+      {
+        q: "How does Reflet pick the questions?",
+        a: "Reflet analyzes your website to understand your offering, and then generates questions that accurately represent what your prospects would search for."
+      },
+      {
+        q: "Does Reflet detect changes to my website?",
+        a: "Yes, Reflet automatically monitors your site and flags any detected changes."
+      },
+      {
+        q: "Do I have to manually declare every change?",
+        a: "No, monitoring is fully automatic — you don't have to do anything."
+      },
+      {
+        q: "Can I try Reflet for free?",
+        a: "Yes, the Free plan lets you track one question and get a real glimpse of your visibility, without a credit card."
+      },
+      {
+        q: "Does Reflet guarantee a position in ChatGPT?",
+        a: "No. Reflet measures and explains your current visibility, providing actionable insights to help you improve it, but no one can guarantee a specific rank in a generative model."
+      }
+    ]
+  },
+  ctaFinal: {
+    heading: "Find out what ChatGPT is saying about your brand.",
+    subheading: "Analyze your site, select your key questions, and get your first AI visibility score today.",
+    cta: "Analyze my site"
+  },
+  footer: {
+    columns: {
+      product: {
+        title: "Product",
+        links: ["Overview", "AI Visibility", "Questions & Tracking", "Evidence & Gaps", "Site History"]
+      },
+      resources: {
+        title: "Resources",
+        links: ["Blog", "Guides", "Studies", "Glossary"]
+      },
+      company: {
+        title: "Company",
+        links: ["About", "Contact"]
+      },
+      legal: {
+        title: "Legal",
+        links: ["Privacy", "Terms"]
+      }
+    },
+    copyright: "© 2026 Reflet — Measure. Understand. Improve."
   }
 };

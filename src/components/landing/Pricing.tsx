@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Check, Sparkles, Building2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 
 type Feature = { label: string; detail?: string }
 
@@ -61,6 +62,7 @@ function FeatureItem({ feature }: { feature: Feature }) {
 }
 
 export function Pricing() {
+  const { t } = useTranslation()
   const [annual, setAnnual] = useState(false)
 
   return (
@@ -68,10 +70,10 @@ export function Pricing() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center lg:max-w-4xl">
           <h2 className="font-display text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
-            Un tarif simple, sans surprise
+            {t.pricing.heading}
           </h2>
           <p className="mt-4 text-lg text-ink-secondary">
-            Commencez à mesurer votre impact réel sur l'IA dès aujourd'hui.
+            {t.pricing.subheading}
           </p>
         </div>
 
@@ -84,7 +86,7 @@ export function Pricing() {
                 !annual ? 'text-black' : 'text-ink-secondary hover:text-ink-primary'
               }`}
             >
-              Mensuel
+              {t.pricing.monthly}
             </button>
             <button
               type="button"
@@ -93,7 +95,7 @@ export function Pricing() {
                 annual ? 'text-black' : 'text-ink-secondary hover:text-ink-primary'
               }`}
             >
-              Annuel
+              {t.pricing.annual}
             </button>
             <div
               className={`absolute left-1 top-1 h-[calc(100%-8px)] w-28 rounded-full bg-brand transition-transform duration-300 ease-in-out ${
@@ -107,19 +109,19 @@ export function Pricing() {
           {/* Free Plan */}
           <div className="flex flex-col rounded-xl border border-hairline border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
             <div className="mb-6">
-              <h3 className="font-display text-2xl font-semibold text-ink-primary">Free</h3>
+              <h3 className="font-display text-2xl font-semibold text-ink-primary">{t.pricing.free.name}</h3>
               <p className="mt-2 text-sm text-ink-secondary">
-                Pour voir un aperçu réel de votre visibilité, sans engagement.
+                {t.pricing.free.description}
               </p>
             </div>
 
             <div className="mb-1 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-semibold tracking-tight text-ink-primary">0 €</span>
+              <span className="font-display text-5xl font-semibold tracking-tight text-ink-primary">{t.pricing.free.price}</span>
             </div>
-            <p className="mb-6 text-sm text-ink-muted">Sans carte bancaire</p>
+            <p className="mb-6 text-sm text-ink-muted">{t.pricing.free.noCard}</p>
 
             <ul className="mb-8 flex-1 space-y-4">
-              {featuresFree.map((feature) => (
+              {t.pricing.free.features.map((feature) => (
                 <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
@@ -128,7 +130,7 @@ export function Pricing() {
               to="/signup"
               className="mt-auto flex w-full items-center justify-center rounded-xl border border-border bg-transparent py-3 text-sm font-medium text-ink-primary transition-all hover:border-border-strong hover:bg-elevated"
             >
-              Commencer gratuitement
+              {t.pricing.free.cta}
             </Link>
           </div>
 
@@ -136,29 +138,29 @@ export function Pricing() {
           <div className="relative flex flex-col rounded-xl border border-brand/50 bg-surface p-8 shadow-2xl shadow-brand/10 ring-1 ring-brand/50">
             <div className="absolute -top-4 left-0 right-0 flex justify-center">
               <span className="flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
-                <Sparkles className="size-3.5" /> Plan recommandé
+                <Sparkles className="size-3.5" /> {t.pricing.pro.recommended}
               </span>
             </div>
             
             <div className="mb-6">
-              <h3 className="font-display text-2xl font-semibold text-ink-primary">Pro</h3>
+              <h3 className="font-display text-2xl font-semibold text-ink-primary">{t.pricing.pro.name}</h3>
               <p className="mt-2 text-sm text-ink-secondary">
-                Idéal pour les marques souhaitant maîtriser leur visibilité.
+                {t.pricing.pro.description}
               </p>
             </div>
             
             <div className="mb-6 flex items-baseline gap-2">
               <span className="font-display text-5xl font-semibold tracking-tight text-ink-primary">
-                {annual ? '60 €' : '75 €'}
+                {annual ? t.pricing.pro.priceAnnual : t.pricing.pro.priceMonthly}
               </span>
-              <span className="text-sm font-medium text-ink-muted">/mois</span>
+              <span className="text-sm font-medium text-ink-muted">{t.pricing.pro.perMonth}</span>
             </div>
             {annual && (
-              <p className="mb-6 text-sm text-success">Facturé 720 € par an (20% d'économie)</p>
+              <p className="mb-6 text-sm text-success">{t.pricing.pro.billedAnnually}</p>
             )}
 
             <ul className="mb-8 flex-1 space-y-4">
-              {featuresPro.map((feature) => (
+              {t.pricing.pro.features.map((feature) => (
                 <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
@@ -167,7 +169,7 @@ export function Pricing() {
               to="/login"
               className="mt-auto flex w-full items-center justify-center rounded-xl bg-brand py-3 text-sm font-semibold text-black transition-all hover:bg-brand-hover hover:shadow-lg hover:shadow-brand/20"
             >
-              Démarrer avec Pro
+              {t.pricing.pro.cta}
             </Link>
           </div>
 
@@ -177,20 +179,20 @@ export function Pricing() {
               <div className="mb-4 flex size-10 items-center justify-center rounded-md border border-hairline border-border bg-elevated text-ink-primary">
                 <Building2 className="size-5" />
               </div>
-              <h3 className="font-display text-2xl font-semibold text-ink-primary">Enterprise</h3>
+              <h3 className="font-display text-2xl font-semibold text-ink-primary">{t.pricing.enterprise.name}</h3>
               <p className="mt-2 text-sm text-ink-secondary">
-                Pour les agences et les grandes structures aux besoins complexes.
+                {t.pricing.enterprise.description}
               </p>
             </div>
             
             <div className="mb-6 flex items-baseline gap-2">
               <span className="font-display text-4xl font-semibold tracking-tight text-ink-primary">
-                Sur devis
+                {t.pricing.enterprise.price}
               </span>
             </div>
 
             <ul className="mb-8 flex-1 space-y-4">
-              {featuresEnterprise.map((feature) => (
+              {t.pricing.enterprise.features.map((feature) => (
                 <FeatureItem key={feature.label} feature={feature} />
               ))}
             </ul>
@@ -199,7 +201,7 @@ export function Pricing() {
               href="mailto:contact@reflet.ai"
               className="mt-auto flex w-full items-center justify-center rounded-xl border border-border bg-transparent py-3 text-sm font-medium text-ink-primary transition-all hover:border-border-strong hover:bg-elevated"
             >
-              Contacter les ventes
+              {t.pricing.enterprise.cta}
             </a>
           </div>
         </div>

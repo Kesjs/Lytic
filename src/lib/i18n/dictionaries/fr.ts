@@ -90,5 +90,129 @@ export const fr = {
       previewLabel: "Benchmark concurrentiel — NovaPay vs Qonto",
       previewBadge: "Benchmark vs Qonto"
     }
+  },
+  history: {
+    tag: "Surveillance continue",
+    heading: "Votre visibilité n'est pas un chiffre isolé.",
+    description: "Reflet surveille automatiquement votre site et réinterroge les modèles à intervalle régulier. Chaque nouvelle mention, gain ou perte de position est archivé avec sa date et son impact.",
+    previewLabel: "Fil d'événements — page Historique",
+    previewBadge: "Audit en continu"
+  },
+  pricing: {
+    heading: "Un tarif simple, sans surprise",
+    subheading: "Commencez à mesurer votre impact réel sur l'IA dès aujourd'hui.",
+    monthly: "Mensuel",
+    annual: "Annuel",
+    free: {
+      name: "Free",
+      description: "Pour voir un aperçu réel de votre visibilité, sans engagement.",
+      price: "0 €",
+      noCard: "Sans carte bancaire",
+      cta: "Commencer gratuitement",
+      features: [
+        { label: '1 site suivi' },
+        { label: '1 question suivie' },
+        { label: '1 mesure (aperçu unique)' },
+        { label: 'Score + 1 concurrent visible' },
+        { label: 'Accès Bots IA', detail: 'Autorisation de crawl pour GPTBot, ClaudeBot et PerplexityBot sur votre contenu indexable.' }
+      ]
+    },
+    pro: {
+      name: "Pro",
+      recommended: "Plan recommandé",
+      description: "Idéal pour les marques souhaitant maîtriser leur visibilité.",
+      priceMonthly: "75 €",
+      priceAnnual: "60 €",
+      perMonth: "/mois",
+      billedAnnually: "Facturé 720 € par an (20% d'économie)",
+      cta: "Démarrer avec Pro",
+      features: [
+        { label: '1 site suivi' },
+        { label: "Jusqu'à 50 questions" },
+        { label: 'Mesure continue automatique', detail: 'Vérification automatique de votre visibilité une fois par semaine, sans action de votre part.' },
+        { label: 'Interrogation de ChatGPT' },
+        { label: 'Analyse de positionnement' },
+        { label: 'Détection des opportunités' }
+      ]
+    },
+    enterprise: {
+      name: "Enterprise",
+      description: "Pour les agences et les grandes structures aux besoins complexes.",
+      price: "Sur devis",
+      cta: "Contacter les ventes",
+      features: [
+        { label: 'Multi-sites & multi-marques' },
+        { label: 'Questions illimitées' },
+        { label: 'Accès API complet' },
+        { label: 'Multi-moteurs IA (sur roadmap)' },
+        { label: 'Support dédié (Slack/Email)' },
+        { label: 'SSO & SLA garantis', detail: 'Connexion unique (SSO/SAML) et engagement contractuel de disponibilité (SLA), avec support prioritaire.' }
+      ]
+    }
+  },
+  faq: {
+    tag: "FAQ",
+    heading: "Questions, réponses.",
+    description: "Les questions qu'on nous pose le plus souvent. Toujours bloqué ? Contactez-nous.",
+    items: [
+      {
+        q: "Qu'est-ce que Reflet mesure exactement ?",
+        a: "Reflet mesure la présence, la recommandation et la position de votre marque dans les réponses générées par ChatGPT, ainsi que la présence de vos concurrents."
+      },
+      {
+        q: "Est-ce que Reflet utilise ChatGPT directement ?",
+        a: "Oui, Reflet interroge ChatGPT avec les questions que vos prospects pourraient réellement poser, puis analyse les réponses obtenues."
+      },
+      {
+        q: "Pourquoi les réponses peuvent-elles varier ?",
+        a: "Les modèles génératifs peuvent produire des réponses différentes d'une requête à l'autre. Reflet mesure ces variations dans le temps plutôt qu'un instantané unique."
+      },
+      {
+        q: "Comment Reflet choisit-il les questions ?",
+        a: "Reflet analyse votre site pour comprendre votre offre, puis construit des questions représentatives de ce que vos prospects pourraient poser."
+      },
+      {
+        q: "Est-ce que Reflet détecte les modifications de mon site ?",
+        a: "Oui, Reflet surveille automatiquement votre site et signale les changements détectés."
+      },
+      {
+        q: "Est-ce que je dois déclarer chaque modification ?",
+        a: "Non, la surveillance est automatique — vous n'avez rien à déclarer."
+      },
+      {
+        q: "Puis-je essayer Reflet gratuitement ?",
+        a: "Oui, le plan Free permet de mesurer une question et de voir un aperçu réel de votre visibilité, sans carte bancaire."
+      },
+      {
+        q: "Reflet garantit-il une position dans ChatGPT ?",
+        a: "Non. Reflet mesure et explique votre visibilité actuelle et vous aide à l'améliorer, mais ne peut garantir une position spécifique dans un modèle génératif."
+      }
+    ]
+  },
+  ctaFinal: {
+    heading: "Découvrez ce que ChatGPT dit de votre marque.",
+    subheading: "Analysez votre site, sélectionnez vos questions clés et obtenez votre premier score de visibilité IA dès aujourd'hui.",
+    cta: "Analyser mon site"
+  },
+  footer: {
+    columns: {
+      product: {
+        title: "Produit",
+        links: ["Vue d’ensemble", "Visibilité IA", "Questions et mesures", "Preuves et opportunités", "Historique du site"]
+      },
+      resources: {
+        title: "Ressources",
+        links: ["Blog", "Guides", "Études", "Glossaire"]
+      },
+      company: {
+        title: "Entreprise",
+        links: ["À propos", "Contact"]
+      },
+      legal: {
+        title: "Légal",
+        links: ["Confidentialité", "Conditions"]
+      }
+    },
+    copyright: "© 2026 Reflet — Mesurer. Comprendre. Améliorer."
   }
 };

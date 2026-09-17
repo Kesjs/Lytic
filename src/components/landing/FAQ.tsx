@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 
 const faqs = [
   {
@@ -37,6 +38,7 @@ const faqs = [
 ]
 
 export function FAQ() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState<number | null>(null)
 
   return (
@@ -44,19 +46,19 @@ export function FAQ() {
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 border-x-0 border-border md:grid-cols-2 md:border-x">
         {/* Colonne intro */}
         <div className="flex flex-col gap-4 border-b border-border px-6 pt-16 pb-8 md:border-b-0 md:border-e md:px-10 md:py-20">
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-muted">FAQ</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-muted">{t.faq.tag}</span>
           <h2 className="font-display text-4xl font-medium leading-[1.04] tracking-tight text-ink-primary md:text-5xl">
-            Questions, réponses.
+            {t.faq.heading}
           </h2>
           <p className="max-w-sm text-sm text-ink-secondary">
-            Les questions qu'on nous pose le plus souvent. Toujours bloqué ? Contactez-nous.
+            {t.faq.description}
           </p>
         </div>
 
         {/* Colonne accordéon */}
         <div className="flex flex-col justify-center px-6 py-6 md:px-8">
           <div className="divide-y divide-border">
-            {faqs.map((item, i) => (
+            {t.faq.items.map((item, i) => (
               <div key={item.q}>
                 <button
                   type="button"
