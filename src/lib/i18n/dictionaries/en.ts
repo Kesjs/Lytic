@@ -39,5 +39,56 @@ export const en = {
       { title: 'Misunderstood', body: "Your site has a clear offering, but the AI responses don't reflect it accurately." }
     ],
     footer: "Reflet measures this gap instead of asking you to guess it."
+  },
+  howItWorks: {
+    heading: "How it works",
+    subheading: "You pick the questions. Our engine handles the rest.",
+    steps: [
+      {
+        title: "Smart Onboarding",
+        description: "Enter your domain. Reflet analyzes your site and automatically generates the most strategic questions.",
+        benefits: ["AI-driven intent generation", "Highly precise semantic targeting", "No complex setup required"]
+      },
+      {
+        title: "Measurement & Analysis",
+        description: "Our engine regularly prompts LLMs and cross-references their answers with your website's evolution.",
+        benefits: ["Clear visibility and recommendation score", "Deterministic change detection ($0)", "Automated sentiment analysis"]
+      },
+      {
+        title: "Actionable Opportunities",
+        description: "Get clear recommendations (before/after) to fix your gaps and hack the LLM algorithm.",
+        benefits: ["Detailed technical evidence", "Competitor comparison", "Maintain your competitive edge"]
+      }
+    ],
+    opportunities: {
+      tag: "Actionable Recommendations",
+      heading: "Turn every gap into a clear action item",
+      description: "Reflet doesn't just point out flaws: every anomaly is converted into a prioritized recommendation with a confidence score.",
+      previewLabel: "Opportunities Page — Concrete Recommendations",
+      previewBadge: "Priority Opportunities"
+    }
+  },
+  questionEngine: {
+    heading: "The right questions before the right answers.",
+    description: "Reflet doesn't just ask ChatGPT to talk about you — it asks the exact questions your prospects would actually ask.",
+    badExample: "\"Tell me about SIKKA\"",
+    goodExample: "\"Which invoicing software would you recommend to a craftsman in Benin?\""
+  },
+  metrics: {
+    heading: "What Reflet measures",
+    subheading: "The 4 pillars of your visibility across major language models.",
+    items: [
+      { title: 'Presence', body: 'Is your brand mentioned in AI responses?' },
+      { title: 'Recommendation', body: 'Is it proposed as the ideal solution, or just neutrally listed?' },
+      { title: 'Positioning', body: 'Where does it appear when a list of solutions is generated?' },
+      { title: 'Competition', body: 'Which competitors appear instead of you, or more frequently?' }
+    ],
+    benchmark: {
+      tag: "Real-world Benchmark",
+      heading: "Compare your presence against direct competitors",
+      description: "Every score traces back to the original prompt and the raw AI response — monitor your mention and recommendation gaps against market alternatives.",
+      previewLabel: "Competitive Benchmark — NovaPay vs Qonto",
+      previewBadge: "Benchmark vs Qonto"
+    }
   }
 };

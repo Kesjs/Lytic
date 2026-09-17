@@ -1,6 +1,7 @@
 import { cn } from "~/lib/utils"
 import { Settings, Activity, Lightbulb } from "lucide-react"
 import type React from "react"
+import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { ScreenshotFrame } from "./ScreenshotFrame"
 
 interface HowItWorksProps extends React.HTMLAttributes<HTMLElement> {}
@@ -46,39 +47,19 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
   className,
   ...props
 }) => {
+  const { t } = useTranslation()
   const stepsData = [
     {
       icon: <Settings className="size-5" />,
-      title: "Onboarding intelligent",
-      description:
-        "Renseignez votre domaine. Reflet analyse votre site et génère automatiquement les questions les plus stratégiques.",
-      benefits: [
-        "Génération des intentions par l'IA",
-        "Ciblage sémantique ultra-précis",
-        "Aucun paramétrage complexe requis",
-      ],
+      ...t.howItWorks.steps[0],
     },
     {
       icon: <Activity className="size-5" />,
-      title: "Mesure et Analyse",
-      description:
-        "Notre moteur interroge régulièrement les LLMs et croise leurs réponses avec l'évolution de vos pages web.",
-      benefits: [
-        "Score clair de visibilité et recommandation",
-        "Détection déterministe des changements (0€)",
-        "Analyse de sentiment automatisée",
-      ],
+      ...t.howItWorks.steps[1],
     },
     {
       icon: <Lightbulb className="size-5" />,
-      title: "Actionnez les opportunités",
-      description:
-        "Obtenez des recommandations claires (avant/après) pour corriger vos lacunes et hacker l'algorithme des LLMs.",
-      benefits: [
-        "Preuves techniques détaillées",
-        "Comparaison avec la concurrence",
-        "Maintien de votre avantage compétitif",
-      ],
+      ...t.howItWorks.steps[2],
     },
   ]
 
@@ -91,10 +72,10 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="mx-auto mb-16 max-w-2xl text-center">
           <h2 className="text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
-            Comment ça fonctionne
+            {t.howItWorks.heading}
           </h2>
           <p className="mt-4 text-lg text-ink-secondary">
-            Vous choisissez les questions. Notre moteur s'occupe du reste.
+            {t.howItWorks.subheading}
           </p>
         </div>
 
@@ -130,20 +111,20 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
         {/* Showcase de l'écran Opportunités */}
         <div className="mx-auto mt-20 max-w-5xl">
           <div className="mb-8 text-center">
-            <span className="text-xs font-mono uppercase tracking-wider text-brand-text">Recommandations exploitables</span>
+            <span className="text-xs font-mono uppercase tracking-wider text-brand-text">{t.howItWorks.opportunities.tag}</span>
             <h3 className="mt-2 text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
-              Transformez chaque écart en opportunité d'action
+              {t.howItWorks.opportunities.heading}
             </h3>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">
-              Reflet ne se limite pas à constater les manques : chaque anomalie est convertie en recommandation priorisée avec indice de confiance.
+              {t.howItWorks.opportunities.description}
             </p>
           </div>
           <ScreenshotFrame
-            label="Page Opportunités — Recommandations concrètes"
+            label={t.howItWorks.opportunities.previewLabel}
             src="/images/dashboard/opportunities.png"
             urlPath="app.reflet.io/dashboard/opportunites"
             glow
-            badge="Opportunités prioritaires"
+            badge={t.howItWorks.opportunities.previewBadge}
           />
         </div>
       </div>
