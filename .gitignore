@@ -41,3 +41,4 @@ next-env.d.ts
 
 # Scratch & temporary scripts
 /scratch/
+supabase/.temp/

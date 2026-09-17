@@ -77,14 +77,19 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirm
     const { opportunities: parsed, usage, model: actualModel } = await generateOpportunities(context, brand.name, brand.website_url || 'inconnu', brand.plan as 'free' | 'pro')
 
     if (usage.inputTokens > 0 || usage.outputTokens > 0) {
-      await supabase.from('api_usage_log').insert({
-        brand_id: brandId,
-        call_type: 'opportunity_generation',
-        model: actualModel,
-        tokens_input: usage.inputTokens,
-        tokens_output: usage.outputTokens,
-        estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
-      })
+      try {
+        await supabase.from('api_usage_log').insert({
+          brand_id: brandId,
+          user_id: brand.owner_id,
+          call_type: 'opportunity_generation',
+          model: actualModel,
+          tokens_input: usage.inputTokens,
+          tokens_output: usage.outputTokens,
+          estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
+        })
+      } catch (logErr) {
+        console.warn('[opportunities_engine] api_usage_log insert skipped:', logErr)
+      }
     }
 
     for (const opp of parsed) {

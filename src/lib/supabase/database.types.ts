@@ -378,6 +378,7 @@ export interface Database {
         Row: {
           id: string
           brand_id: string | null
+          user_id: string | null
           call_type: string
           model: string
           tokens_input: number
@@ -388,6 +389,7 @@ export interface Database {
         Insert: {
           id?: string
           brand_id?: string | null
+          user_id?: string | null
           call_type: string
           model: string
           tokens_input: number

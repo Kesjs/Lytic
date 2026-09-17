@@ -37,12 +37,15 @@ export interface EvidenceStep {
   content: string | null
 }
 
-// Plan Free : pas de vraie Opportunity générée par IA (pas d'appel à
-// generateOpportunities) — juste un insight construit directement depuis
-// observations de la mesure unique.
+// Plan Free : génération d'une seule opportunité teaser par IA (coût isolé sur clé Free),
+// persistée en base pour ne jamais appeler le LLM plus d'une fois.
 export interface FreeInsight {
   questionText: string
   notRecommended: true
+  title?: string
+  priority?: OpportunityPriority
+  reason?: string
+  proposedDirection?: string
 }
 
 const priorityWeight: Record<OpportunityPriority, number> = { high: 0, medium: 1, low: 2 }
@@ -65,8 +68,45 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
   if (!brand) return { brand: null } as const
 
   if (isFreePlan(brand.plan)) {
-    // Pas de génération IA d'opportunités pour le plan Free — un insight
-    // simple, construit directement depuis observations, sans coût OpenAI.
+    // 1. Vérifier si une opportunité teaser a déjà été générée et enregistrée pour cette marque
+    const { data: existingOpps } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('brand_id', brand.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (existingOpps && existingOpps.length > 0) {
+      const opp = existingOpps[0]
+      const { data: link } = await supabase
+        .from('opportunity_questions')
+        .select('question_id')
+        .eq('opportunity_id', opp.id)
+        .limit(1)
+        .maybeSingle()
+
+      let qText = ''
+      if (link?.question_id) {
+        const { data: q } = await supabase
+          .from('questions')
+          .select('text')
+          .eq('id', link.question_id)
+          .maybeSingle()
+        qText = q?.text ?? ''
+      }
+
+      const freeInsight: FreeInsight = {
+        questionText: qText,
+        notRecommended: true,
+        title: opp.title,
+        priority: opp.priority,
+        reason: opp.reason,
+        proposedDirection: opp.proposed_direction,
+      }
+      return { brand, opportunities: [] as OpportunityRow[], freeInsight } as const
+    }
+
+    // 2. Pas encore d'opportunité enregistrée. Vérifie la dernière mesure terminée.
     const { data: latestRun } = await supabase
       .from('measurement_runs')
       .select('id')
@@ -82,7 +122,7 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
 
     const { data: notRecommended } = await supabase
       .from('observations')
-      .select('question_id')
+      .select('id, question_id, raw_answer')
       .eq('run_id', latestRun.id)
       .eq('brand_recommended', false)
       .limit(1)
@@ -99,7 +139,82 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
       .eq('id', notRecommended.question_id)
       .maybeSingle()
 
-    const freeInsight: FreeInsight = { questionText: question?.text ?? '', notRecommended: true }
+    const questionText = question?.text ?? ''
+
+    // 3. Génération d'une opportunité teaser unique (coût isolé sur clé Free)
+    try {
+      const { generateOpportunities } = await import('~/lib/analysis')
+      const { calculateCost } = await import('~/lib/openai-pricing')
+      const { getSupabaseAdminClient } = await import('~/lib/supabase/server')
+
+      const context = `Question posée à l'IA : "${questionText}"
+Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée) :
+"${notRecommended.raw_answer ?? ''}"`
+
+      const { opportunities: parsed, usage, model: actualModel } = await generateOpportunities(
+        context,
+        brand.name,
+        brand.website_url || 'inconnu',
+        'free',
+      )
+
+      const adminSupabase = getSupabaseAdminClient()
+
+      if (usage.inputTokens > 0 || usage.outputTokens > 0) {
+        try {
+          await (adminSupabase as any).from('api_usage_log').insert({
+            brand_id: brand.id,
+            user_id: auth.user.id,
+            call_type: 'opportunity_generation',
+            model: actualModel,
+            tokens_input: usage.inputTokens,
+            tokens_output: usage.outputTokens,
+            estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
+          })
+        } catch (logErr) {
+          console.warn('[fetchOpportunities] api_usage_log insert skipped:', logErr)
+        }
+      }
+
+      if (parsed && parsed.length > 0) {
+        const firstOpp = parsed[0]
+        const { data: insertedOpp } = await (adminSupabase as any)
+          .from('opportunities')
+          .insert({
+            brand_id: brand.id,
+            title: firstOpp.title,
+            priority: firstOpp.priority,
+            confidence: firstOpp.confidence / 100,
+            status: 'open',
+            observations_count: 1,
+            reason: firstOpp.reason,
+            proposed_direction: firstOpp.proposed_direction,
+          })
+          .select('id, title, priority, reason, proposed_direction')
+          .maybeSingle()
+
+        if (insertedOpp) {
+          await (adminSupabase as any).from('opportunity_questions').insert({
+            opportunity_id: insertedOpp.id,
+            question_id: notRecommended.question_id,
+          })
+
+          const freeInsight: FreeInsight = {
+            questionText,
+            notRecommended: true,
+            title: insertedOpp.title,
+            priority: insertedOpp.priority,
+            reason: insertedOpp.reason,
+            proposedDirection: insertedOpp.proposed_direction,
+          }
+          return { brand, opportunities: [] as OpportunityRow[], freeInsight } as const
+        }
+      }
+    } catch (err) {
+      console.error('[fetchOpportunities] Erreur lors de la génération de teaser opportunité Free:', err)
+    }
+
+    const freeInsight: FreeInsight = { questionText, notRecommended: true }
     return { brand, opportunities: [] as OpportunityRow[], freeInsight } as const
   }
 

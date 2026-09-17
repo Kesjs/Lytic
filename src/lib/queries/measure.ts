@@ -428,23 +428,28 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       let totalInput = 0
       let totalOutput = 0
       rawResults.forEach(r => {
-        totalInput += r.usage.inputTokens
-        totalOutput += r.usage.outputTokens
+        totalInput += r.usage?.inputTokens ?? 0
+        totalOutput += r.usage?.outputTokens ?? 0
       })
       analyses.forEach(a => {
-        totalInput += a.usage.inputTokens
-        totalOutput += a.usage.outputTokens
+        totalInput += a.usage?.inputTokens ?? 0
+        totalOutput += a.usage?.outputTokens ?? 0
       })
       if (totalInput > 0 || totalOutput > 0) {
         const actualModel = rawResults[0]?.model || 'gpt-4o-mini'
-        await adminSupabase.from('api_usage_log').insert({
-          brand_id: brand.id,
-          call_type: 'measurement',
-          model: actualModel,
-          tokens_input: totalInput,
-          tokens_output: totalOutput,
-          estimated_cost_usd: calculateCost(actualModel, totalInput, totalOutput),
-        })
+        try {
+          await (adminSupabase as any).from('api_usage_log').insert({
+            brand_id: brand.id,
+            user_id: brand.owner_id,
+            call_type: 'measurement',
+            model: actualModel,
+            tokens_input: totalInput,
+            tokens_output: totalOutput,
+            estimated_cost_usd: calculateCost(actualModel, totalInput, totalOutput),
+          })
+        } catch (logErr) {
+          console.warn('[processNextQuestion] api_usage_log insert skipped:', logErr)
+        }
       }
 
       // cited déterministe par échantillon (non utilisé dans la DB pour l'instant,

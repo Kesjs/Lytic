@@ -516,7 +516,17 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
   .validator((data: { name: string; websiteUrl: string }) => data)
   .handler(async ({ data }): Promise<string[]> => {
     const supabase = getSupabaseServerClient()
-    await requireUser(supabase)
+    const user = await requireUser(supabase)
+
+    // Garde-fou 1 : vérification d'email confirmé en production
+    if (
+      process.env.NODE_ENV === 'production' &&
+      user.app_metadata?.provider === 'email' &&
+      !(user as any).email_confirmed_at &&
+      !(user as any).confirmed_at
+    ) {
+      throw new Error('Veuillez confirmer votre adresse email avant de générer des suggestions de questions.')
+    }
 
     const name = data.name.trim()
     const websiteUrl = data.websiteUrl.trim()
@@ -527,24 +537,96 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
       throw new Error('URL invalide.')
     }
 
+    const { getSupabaseAdminClient } = await import('~/lib/supabase/server')
+    const adminSupabase = getSupabaseAdminClient()
+
+    // Garde-fou 2 : 1 génération par compte maximum (user_id)
+    // Même philosophie que FREE_MAX_MEASUREMENTS = 1
+    try {
+      const { count: genCount, error: countError } = await (adminSupabase as any)
+        .from('api_usage_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('call_type', 'question_generation')
+
+      if (!countError && (genCount ?? 0) >= 1) {
+        throw new Error(
+          'Vous avez déjà généré des suggestions pour ce compte. Vous pouvez les modifier ou en ajouter manuellement.',
+        )
+      }
+    } catch (err: any) {
+      if (err?.message?.includes('déjà généré')) {
+        throw err
+      }
+      // Si la table n'existe pas encore (PGRST205 / 42P01), tolérer sans crasher
+    }
+
+    // Garde-fou 3 : Filet de sécurité IP basé sur getClientIp() et signup_attempts
+    try {
+      const { getClientIp } = await import('~/lib/queries/auth')
+      const ip = getClientIp()
+
+      if (ip && ip !== 'unknown') {
+        const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        const { data: attempts } = await (adminSupabase as any)
+          .from('signup_attempts')
+          .select('user_id')
+          .eq('ip_address', ip)
+          .gte('created_at', since24h)
+
+        if (attempts && attempts.length > 0) {
+          const userIds = attempts.map((a: any) => a.user_id).filter(Boolean)
+          if (userIds.length > 0) {
+            const { count: ipGenCount } = await (adminSupabase as any)
+              .from('api_usage_log')
+              .select('id', { count: 'exact', head: true })
+              .in('user_id', userIds)
+              .eq('call_type', 'question_generation')
+
+            if ((ipGenCount ?? 0) >= 3) {
+              throw new Error(
+                'Trop de demandes de génération depuis cette connexion. Veuillez réessayer plus tard.',
+              )
+            }
+          }
+        }
+      }
+    } catch (ipErr: any) {
+      if (ipErr?.message?.includes('Trop de demandes')) {
+        throw ipErr
+      }
+      // Tolérer si signup_attempts n'existe pas encore
+    }
+
     // Dynamic import to avoid running gemini code on client side bundle if not split
     const { generateBrandQuestions } = await import('~/lib/analysis')
     const { calculateCost } = await import('~/lib/openai-pricing')
-    const { getSupabaseAdminClient } = await import('~/lib/supabase/server')
     
+    // Récupérer la marque de l'utilisateur si elle existe déjà
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('owner_id', user.id)
+      .maybeSingle()
+
     const { questions, usage, model: actualModel } = await generateBrandQuestions(name, websiteUrl, 'free')
     
     if (usage.inputTokens > 0 || usage.outputTokens > 0) {
-      const adminSupabase = getSupabaseAdminClient()
-      await adminSupabase.from('api_usage_log').insert({
-        brand_id: null,
-        call_type: 'question_generation',
-        model: actualModel,
-        tokens_input: usage.inputTokens,
-        tokens_output: usage.outputTokens,
-        estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
-      })
+      try {
+        await (adminSupabase as any).from('api_usage_log').insert({
+          brand_id: brand?.id ?? null,
+          user_id: user.id,
+          call_type: 'question_generation',
+          model: actualModel,
+          tokens_input: usage.inputTokens,
+          tokens_output: usage.outputTokens,
+          estimated_cost_usd: calculateCost(actualModel, usage.inputTokens, usage.outputTokens),
+        })
+      } catch (insertErr) {
+        console.warn('api_usage_log insert skipped:', insertErr)
+      }
     }
     
     return questions
   })
+

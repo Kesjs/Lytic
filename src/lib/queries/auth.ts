@@ -10,7 +10,7 @@ import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/
 const SIGNUP_WINDOW_DAYS = 30
 const SIGNUP_MAX_PER_IP = 1
 
-function getClientIp(): string {
+export function getClientIp(): string {
   // Transmis par le proxy (Render) — jamais fiable à 100% mais c'est la seule
   // IP réelle accessible côté serveur ici (le SDK Supabase côté navigateur
   // n'a aucun accès à l'IP du visiteur).

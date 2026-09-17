@@ -129,13 +129,13 @@ describe('tests/integration/measure.test.ts', () => {
       )
     })
 
-    it('refuse si le délai de 7 jours n\'est pas écoulé depuis la dernière mesure', async () => {
-      const recentDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // il y a 2 jours
+    it('refuse si le délai n\'est pas écoulé depuis la dernière mesure', async () => {
+      const recentDate = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // il y a 2 heures
       const mockClient = createMockSupabase({
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
         from: (table: string) => {
           if (table === 'brands') {
-            return createChainableBuilder({ data: mockBrand, error: null })
+            return createChainableBuilder({ data: { ...mockBrand, plan: 'active' }, error: null })
           }
           if (table === 'measurement_runs') {
             // checkMeasurementDelay
@@ -335,12 +335,18 @@ describe('tests/integration/measure.test.ts', () => {
       ;(runOpenAIQuery as any).mockResolvedValue({
         text: 'Ma Marque est une très bonne solution ainsi que ConcurA.',
         citations: ['https://mamarque.com/features'],
+        usage: { inputTokens: 20, outputTokens: 20 },
+        model: 'gpt-4o-mini',
       })
       ;(analyzeAnswer as any).mockResolvedValue({
-        brand_mentioned: true,
-        brand_recommended: true,
-        brand_position: 1,
-        competitors: [{ name: 'ConcurA', mentioned: true, recommended: false, position: 2 }],
+        parsed: {
+          brand_mentioned: true,
+          brand_recommended: true,
+          brand_position: 1,
+          competitors: [{ name: 'ConcurA', mentioned: true, recommended: false, position: 2 }],
+        },
+        usage: { inputTokens: 20, outputTokens: 20 },
+        model: 'gpt-4o-mini',
       })
 
       let insertedObservation: any = null
@@ -397,7 +403,7 @@ describe('tests/integration/measure.test.ts', () => {
       const res = await processNextQuestion({ data: { runId: 'run-1' } })
       expect(res.done).toBe(false)
       expect(res.run.questions_completed).toBe(1)
-      expect(runOpenAIQuery).toHaveBeenCalledWith('Meilleur service IA ?')
+      expect(runOpenAIQuery).toHaveBeenCalledWith('Meilleur service IA ?', undefined)
       expect(insertedObservation.brand_mentioned).toBe(true)
       expect(insertedObservation.brand_recommended).toBe(true)
       expect(insertedObservation.brand_position).toBe(1)

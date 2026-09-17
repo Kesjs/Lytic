@@ -164,27 +164,134 @@ function OpportunitesPage() {
 }
 
 function FreeInsightCard({ insight }: { insight: FreeInsight }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-6">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-elevated border border-border text-ink-muted">
-          <Lightbulb className="size-4" />
+  const hasDetailedInsight = Boolean(insight.title && insight.reason)
+
+  if (!hasDetailedInsight) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-elevated border border-border text-ink-muted">
+            <Lightbulb className="size-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-ink-primary">Une question sans recommandation</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+              Sur « {insight.questionText} », votre marque n'a pas été recommandée dans la réponse
+              observée.
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-ink-primary">Une question sans recommandation</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
-            Sur « {insight.questionText} », votre marque n'a pas été recommandée dans la réponse
-            observée.
-          </p>
-        </div>
+        <a
+          href="/dashboard/parametres"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+        >
+          Débloquez le plan d'action détaillé avec Reflet Pro
+          <ArrowRight className="size-3.5" />
+        </a>
       </div>
-      <a
-        href="/dashboard/parametres"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
-      >
-        Débloquez le plan d'action détaillé avec Reflet Pro
-        <ArrowRight className="size-3.5" />
-      </a>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Bannière d'information */}
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-brand/20 bg-brand/5 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs font-medium text-ink-primary">
+          <span className="flex size-2 rounded-full bg-brand animate-pulse" />
+          <span>Aperçu de diagnostic AIO offert</span>
+          <span className="text-ink-muted">•</span>
+          <span className="text-ink-muted">Basé sur votre analyse gratuite</span>
+        </div>
+        <a
+          href="/dashboard/parametres"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-brand-text hover:underline"
+        >
+          Passer Pro pour tout débloquer
+          <ChevronRight className="size-3.5" />
+        </a>
+      </div>
+
+      {/* Carte Teaser d'Opportunité */}
+      <section className="rounded-lg border border-border bg-surface overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-border/60">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-sm border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[11px] font-medium text-warning">
+                  Opportunité détectée
+                </span>
+                <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
+                  Aperçu Free (1/1)
+                </span>
+              </div>
+              <h2 className="mt-2.5 text-base font-semibold text-ink-primary">
+                {insight.title}
+              </h2>
+            </div>
+          </div>
+
+          {insight.questionText && (
+            <div className="mt-3.5 pt-3 border-t border-border/40">
+              <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider">
+                Question concernée
+              </p>
+              <p className="mt-1 text-xs font-medium text-ink-secondary">
+                « {insight.questionText} »
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 space-y-6 bg-elevated/20">
+          {/* Diagnostic en clair */}
+          <div>
+            <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider">
+              Pourquoi (Diagnostic)
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-secondary bg-surface p-3.5 rounded-md border border-border">
+              {insight.reason}
+            </p>
+          </div>
+
+          {/* Action concrète - Teaser verrouillé / flouté */}
+          <div>
+            <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wider mb-2">
+              Action recommandée pour votre site
+            </p>
+            <div className="relative rounded-md border border-border/80 bg-surface overflow-hidden p-5">
+              {/* Contenu flouté en arrière-plan */}
+              <div className="filter blur-[5px] select-none pointer-events-none opacity-30 space-y-2">
+                <p className="text-xs font-medium text-ink-primary">
+                  {insight.proposedDirection || "Optimisation de la page d'accueil et ajout des éléments d'autorité nécessaires pour être cité en première position."}
+                </p>
+                <p className="text-xs text-ink-secondary">
+                  Créer une section dédiée aux avis comparatifs, restructurer les balises avec les mots-clés exacts, et ajouter les citations de réassurance mentionnées par l'IA.
+                </p>
+              </div>
+
+              {/* Overlay verrou avec CTA Pro */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[2px] p-4 text-center">
+                <div className="flex size-9 items-center justify-center rounded-full bg-brand/10 border border-brand/20 text-brand-text mb-2">
+                  <Lock className="size-4" />
+                </div>
+                <p className="text-sm font-semibold text-ink-primary">
+                  Recommandation concrète verrouillée
+                </p>
+                <p className="mt-1 max-w-md text-xs text-ink-secondary">
+                  Passez au plan Pro pour débloquer les consignes techniques exactes, le suivi continu et la détection automatique de toutes vos opportunités.
+                </p>
+                <a
+                  href="/dashboard/parametres"
+                  className="mt-3.5 inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-xs font-semibold text-black hover:bg-brand-hover shadow-sm transition-colors"
+                >
+                  Débloquer avec Reflet Pro
+                  <ArrowRight className="size-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

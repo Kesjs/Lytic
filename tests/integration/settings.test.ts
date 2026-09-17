@@ -30,7 +30,15 @@ vi.mock('~/lib/supabase/server', () => ({
   getSupabaseAdminClient: vi.fn(),
 }))
 
-import { getSupabaseServerClient } from '~/lib/supabase/server'
+vi.mock('~/lib/analysis', () => ({
+  generateBrandQuestions: vi.fn().mockResolvedValue({
+    questions: ['Question 1 ?', 'Question 2 ?'],
+    usage: { inputTokens: 30, outputTokens: 30 },
+    model: 'gpt-5.6-luna',
+  }),
+}))
+
+import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 import {
   fetchSettings,
   updateProfileName,
@@ -41,6 +49,7 @@ import {
   updateQuestionText,
   toggleQuestionActive,
   updateNotificationPreferences,
+  generateQuestionsWithAI,
 } from '~/lib/queries/settings'
 
 function createMockSupabase(handlers: {
@@ -385,12 +394,12 @@ describe('tests/integration/settings.test.ts', () => {
       })
       ;(getSupabaseServerClient as any).mockReturnValue(mockClient)
 
-      const questions = Array.from({ length: 51 }, (_, i) => `Question ${i + 1} ?`)
+      const questions = Array.from({ length: 2 }, (_, i) => `Question ${i + 1} ?`)
       await expect(
         createBrandWithQuestions({
           data: { name: 'Brand', websiteUrl: 'https://site.fr', questions },
         }),
-      ).rejects.toThrow('Limite de 50 questions suivies atteinte pour ce plan.')
+      ).rejects.toThrow('Le plan Free est limité à 1 question suivie')
     })
 
     it('refuse si une question dépasse la longueur maximale (300 caractères)', async () => {
@@ -455,12 +464,12 @@ describe('tests/integration/settings.test.ts', () => {
         data: {
           name: 'Nouvelle Marque',
           websiteUrl: 'https://nouvelle-marque.com',
-          questions: ['Quelle est la meilleure solution ?', 'Quel outil choisir ?'],
+          questions: ['Quelle est la meilleure solution ?'],
         },
       })
 
       expect(res).toEqual({ success: true, brandId: 'new-brand-id' })
-      expect(insertedQuestions).toHaveLength(2)
+      expect(insertedQuestions).toHaveLength(1)
       expect(insertedQuestions[0]).toEqual({
         brand_id: 'new-brand-id',
         text: 'Quelle est la meilleure solution ?',
@@ -525,4 +534,72 @@ describe('tests/integration/settings.test.ts', () => {
       })
     })
   })
+
+  describe('generateQuestionsWithAI', () => {
+    it('refuse si l\'utilisateur a déjà généré des questions (rate-limiting par compte)', async () => {
+      const mockClient = createMockSupabase({
+        auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+      })
+      ;(getSupabaseServerClient as any).mockReturnValue(mockClient)
+
+      const mockAdmin = createMockSupabase({
+        from: (table: string) => {
+          if (table === 'api_usage_log') {
+            return createChainableBuilder({ count: 1, error: null })
+          }
+          return createChainableBuilder()
+        },
+      })
+      ;(getSupabaseAdminClient as any).mockReturnValue(mockAdmin)
+
+      await expect(
+        generateQuestionsWithAI({
+          data: { name: 'Ma Marque', websiteUrl: 'https://mamarque.com' },
+        }),
+      ).rejects.toThrow('Vous avez déjà généré des suggestions pour ce compte.')
+    })
+
+    it('génère des questions et journalise l\'appel avec user_id dans api_usage_log', async () => {
+      let loggedUsage: any = null
+      const mockClient = createMockSupabase({
+        auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+        from: (table: string) => {
+          if (table === 'brands') {
+            return createChainableBuilder({ data: { id: 'brand-123' }, error: null })
+          }
+          return createChainableBuilder()
+        },
+      })
+      ;(getSupabaseServerClient as any).mockReturnValue(mockClient)
+
+      const mockAdmin = createMockSupabase({
+        from: (table: string) => {
+          if (table === 'api_usage_log') {
+            const b = createChainableBuilder({ count: 0, error: null })
+            b.insert = vi.fn((row) => {
+              loggedUsage = row
+              return Promise.resolve({ error: null })
+            })
+            return b
+          }
+          if (table === 'signup_attempts') {
+            return createChainableBuilder({ data: [], error: null })
+          }
+          return createChainableBuilder()
+        },
+      })
+      ;(getSupabaseAdminClient as any).mockReturnValue(mockAdmin)
+
+      const questions = await generateQuestionsWithAI({
+        data: { name: 'Ma Marque', websiteUrl: 'https://mamarque.com' },
+      })
+
+      expect(questions).toHaveLength(2)
+      expect(loggedUsage).toBeDefined()
+      expect(loggedUsage.user_id).toBe('user-123')
+      expect(loggedUsage.brand_id).toBe('brand-123')
+      expect(loggedUsage.call_type).toBe('question_generation')
+    })
+  })
 })
+
