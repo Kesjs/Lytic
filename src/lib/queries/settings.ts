@@ -266,6 +266,77 @@ export const createBrandWithQuestions = createServerFn({ method: 'POST' })
     return { success: true, brandId: brand.id } as const
   })
 
+// --- Réinitialisation (recommencer l'onboarding) ---
+
+// Aucune UI ne permettait jusqu'ici de revenir en arrière une fois une
+// marque créée : createBrandWithQuestions refuse toute nouvelle marque tant
+// que owner_id en a déjà une (cf. plus haut), et il n'existait aucun moyen
+// de supprimer la marque existante — y compris quand la toute première
+// mesure automatique de l'onboarding échoue et laisse le compte dans un
+// état à moitié configuré, sans issue possible pour l'utilisateur.
+// On ne suppose pas de ON DELETE CASCADE en base (cf. deleteQuestion
+// ci-dessus) : on supprime explicitement chaque table dépendante, de la
+// plus profonde à la plus haute, pour que ça marche même sans cascade.
+export const deleteBrand = createServerFn({ method: 'POST' })
+  .validator((data: { brandId: string }) => data)
+  .handler(async ({ data }): Promise<any> => {
+    const supabase = getSupabaseServerClient()
+    const user = await requireUser(supabase)
+    await requireOwnedBrand(supabase, user.id, data.brandId)
+
+    async function del(table: string, column: string, values: readonly string[]) {
+      if (values.length === 0) return
+      const { error } = await supabase.from(table).delete().in(column, values as string[])
+      if (error) throw new Error(error.message)
+    }
+    async function delByBrand(table: string) {
+      const { error } = await supabase.from(table).delete().eq('brand_id', data.brandId)
+      if (error) throw new Error(error.message)
+    }
+
+    const ids = async (table: string, column = 'id') => {
+      const { data: rows, error } = await supabase.from(table).select(column).eq('brand_id', data.brandId)
+      if (error) throw new Error(error.message)
+      return (rows ?? []).map((r: any) => r[column] as string)
+    }
+
+    const runIds = await ids('measurement_runs')
+    const questionIds = await ids('questions')
+    const opportunityIds = await ids('opportunities')
+    const competitorIds = await ids('competitors')
+
+    const { data: obsRows, error: obsSelectError } = await supabase
+      .from('observations')
+      .select('id')
+      .in('run_id', runIds.length ? runIds : ['00000000-0000-0000-0000-000000000000'])
+    if (obsSelectError) throw new Error(obsSelectError.message)
+    const observationIds = (obsRows ?? []).map((r) => r.id as string)
+
+    await del('observation_samples', 'observation_id', observationIds)
+    await del('observation_competitors', 'observation_id', observationIds)
+    await del('observation_competitors', 'competitor_id', competitorIds)
+    await del('observations', 'run_id', runIds)
+    await del('opportunity_evidence', 'opportunity_id', opportunityIds)
+    await del('opportunity_questions', 'opportunity_id', opportunityIds)
+    await del('opportunity_questions', 'question_id', questionIds)
+    await delByBrand('opportunities')
+    await delByBrand('site_changes')
+    await delByBrand('site_pages')
+    await delByBrand('site_crawl_runs')
+    await delByBrand('questions')
+    await delByBrand('measurement_runs')
+    await delByBrand('competitors')
+    await delByBrand('api_usage_log')
+    await delByBrand('events')
+    await delByBrand('notification_preferences')
+    await delByBrand('brand_bot_access')
+
+    const { error: brandError } = await supabase.from('brands').delete().eq('id', data.brandId)
+    if (brandError) throw new Error(brandError.message)
+
+    return { success: true } as const
+  })
+
 // --- Questions ---
 // Gestion manuelle (ajout / édition / désactivation) — pas de génération
 // automatique dans le MVP (§48 du master : hors périmètre actuel).
