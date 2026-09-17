@@ -1,16 +1,11 @@
 import OpenAI from 'openai'
 import * as cheerio from 'cheerio'
 import { fetchSafe } from '~/lib/crawler/fetch-safe'
+import { getClient } from '~/lib/openai'
 import type { ResponseOutputText } from 'openai/resources/responses/responses'
 
 const MODEL = 'gpt-5.6-luna'
 const MAX_RETRIES = 3
-
-function getClient(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) throw new Error("OPENAI_API_KEY non définie dans les variables d'environnement serveur.")
-  return new OpenAI({ apiKey, maxRetries: 0 }) 
-}
 
 /** Extrait le texte brut d'une réponse Responses API */
 function extractText(response: OpenAI.Responses.Response): string {
