@@ -54,11 +54,72 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
   )
 }
 
+// Groupe repliable pour le menu mobile — reproduit le regroupement des
+// dropdowns desktop (Produit / Ressources) au lieu d'afficher les 9 liens
+// à plat, qui rendait le menu mobile trop long et peu lisible.
+function MobileNavGroup({ label, items, onNavigate }: { label: string; items: { label: string; href: string }[]; onNavigate: () => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="border-b border-border/60">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between py-3 text-sm text-ink-secondary transition-colors hover:text-ink-primary"
+        aria-expanded={open}
+      >
+        {label}
+        <ChevronDown className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-1 pb-3 pl-3">
+              {items.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className="py-2 text-sm text-ink-secondary transition-colors hover:text-ink-primary"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export function Navbar() {
   const { t } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+
+  // Listes partagées entre le dropdown desktop et l'accordéon mobile, pour
+  // ne jamais les laisser diverger.
+  const productItems = [
+    { label: t.navbar.productOverview, href: '/#produit' },
+    { label: t.navbar.productAiVisibility, href: '/#produit' },
+    { label: t.navbar.productQuestions, href: '/#questions' },
+    { label: t.navbar.productEvidence, href: '/#preuves' },
+    { label: t.navbar.productHistory, href: '/#historique' },
+  ]
+  const resourceItems = [
+    { label: t.navbar.resourcesBlog, href: '#' },
+    { label: t.navbar.resourcesGuides, href: '#' },
+    { label: t.navbar.resourcesStudies, href: '#' },
+    { label: t.navbar.resourcesGlossary, href: '#' },
+  ]
 
   useEffect(() => {
     function onScroll() {
@@ -102,19 +163,8 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
-          <NavDropdown label={t.navbar.product} items={[
-            { label: t.navbar.productOverview, href: '/#produit' },
-            { label: t.navbar.productAiVisibility, href: '/#produit' },
-            { label: t.navbar.productQuestions, href: '/#questions' },
-            { label: t.navbar.productEvidence, href: '/#preuves' },
-            { label: t.navbar.productHistory, href: '/#historique' },
-          ]} />
-          <NavDropdown label={t.navbar.resources} items={[
-            { label: t.navbar.resourcesBlog, href: '#' },
-            { label: t.navbar.resourcesGuides, href: '#' },
-            { label: t.navbar.resourcesStudies, href: '#' },
-            { label: t.navbar.resourcesGlossary, href: '#' },
-          ]} />
+          <NavDropdown label={t.navbar.product} items={productItems} />
+          <NavDropdown label={t.navbar.resources} items={resourceItems} />
           <a href="#tarifs" className="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
             {t.navbar.pricing}
           </a>
@@ -159,44 +209,46 @@ export function Navbar() {
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden border-t border-border bg-canvas md:hidden"
           >
-            <div className="flex flex-col gap-1 px-6 py-4">
+            <div className="flex flex-col px-6 py-4">
               <div className="mb-4">
                 <LanguageSwitcher />
               </div>
-              {[
-                { label: t.navbar.productOverview, href: '/#produit' },
-                { label: t.navbar.productAiVisibility, href: '/#produit' },
-                { label: t.navbar.productQuestions, href: '/#questions' },
-                { label: t.navbar.productEvidence, href: '/#preuves' },
-                { label: t.navbar.productHistory, href: '/#historique' },
-                { label: t.navbar.resourcesBlog, href: '#' },
-                { label: t.navbar.resourcesGuides, href: '#' },
-                { label: t.navbar.resourcesStudies, href: '#' },
-                { label: t.navbar.resourcesGlossary, href: '#' },
-              ].map((item) => (
-                <a key={item.label} href={item.href} className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
-                  {item.label}
-                </a>
-              ))}
-              <a href="#tarifs" className="py-2 text-sm text-ink-secondary hover:text-ink-primary">
+
+              {/* Regroupé comme sur desktop (Produit / Ressources) au lieu
+                  d'une liste à plat de 9 liens. */}
+              <MobileNavGroup label={t.navbar.product} items={productItems} onNavigate={() => setMobileOpen(false)} />
+              <MobileNavGroup label={t.navbar.resources} items={resourceItems} onNavigate={() => setMobileOpen(false)} />
+              <a
+                href="#tarifs"
+                onClick={() => setMobileOpen(false)}
+                className="border-b border-border/60 py-3 text-sm text-ink-secondary hover:text-ink-primary"
+              >
                 {t.navbar.pricing}
               </a>
-              <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
+
+              <div className="mt-4 flex flex-col gap-2">
                 {isAuthenticated ? (
                   <Link
                     to="/dashboard"
-                    className="flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-center text-sm font-semibold text-black"
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
                   >
                     {t.navbar.goToDashboard}
                     <ArrowRight className="size-4" />
                   </Link>
                 ) : (
                   <>
-                    <Link to="/login" className="text-sm text-ink-secondary hover:text-ink-primary">
+                    <Link
+                      to="/login"
+                      className="flex w-full items-center justify-center py-2 text-sm text-ink-secondary hover:text-ink-primary"
+                    >
                       {t.navbar.login}
                     </Link>
-                    <Link to="/login" className="rounded-md bg-brand px-4 py-2 text-center text-sm font-medium text-black">
+                    <Link
+                      to="/login"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-brand-hover"
+                    >
                       {t.navbar.start}
+                      <ArrowRight className="size-3.5" />
                     </Link>
                   </>
                 )}
