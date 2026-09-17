@@ -284,6 +284,23 @@ export const deleteBrand = createServerFn({ method: 'POST' })
     const user = await requireUser(supabase)
     await requireOwnedBrand(supabase, user.id, data.brandId)
 
+    // Garde-fou anti-abus (refonte Free §pricing) : la suppression ne sert
+    // qu'à se sortir d'un onboarding planté avant la première mesure. Une
+    // fois une mesure réussie, un plan Free pourrait sinon supprimer/
+    // recréer sa marque à l'infini pour contourner FREE_MAX_MEASUREMENTS.
+    // Au-delà, il faut passer par le support.
+    const { count: successCount, error: successCheckError } = await supabase
+      .from('measurement_runs')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', data.brandId)
+      .eq('status', 'success')
+    if (successCheckError) throw new Error(successCheckError.message)
+    if ((successCount ?? 0) > 0) {
+      throw new Error(
+        'Cette marque a déjà une mesure réussie : la suppression automatique n\'est plus disponible. Contacte le support pour recommencer.',
+      )
+    }
+
     async function del(table: string, column: string, values: readonly string[]) {
       if (values.length === 0) return
       const { error } = await supabase.from(table).delete().in(column, values as string[])
