@@ -146,3 +146,9 @@ table {
 html[data-magicui-theme-vt="active"]::view-transition-group(root) {
   animation-duration: var(--magicui-theme-toggle-vt-duration);
 }
+
+/* Désactive l'icône oeil native des navigateurs (Edge/IE) pour les mots de passe */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
