@@ -192,7 +192,7 @@ function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
           <div className="size-7 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-          <p className="text-xs text-ink-muted">Accès à votre espace...</p>
+          <p className="text-xs text-ink-muted">Chargement...</p>
         </div>
       </div>
     )
