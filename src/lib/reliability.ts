@@ -55,3 +55,40 @@ export async function getChangeReliabilityStatus(
     reliable: runsWithinWindow >= RUNS_REQUIRED,
   }
 }
+
+// ─── Remesure conditionnelle Free (refonte §4) ────────────────────────────
+// Un compte Free n'a plus de remesure automatique : il en débloque UNE
+// lorsqu'un changement de site significatif (importance != 'low') a été
+// détecté depuis sa dernière mesure ET n'a pas déjà servi à débloquer une
+// remesure précédente (site_changes.linked_run_id encore vide).
+// Partagé entre measure.ts (application du blocage) et dashboard.ts
+// (affichage du bouton) pour ne jamais diverger sur la même règle.
+
+export interface FreeRemeasureUnlock {
+  available: boolean
+  changeId: string | null
+}
+
+export async function getFreeRemeasureUnlock(
+  supabase: SupabaseClient<Database>,
+  brandId: string,
+  sinceIso: string | null,
+): Promise<FreeRemeasureUnlock> {
+  // Pas de mesure précédente : c'est la toute première mesure, jamais
+  // bloquée par cette règle (le blocage "une seule mesure gratuite" est
+  // géré séparément, avant l'appel à cette fonction).
+  if (!sinceIso) return { available: true, changeId: null }
+
+  const { data: unusedChange } = await supabase
+    .from('site_changes')
+    .select('id')
+    .eq('brand_id', brandId)
+    .neq('importance', 'low')
+    .is('linked_run_id', null)
+    .gte('detected_at', sinceIso)
+    .order('detected_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return { available: !!unusedChange, changeId: unusedChange?.id ?? null }
+}

@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts'
+import { Lock } from 'lucide-react'
 import { fetchMetricsHistory, type MetricPeriod, type MetricPoint } from '~/lib/queries/metrics'
 
 type Indicator = 'score' | 'mentionsPct' | 'recommendationsPct' | 'avgPosition'
@@ -26,14 +27,14 @@ const PERIODS: { value: MetricPeriod; label: string }[] = [
   { value: '3m', label: '3 mois' },
 ]
 
-export function PerformanceChart({ hasAnyRun }: { hasAnyRun: boolean }) {
+export function PerformanceChart({ hasAnyRun, free = false }: { hasAnyRun: boolean; free?: boolean }) {
   const [indicator, setIndicator] = useState<Indicator>('score')
   const [period, setPeriod] = useState<MetricPeriod>('30d')
 
   const { data, isLoading } = useQuery({
     queryKey: ['metrics-history', period],
     queryFn: () => fetchMetricsHistory({ data: period }),
-    enabled: hasAnyRun,
+    enabled: hasAnyRun && !free,
   })
 
   const meta = INDICATORS.find((i) => i.value === indicator)!
@@ -83,6 +84,8 @@ export function PerformanceChart({ hasAnyRun }: { hasAnyRun: boolean }) {
       <div className="mt-4">
         {!hasAnyRun ? (
           <ChartMessage text="Pas encore de mesure — le graphique apparaîtra après la première mesure." />
+        ) : free ? (
+          <FreeChartTeaser />
         ) : isLoading ? (
           <ChartMessage text="Chargement du graphique…" />
         ) : points.length === 0 ? (
@@ -137,6 +140,47 @@ export function PerformanceChart({ hasAnyRun }: { hasAnyRun: boolean }) {
             </AreaChart>
           </ResponsiveContainer>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Plan Free : jamais assez de mesures pour tracer une vraie courbe (1 seul
+// point). On montre une forme grise abstraite — jamais de données
+// fabriquées — plutôt qu'un graphique à point unique trompeur. Même
+// principe de flou que la page Concurrents.
+function FreeChartTeaser() {
+  return (
+    <div className="relative h-[260px] overflow-hidden rounded-md border border-border">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 400 160"
+        preserveAspectRatio="none"
+        className="absolute inset-0 size-full blur-sm select-none opacity-60"
+      >
+        <path
+          d="M0,120 C40,100 60,60 100,70 C140,80 160,40 200,50 C240,60 260,20 300,35 C340,50 360,90 400,80"
+          fill="none"
+          stroke="#6b6b6b"
+          strokeWidth={3}
+        />
+        <path
+          d="M0,120 C40,100 60,60 100,70 C140,80 160,40 200,50 C240,60 260,20 300,35 C340,50 360,90 400,80 L400,160 L0,160 Z"
+          fill="#6b6b6b"
+          opacity={0.15}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-canvas/70 px-6 text-center">
+        <Lock className="size-4 text-ink-muted" />
+        <p className="text-sm text-ink-secondary">
+          Ce n'est qu'un instantané — le suivi semaine après semaine est réservé au plan Pro.
+        </p>
+        <a
+          href="/dashboard/parametres"
+          className="mt-1 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+        >
+          Débloquer le suivi dans le temps avec Pro
+        </a>
       </div>
     </div>
   )

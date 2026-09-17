@@ -5,6 +5,7 @@ import { fetchPerformanceOverview, type PerformanceQuestionRow } from '~/lib/que
 import { PerformanceChart } from '~/components/dashboard/PerformanceChart'
 import { QuestionDrawer } from '~/components/dashboard/QuestionDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
+import { isFreePlan } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/performance')({
   component: PerformancePage,
@@ -75,6 +76,11 @@ function PerformancePage() {
                 La dernière tentative de mesure a échoué.
               </p>
             )}
+            {isFreePlan(data.brand.plan) && (
+              <p className="mt-1 text-[11px] text-ink-muted">
+                Basé sur 1 seul échantillon — moins fiable que la mesure Pro multi-échantillons.
+              </p>
+            )}
           </>
         ) : (
           <DashboardStateView state={displayRun.status === 'partial' ? 'partial' : 'stale'} compact className="mt-2" />
@@ -84,7 +90,7 @@ function PerformancePage() {
         )}
       </header>
 
-      <PerformanceChart hasAnyRun={hasAnyRun} />
+      <PerformanceChart hasAnyRun={hasAnyRun} free={isFreePlan(data.brand.plan)} />
 
       <section className="rounded-lg border border-border bg-surface p-5">
         <h2 className="text-sm font-semibold text-ink-primary">Questions suivies</h2>

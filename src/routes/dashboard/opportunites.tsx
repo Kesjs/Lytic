@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Check, ChevronDown, ChevronRight, Filter, Search, X as XIcon, Lightbulb, ArrowRight } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Filter, Search, X as XIcon, Lightbulb, ArrowRight, Lock } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import {
   fetchOpportunities,
@@ -16,6 +16,7 @@ import {
   type FreeInsight,
 } from '~/lib/queries/opportunities'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
+import { isFreePlan } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/opportunites')({
   component: OpportunitesPage,
@@ -95,6 +96,9 @@ function OpportunitesPage() {
     // unique question suivie. Sinon (bien recommandée) : état vide inchangé.
     if (data.freeInsight) {
       return <FreeInsightCard insight={data.freeInsight} />
+    }
+    if (isFreePlan(data.brand.plan)) {
+      return <FreeOpportunitiesLockedCard />
     }
     return <DashboardStateView state="no_opportunity" />
   }
@@ -179,6 +183,36 @@ function FreeInsightCard({ insight }: { insight: FreeInsight }) {
         className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
       >
         Débloquez le plan d'action détaillé avec Reflet Pro
+        <ArrowRight className="size-3.5" />
+      </a>
+    </div>
+  )
+}
+
+// Plan Free, aucune opportunité ET aucun freeInsight : pas de "Aucune
+// opportunité détectée" trompeur (ça sous-entend une vraie analyse) — les
+// opportunités exigent plusieurs mesures dans le temps, indisponibles avec
+// l'aperçu unique Free. Aucun chiffre inventé, juste une explication honnête.
+function FreeOpportunitiesLockedCard() {
+  return (
+    <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-elevated border border-border text-ink-muted">
+          <Lock className="size-4" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-ink-primary">Opportunités indisponibles en Free</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+            Les opportunités se détectent en croisant plusieurs mesures dans le temps —
+            indisponibles avec l'aperçu unique Free.
+          </p>
+        </div>
+      </div>
+      <a
+        href="/dashboard/parametres"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+      >
+        Passer Pro pour détecter vos opportunités
         <ArrowRight className="size-3.5" />
       </a>
     </div>

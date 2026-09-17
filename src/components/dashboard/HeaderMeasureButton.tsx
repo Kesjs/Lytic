@@ -2,18 +2,21 @@ import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Gauge, Clock, Loader2, X } from 'lucide-react'
+import { Gauge, Clock, Loader2, X, Sparkles } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { runFullMeasurement } from '~/lib/measurement-client'
+import { isFreePlan, MEASUREMENT_DELAY_DAYS } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 
-const DELAY_DAYS = 7
-
+// MEASUREMENT_DELAY_DAYS vient de plan.ts — même constante que celle
+// appliquée côté serveur dans measure.ts, pour que ce compte à rebours ne
+// puisse plus diverger du délai réellement appliqué (ancien bug : 7j codé
+// en dur ici vs 1j réel côté serveur).
 function daysRemaining(lastCompletedAt: string | null): number {
   if (!lastCompletedAt) return 0
   const elapsedMs = Date.now() - new Date(lastCompletedAt).getTime()
   const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24)
-  return Math.max(0, Math.ceil(DELAY_DAYS - elapsedDays))
+  return Math.max(0, Math.ceil(MEASUREMENT_DELAY_DAYS - elapsedDays))
 }
 
 export function HeaderMeasureButton() {
@@ -30,10 +33,16 @@ export function HeaderMeasureButton() {
 
   if (!data || !data.brand) return null
 
-  const remaining = data.latestRun?.status === 'success' 
-    ? daysRemaining(data.latestRun.completed_at) 
-    : 0
-  const isAvailable = remaining === 0
+  const free = isFreePlan(data.brand.plan)
+  const hasCompletedRun = data.latestRun?.status === 'success' || data.latestRun?.status === 'partial'
+
+  // Plan payant : cooldown classique de MEASUREMENT_DELAY_DAYS entre deux
+  // mesures manuelles. Plan Free : pas de cooldown en jours — bloqué tant
+  // qu'aucun changement de site significatif n'a débloqué de remesure.
+  const remaining =
+    !free && data.latestRun?.status === 'success' ? daysRemaining(data.latestRun.completed_at) : 0
+  const freeLocked = free && hasCompletedRun && !data.freeRemeasureAvailable
+  const isAvailable = free ? !freeLocked : remaining === 0
 
   const isMeasuring = pending || data.latestRun?.status === 'measuring' || data.latestRun?.status === 'pending'
 
@@ -85,6 +94,25 @@ export function HeaderMeasureButton() {
           </button>
         </TooltipTrigger>
         <TooltipContent>Annuler la mesure en cours</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  if (freeLocked) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href="/#tarifs"
+            className="flex h-8 items-center justify-center gap-1.5 rounded-md bg-brand px-3 text-[11px] font-semibold text-black transition-colors hover:bg-brand-hover"
+          >
+            <Sparkles className="size-3.5" />
+            <span className="hidden sm:inline">Passer Pro</span>
+          </a>
+        </TooltipTrigger>
+        <TooltipContent>
+          Vous avez modifié votre site ? Passez Pro pour vérifier l'impact réel sur votre visibilité IA.
+        </TooltipContent>
       </Tooltip>
     )
   }

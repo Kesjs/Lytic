@@ -2,6 +2,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
 import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
+import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Toutes les requêtes ci-dessous lisent les vraies tables Supabase
 // (brands, measurement_runs, opportunities, events, site_pages…).
@@ -284,9 +285,19 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     dataRun = { ...dataRun, status: actualStatus }
   }
 
+  // Plan Free uniquement : indique si une remesure est débloquée par un
+  // changement de site détecté depuis la dernière mesure (§4) — sert au
+  // bouton "Mesurer" du header (HeaderMeasureButton).
+  let freeRemeasureAvailable = true
+  if (isFreePlan(brand.plan) && dataRun) {
+    const unlock = await getFreeRemeasureUnlock(supabase, brand.id, dataRun.completed_at)
+    freeRemeasureAvailable = unlock.available
+  }
+
   return {
     brand,
     latestRun,
+    freeRemeasureAvailable,
     displayRun: dataRun,
     previousRun,
     opportunities: opportunities ?? [],

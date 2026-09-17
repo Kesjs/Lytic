@@ -7,7 +7,8 @@ import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
 import { aggregateSamples } from '~/lib/aggregate'
-import { isFreePlan, FREE_SAMPLES_PER_QUESTION, PRO_SAMPLES_PER_QUESTION } from '~/lib/plan'
+import { isFreePlan, FREE_SAMPLES_PER_QUESTION, PRO_SAMPLES_PER_QUESTION, MEASUREMENT_DELAY_DAYS } from '~/lib/plan'
+import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
 // Architecturé en deux server functions distinctes pour rester dans les
@@ -19,16 +20,13 @@ import { isFreePlan, FREE_SAMPLES_PER_QUESTION, PRO_SAMPLES_PER_QUESTION } from 
 // Chaque appel à processNextQuestion est donc court (1 aller-retour LLM ~15-60s)
 // et ne dépasse pas les limites Vercel par défaut.
 
-const MEASUREMENT_DELAY_DAYS = 1
-
 type RunStatus = Database['public']['Tables']['measurement_runs']['Row']['status']
 type MeasurementRun = Database['public']['Tables']['measurement_runs']['Row']
 type Brand = Database['public']['Tables']['brands']['Row']
 
-/** Vérifie le délai entre deux mesures manuelles (MEASUREMENT_DELAY_DAYS ci-dessus,
- *  actuellement 1 jour — le commentaire précédent mentionnait 7 jours à tort,
- *  corrigé lors de la refonte v2 ; à valider côté produit si 7j était la vraie
- *  intention, auquel cas changer uniquement la constante, pas cette fonction).
+/** Vérifie le délai entre deux mesures manuelles (MEASUREMENT_DELAY_DAYS,
+ *  importée de plan.ts — actuellement 1 jour, seule source de vérité,
+ *  partagée avec l'affichage du bouton côté client pour ne plus diverger).
  *  Utilise .or() au lieu de .in('status', [...]) pour éviter l'erreur TS
  *  liée à l'inférence stricte du type enum dans le client Supabase. */
 async function checkMeasurementDelay(
@@ -77,19 +75,30 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
 
     if (brandError || !brand) throw new Error('Marque introuvable ou accès refusé')
 
+    let freeUnlockChangeId: string | null = null
+
     if (isFreePlan(brand.plan)) {
-      // Plan Free : jamais de remesure, quel que soit le délai — une seule
-      // mesure "aperçu" à vie tant que le compte n'est pas passé en Pro.
-      const { data: existingRun } = await supabase
+      // Plan Free (refonte §4) : plus de blocage à vie. La première mesure
+      // est toujours autorisée ; une remesure suivante ne l'est que si un
+      // changement de site significatif (importance != 'low') a été détecté
+      // depuis, et n'a pas déjà servi à débloquer une remesure précédente.
+      const { data: lastFreeRun } = await supabase
         .from('measurement_runs')
-        .select('id')
+        .select('id, completed_at')
         .eq('brand_id', brand.id)
         .or('status.eq.success,status.eq.partial')
+        .order('completed_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      if (existingRun) {
-        throw new Error('Mesure gratuite déjà utilisée — passez au plan Pro pour remesurer.')
+      if (lastFreeRun) {
+        const unlock = await getFreeRemeasureUnlock(supabase, brand.id, lastFreeRun.completed_at)
+        if (!unlock.available) {
+          throw new Error(
+            'Mesure gratuite déjà utilisée — passez au plan Pro pour remesurer, ou attendez qu\'un changement de votre site soit détecté.',
+          )
+        }
+        freeUnlockChangeId = unlock.changeId
       }
     } else {
       // Vérifie le délai entre deux mesures (plans payants uniquement)
@@ -114,10 +123,14 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       )
     }
 
-    // Cherche un changement non fiable à lier
-    const { getChangeReliabilityStatus } = await import('~/lib/reliability')
-    const reliability = await getChangeReliabilityStatus(supabase, brand.id)
-    const linkedChangeId = reliability && !reliability.reliable ? reliability.changeId : null
+    // Cherche un changement non fiable à lier (plans payants — suivi de
+    // fiabilité §21j/15runs, sans lien avec la règle Free ci-dessus)
+    let linkedChangeId: string | null = freeUnlockChangeId
+    if (!isFreePlan(brand.plan)) {
+      const { getChangeReliabilityStatus } = await import('~/lib/reliability')
+      const reliability = await getChangeReliabilityStatus(supabase, brand.id)
+      linkedChangeId = reliability && !reliability.reliable ? reliability.changeId : null
+    }
 
     // Crée le run
     const { data: run, error: runError } = await supabase
@@ -134,6 +147,15 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       .single()
 
     if (runError || !run) throw new Error('Impossible de créer le run : ' + runError?.message)
+
+    // Marque le changement de site comme consommé pour ce déblocage Free,
+    // pour qu'il ne puisse pas débloquer une deuxième remesure.
+    if (freeUnlockChangeId) {
+      await supabase
+        .from('site_changes')
+        .update({ linked_run_id: run.id })
+        .eq('id', freeUnlockChangeId)
+    }
 
     return { runId: run.id }
   })

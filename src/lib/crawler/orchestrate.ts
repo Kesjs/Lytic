@@ -7,6 +7,7 @@ import { extractContent } from './extract'
 import { computeDiff } from './diff'
 import { checkBotAccess } from './robots'
 import type { IaBotId } from './constants'
+import { isFreePlan, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
 
 // Délai par défaut entre deux fetches de pages si le robots.txt ne spécifie
 // pas de Crawl-delay. 800 ms offre un compromis correct : on n'inonde pas
@@ -17,6 +18,31 @@ const DEFAULT_CRAWL_DELAY_MS = 800
 // On limite aux bots majeurs pour éviter le bruit (CCBot, Bytespider sont moins
 // directement liés à la visibilité dans ChatGPT/Claude).
 const MAJOR_BOTS: IaBotId[] = ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'Google-Extended']
+
+/** Vérifie le cooldown entre deux scans manuels de site — Free uniquement
+ *  (§5 refonte Free), même mécanique que checkMeasurementDelay dans
+ *  measure.ts. Basé sur le dernier site_crawl_runs 'completed' de la marque. */
+async function checkSiteScanCooldown(
+  admin: ReturnType<typeof getSupabaseAdminClient>,
+  brandId: string,
+): Promise<{ allowed: boolean; daysRemaining: number }> {
+  const { data: lastCompleted } = await (admin as any)
+    .from('site_crawl_runs')
+    .select('completed_at')
+    .eq('brand_id', brandId)
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!lastCompleted?.completed_at) return { allowed: true, daysRemaining: 0 }
+
+  const elapsedDays =
+    (Date.now() - new Date(lastCompleted.completed_at).getTime()) / (1000 * 60 * 60 * 24)
+  const daysRemaining = Math.max(0, Math.ceil(FREE_SITE_SCAN_COOLDOWN_DAYS - elapsedDays))
+
+  return { allowed: daysRemaining === 0, daysRemaining }
+}
 
 // ─── 1. Déclencher un crawl de site ──────────────────────────────────────────
 export const triggerSiteCrawl = createServerFn({ method: 'POST' })
@@ -31,6 +57,16 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
     // Vérifie accès
     const { data: brand } = await admin.from('brands').select('*').eq('id', data.brandId).eq('owner_id', auth.user.id).single()
     if (!brand) throw new Error('Marque introuvable')
+
+    // Cooldown de scan manuel — Free uniquement (§5)
+    if (isFreePlan(brand.plan)) {
+      const { allowed, daysRemaining } = await checkSiteScanCooldown(admin, brand.id)
+      if (!allowed) {
+        throw new Error(
+          `Prochaine vérification disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
+        )
+      }
+    }
 
     // Cherche un run existant bloqué
     const { data: existingRun } = await admin.from('site_crawl_runs')

@@ -171,6 +171,11 @@ function AccueilPage() {
                           ? new Date(displayRun.completed_at).toLocaleDateString('fr-FR')
                           : '—'}
                       </p>
+                      {isFreePlan(brand.plan) && (
+                        <p className="mt-1 text-[11px] text-ink-muted">
+                          Basé sur 1 seul échantillon — moins fiable que la mesure Pro multi-échantillons.
+                        </p>
+                      )}
                       {latestRun?.status === 'failed' && (
                         <p className="mt-2 text-xs font-semibold text-danger">
                           La dernière tentative de mesure a échoué.

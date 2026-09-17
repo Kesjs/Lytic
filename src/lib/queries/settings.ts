@@ -21,6 +21,7 @@ export interface SettingsBrand {
   websiteUrl: string | null
   plan: 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
   createdAt: string
+  lastCrawlCompletedAt: string | null
 }
 
 export interface SettingsQuestion {
@@ -99,6 +100,18 @@ export const fetchSettings = createServerFn({ method: 'GET' }).handler(
       .eq('brand_id', brandRow.id)
       .maybeSingle()
 
+    // Dernier scan de site complété — sert au cooldown Free affiché dans
+    // CrawlSection (§5), même donnée que celle vérifiée côté serveur dans
+    // triggerSiteCrawl.
+    const { data: lastCrawl } = await supabase
+      .from('site_crawl_runs')
+      .select('completed_at')
+      .eq('brand_id', brandRow.id)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
     return {
       profile,
       brand: {
@@ -107,6 +120,7 @@ export const fetchSettings = createServerFn({ method: 'GET' }).handler(
         websiteUrl: brandRow.website_url,
         plan: brandRow.plan as SettingsBrand['plan'],
         createdAt: brandRow.created_at,
+        lastCrawlCompletedAt: lastCrawl?.completed_at ?? null,
       },
       questions: (questionRows ?? []).map((q) => ({
         id: q.id,

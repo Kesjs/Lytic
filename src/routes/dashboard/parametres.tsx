@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { toast } from 'sonner'
-import { Pencil, Plus, Check, X as XIcon, Globe, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Check, X as XIcon, Globe, Trash2, Clock } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
@@ -21,7 +21,7 @@ import {
   type SettingsData,
 } from '~/lib/queries/settings'
 import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
-import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
+import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/parametres')({
   component: ParametresPage,
@@ -642,7 +642,7 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
           <p className="text-xs font-medium text-ink-primary">Limites du plan Free</p>
           <ul className="mt-2 space-y-1 text-xs text-ink-muted">
             <li>• {FREE_MAX_QUESTIONS} question suivie</li>
-            <li>• 1 mesure (aperçu unique, pas de remesure)</li>
+            <li>• 1 mesure (aperçu) + 1 remesure si changement du site détecté</li>
             <li>• {FREE_MAX_COMPETITORS_VISIBLE} concurrent visible</li>
           </ul>
           <a
@@ -711,8 +711,20 @@ function SecuritySection() {
 
 // --- Crawl (Change Detection) ---
 
+function daysRemainingForScan(lastCompletedAt: string | null): number {
+  if (!lastCompletedAt) return 0
+  const elapsedMs = Date.now() - new Date(lastCompletedAt).getTime()
+  const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24)
+  return Math.max(0, Math.ceil(FREE_SITE_SCAN_COOLDOWN_DAYS - elapsedDays))
+}
+
 function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
   const [isCrawling, setIsCrawling] = useState(false)
+  const queryClient = useQueryClient()
+
+  const free = isFreePlan(brand?.plan)
+  const remaining = free ? daysRemainingForScan(brand?.lastCrawlCompletedAt ?? null) : 0
+  const cooldownActive = free && remaining > 0
 
   const triggerMutation = useMutation({
     mutationFn: () => triggerSiteCrawl({ data: { brandId: brand!.id } }),
@@ -735,6 +747,7 @@ function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
 
       setIsCrawling(false)
       toast.success('Analyse du site terminée')
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
     onError: (err: Error) => {
       setIsCrawling(false)
@@ -742,19 +755,32 @@ function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
     }
   })
 
+  const buttonDisabled = isCrawling || triggerMutation.isPending || cooldownActive
+
+  const buttonLabel = isCrawling || triggerMutation.isPending
+    ? 'Analyse en cours...'
+    : cooldownActive
+      ? `Disponible dans ${remaining} jour${remaining > 1 ? 's' : ''}`
+      : 'Vérifier les modifications'
+
   return (
     <SectionCard title="Mémoire du Site (Change Detection)" description="Reflet analyse votre site pour détecter les modifications et prouver l'impact de vos optimisations.">
       <div className="flex items-center justify-between mt-4">
         <p className="text-sm text-ink-secondary">
-          {isCrawling ? 'Analyse en cours...' : 'Le site est analysé régulièrement pour détecter les changements de structure et de contenu.'}
+          {isCrawling
+            ? 'Analyse en cours...'
+            : cooldownActive
+              ? `Prochaine vérification disponible dans ${remaining} jour${remaining > 1 ? 's' : ''}.`
+              : 'Le site est analysé régulièrement pour détecter les changements de structure et de contenu.'}
         </p>
         <button
           type="button"
           onClick={() => triggerMutation.mutate()}
-          disabled={isCrawling || triggerMutation.isPending}
-          className="rounded-md bg-brand/10 border border-brand/30 px-3 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-brand/20 disabled:opacity-50"
+          disabled={buttonDisabled}
+          className="flex items-center gap-1.5 rounded-md bg-brand/10 border border-brand/30 px-3 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-brand/20 disabled:opacity-50 disabled:hover:bg-brand/10"
         >
-          {isCrawling || triggerMutation.isPending ? 'Analyse en cours...' : 'Vérifier les modifications'}
+          {cooldownActive && !isCrawling && !triggerMutation.isPending && <Clock className="size-3.5" />}
+          {buttonLabel}
         </button>
       </div>
     </SectionCard>

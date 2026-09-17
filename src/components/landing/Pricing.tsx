@@ -18,7 +18,7 @@ const featuresFree: Feature[] = [
 
 const featuresPro: Feature[] = [
   { label: '1 site suivi' },
-  { label: "Jusqu'à 30 questions" },
+  { label: "Jusqu'à 50 questions" },
   {
     label: 'Mesure continue automatique',
     detail: 'Vérification automatique de votre visibilité une fois par semaine, sans action de votre part.',
@@ -32,7 +32,7 @@ const featuresEnterprise: Feature[] = [
   { label: 'Multi-sites & multi-marques' },
   { label: 'Questions illimitées' },
   { label: 'Accès API complet' },
-  { label: 'Multi-modèles (ChatGPT, Perplexity, Claude)' },
+  { label: 'Multi-moteurs IA (sur roadmap)' },
   { label: 'Support dédié (Slack/Email)' },
   {
     label: 'SSO & SLA garantis',
