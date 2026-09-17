@@ -22,7 +22,7 @@ export function Hero({
   title = (
     <>
       Découvrez ce que les IA racontent à vos futurs clients.<br />
-      Devenez la seule marque qu'elles <span className="text-brand-text">recommandent.</span>
+      Faites de votre marque l'unique <span className="text-brand-text">réponse des IA.</span>
     </>
   ),
   description = "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
