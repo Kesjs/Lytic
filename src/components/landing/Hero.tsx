@@ -78,7 +78,7 @@ export function Hero({
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="mt-7 font-display text-4xl font-medium leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
         >
-          {t.hero.title.part1}<span className="text-brand">{t.hero.title.highlight}</span>
+          {t.hero.title.part1}<span className="text-brand">{t.hero.title.highlight}</span>{t.hero.title.part2}
         </motion.h1>
 
         {/* Cycle des IA animées */}

@@ -19,6 +19,7 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
           type="button"
           onClick={() => {
             setIsDropdownOpen(false)
-            handleLogout()
+            setIsLogoutModalOpen(true)
           }}
           className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
         >
@@ -200,6 +201,32 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
           </div>
           <ChevronsUpDown className="size-4 shrink-0 text-ink-muted" />
         </button>
+      )}
+
+      {/* Modal de Déconnexion */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-surface shadow-2xl p-6">
+            <h3 className="text-lg font-medium text-ink-primary mb-2">Déconnexion</h3>
+            <p className="text-sm text-ink-secondary mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="rounded-md px-4 py-2 text-sm font-medium text-ink-secondary hover:text-ink-primary transition-colors hover:bg-elevated"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-md bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
+              >
+                Me déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

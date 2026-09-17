@@ -3,7 +3,8 @@ export const fr = {
     eyebrow: 'Testez votre marque',
     title: {
       part1: "Faites de votre marque l'unique réponse des ",
-      highlight: "IA."
+      highlight: "IA",
+      part2: "."
     },
     description: "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
     primaryCta: "Analyser mon site",

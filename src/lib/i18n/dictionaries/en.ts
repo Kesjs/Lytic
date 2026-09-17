@@ -3,7 +3,8 @@ export const en = {
     eyebrow: 'Test your brand',
     title: {
       part1: "Make your brand the only answer ",
-      highlight: "AI gives."
+      highlight: "AI",
+      part2: " gives."
     },
     description: "Reflet measures your visibility in AI responses, compares your ranking with competitors, and turns every gap into actionable insights.",
     primaryCta: "Analyze my site",
