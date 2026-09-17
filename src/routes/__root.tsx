@@ -96,6 +96,11 @@ function ThemedToaster({ toastPosition }: { toastPosition: 'top-center' | 'botto
     <Toaster
       theme={theme}
       position={toastPosition}
+      // Sur mobile le header du dashboard est sticky en haut (h-14 = 56px) :
+      // un toast en top-center par-dessus le masque entièrement, y compris
+      // le bouton "Mesurer" qui permet justement de relancer une mesure
+      // échouée. On décale sous le header uniquement en position mobile.
+      offset={toastPosition === 'top-center' ? '72px' : undefined}
       toastOptions={{
         classNames: {
           toast: 'bg-surface border border-border text-ink-primary shadow-xl font-medium',
