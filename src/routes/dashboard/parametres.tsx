@@ -18,6 +18,7 @@ import {
   updateQuestionText,
   toggleQuestionActive,
   deleteQuestion,
+  deleteBrand,
   updateNotificationPreferences,
   type SettingsData,
 } from '~/lib/queries/settings'
@@ -74,6 +75,7 @@ function ParametresPage() {
       <QuestionsSection brand={data.brand} questions={data.questions} onSaved={invalidate} />
       <NotificationsSection brand={data.brand} notifications={data.notifications} onSaved={invalidate} />
       <SubscriptionSection brand={data.brand} />
+      {data.brand && <DangerZoneSection brand={data.brand} onDeleted={invalidate} />}
       <SecuritySection />
     </div>
   )
@@ -265,6 +267,72 @@ function SiteSection({
             saving={mutation.isPending}
             disabled={!name.trim() || !urlValid}
           />
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
+// --- Zone de danger : recommencer l'onboarding ---
+
+// Débloque un cas jusqu'ici sans issue : une marque créée puis dont la
+// première mesure automatique échoue (ou qu'on veut simplement reconfigurer
+// avec d'autres questions/plan de test) restait bloquée pour toujours —
+// createBrandWithQuestions refuse une deuxième marque pour le même compte,
+// et rien ne permettait de supprimer la première.
+function DangerZoneSection({
+  brand,
+  onDeleted,
+}: {
+  brand: SettingsData['brand']
+  onDeleted: () => void
+}) {
+  const [confirmText, setConfirmText] = useState('')
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: () => deleteBrand({ data: { brandId: brand!.id } }),
+    onSuccess: () => {
+      toast.success('Marque supprimée — vous pouvez recommencer la configuration.')
+      setConfirmText('')
+      // Le brand vit aussi dans le cache d'Accueil (dashboard-home) et du
+      // bouton de mesure — sans ça l'utilisateur revoit l'ancienne marque
+      // en quittant Paramètres tant que ces queries ne sont pas rechargées.
+      queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
+      queryClient.invalidateQueries({ queryKey: ['bot-access'] })
+      onDeleted()
+    },
+    onError: (err: Error) => toast.error(err.message || 'Impossible de supprimer cette marque.'),
+  })
+
+  if (!brand) return null
+
+  return (
+    <SectionCard
+      title="Zone de danger"
+      description="Supprime définitivement cette marque, ses questions, mesures et opportunités — pour repartir de zéro sur l'onboarding."
+    >
+      <div className="space-y-3">
+        <label className="block">
+          <span className="text-xs font-medium text-ink-secondary">
+            Tapez <span className="font-mono text-danger">{brand.name}</span> pour confirmer
+          </span>
+          <input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={brand.name}
+            className="mt-1 w-full rounded-md border border-border bg-elevated px-3 py-2 text-sm text-ink-primary outline-none focus:border-danger/50"
+          />
+        </label>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={confirmText !== brand.name || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {mutation.isPending ? 'Suppression…' : 'Supprimer ma marque et recommencer'}
+          </button>
         </div>
       </div>
     </SectionCard>
