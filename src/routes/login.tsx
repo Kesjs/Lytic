@@ -3,7 +3,7 @@ import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { signUpWithGuard } from '~/lib/queries/auth'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { GrainGradientShader } from '~/components/shared/grain-gradient-shader'
 import { OtpInput } from '~/components/auth/otp-input'
 import { toast } from 'sonner'
@@ -122,7 +122,11 @@ function LoginPage() {
         window.location.href = '/dashboard'
       }, 300)
     } catch (err: any) {
-      toast.error(err?.message || 'Email ou mot de passe incorrect')
+      if (err?.message === 'Invalid login credentials') {
+        toast.error('Email ou mot de passe incorrect')
+      } else {
+        toast.error(err?.message || 'Email ou mot de passe incorrect')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -554,17 +558,33 @@ function InputField({
   placeholder?: string
   onEnter?: () => void
 }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = type === 'password'
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : type
+
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-zinc-400">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter() }}
-        className="w-full h-11 px-4 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/25 transition-colors"
-      />
+      <div className="relative">
+        <input
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter() }}
+          className="w-full h-11 px-4 pr-10 rounded-lg border border-white/10 bg-white/5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/25 transition-colors"
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-brand hover:opacity-80 transition-opacity"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
