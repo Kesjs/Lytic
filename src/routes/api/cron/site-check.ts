@@ -1,12 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getSupabaseAdminClient } from '~/lib/supabase/server'
-import { isFreePlan, isBrandEligibleForCron } from '~/lib/plan'
-import { triggerSiteCrawlForBrandId, runCrawlToCompletion } from '~/lib/crawler/orchestrate'
-import {
-  triggerMeasurementRunForBrandId,
-  runMeasurementToCompletion,
-  checkMeasurementDelay,
-} from '~/lib/queries/measure'
+import { isFreePlan, isBrandEligibleForCron, MEASUREMENT_DELAY_DAYS } from '~/lib/plan'
+import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
+import { triggerMeasurementRun, processNextQuestion } from '~/lib/queries/measure'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Route cron dédiée — plan "Automatisation Vérifier → Remesure" §4.1.
@@ -39,6 +35,28 @@ interface BrandCronResult {
   brandId: string
   crawl: 'ok' | 'skipped' | 'failed'
   remeasure: 'triggered' | 'skipped' | 'failed'
+}
+
+async function checkMeasurementDelay(
+  adminSupabase: ReturnType<typeof getSupabaseAdminClient>,
+  brandId: string,
+): Promise<{ allowed: boolean; daysRemaining: number }> {
+  const { data: lastRun } = await adminSupabase
+    .from('measurement_runs')
+    .select('completed_at')
+    .eq('brand_id', brandId)
+    .eq('status', 'success')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!lastRun?.completed_at) return { allowed: true, daysRemaining: 0 }
+
+  const elapsedDays =
+    (Date.now() - new Date(lastRun.completed_at).getTime()) / (1000 * 60 * 60 * 24)
+  const daysRemaining = Math.max(0, Math.ceil(MEASUREMENT_DELAY_DAYS - elapsedDays))
+
+  return { allowed: daysRemaining === 0, daysRemaining }
 }
 
 export const Route = createFileRoute('/api/cron/site-check')({

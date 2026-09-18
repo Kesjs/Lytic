@@ -30,7 +30,7 @@ type Brand = Database['public']['Tables']['brands']['Row']
  *  partagée avec l'affichage du bouton côté client pour ne plus diverger).
  *  Utilise .or() au lieu de .in('status', [...]) pour éviter l'erreur TS
  *  liée à l'inférence stricte du type enum dans le client Supabase. */
-export async function checkMeasurementDelay(
+async function checkMeasurementDelay(
   supabase: ReturnType<typeof getSupabaseServerClient>,
   brandId: string,
 ): Promise<{ allowed: boolean; daysRemaining: number }> {
@@ -76,31 +76,6 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
 
     if (brandError || !brand) throw new Error('Marque introuvable ou accès refusé')
 
-    return triggerMeasurementRunCore(supabase, brand)
-  })
-
-// ─── Variante admin (sans session utilisateur) ─────────────────────────────
-// Utilisée par le cron /api/cron/site-check (plan automatisation §4.1), qui
-// boucle sur toutes les marques actives sans utilisateur connecté. Réutilise
-// exactement la même logique (délai, blocage Free, lien de fiabilité) via
-// triggerMeasurementRunCore, avec le client admin (service_role) à la place
-// du client RLS lié à une session.
-export async function triggerMeasurementRunForBrandId(brandId: string): Promise<{ runId: string } | null> {
-  const admin = getSupabaseAdminClient()
-  const { data: brand } = await admin
-    .from('brands')
-    .select('id, name, website_url, plan')
-    .eq('id', brandId)
-    .maybeSingle()
-
-  if (!brand) return null
-  return triggerMeasurementRunCore(admin, brand)
-}
-
-async function triggerMeasurementRunCore(
-  supabase: ReturnType<typeof getSupabaseServerClient>,
-  brand: Pick<Brand, 'id' | 'name' | 'website_url' | 'plan'>,
-): Promise<{ runId: string }> {
     let freeUnlockChangeId: string | null = null
 
     if (isFreePlan(brand.plan)) {
@@ -128,7 +103,7 @@ async function triggerMeasurementRunCore(
       }
     } else {
       // Vérifie le délai entre deux mesures (plans payants uniquement)
-      const { allowed, daysRemaining } = await checkMeasurementDelay(supabase, brand.id)
+      const { allowed, daysRemaining } = await checkMeasurementDelay((data.cronSecret && data.cronSecret === process.env.CRON_SECRET) ? adminSupabase : supabase, brand.id)
       if (!allowed) {
         throw new Error(
           `Prochaine mesure manuelle disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
@@ -184,7 +159,7 @@ async function triggerMeasurementRunCore(
     }
 
     return { runId: run.id }
-}
+  })
 
 export const cancelMeasurementRun = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
@@ -260,58 +235,19 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }): Promise<ProcessNextResult> => {
     // Client admin pour les opérations du pipeline (insert observations, etc.)
+    // La vérification d'appartenance est faite ci-dessous via userSupabase.
     const adminSupabase = getSupabaseAdminClient()
     const userSupabase = getSupabaseServerClient()
 
-    // Vérifie que l'utilisateur courant est authentifié et propriétaire du run
+    // Vérifie que l'utilisateur courant est authentifié
     const { data: auth } = await userSupabase.auth.getUser()
     if (!auth.user) throw new Error('Non authentifié')
 
-    const { data: runForAuth } = await adminSupabase
-      .from('measurement_runs')
-      .select('brand_id')
-      .eq('id', data.runId)
-      .single()
-    if (!runForAuth) throw new Error('Run introuvable')
-
-    const { data: brandForAuth } = await adminSupabase
-      .from('brands')
-      .select('owner_id')
-      .eq('id', runForAuth.brand_id)
-      .single()
-    if (!brandForAuth || brandForAuth.owner_id !== auth.user.id) throw new Error('Accès refusé')
-
-    return processNextQuestionCore(adminSupabase, data.runId)
-  })
-
-// ─── Variante admin (sans session utilisateur) ─────────────────────────────
-// Traite l'intégralité d'un run de mesure (boucle jusqu'à `done`), pour le
-// cron /api/cron/site-check — pas de client qui boucle question par question
-// ici, tout se joue dans un seul appel HTTP externe (plan automatisation §4.1).
-// `maxSteps` est un filet de sécurité pour ne jamais boucler indéfiniment.
-export async function runMeasurementToCompletion(
-  runId: string,
-  maxSteps = 200,
-): Promise<ProcessNextResult> {
-  const adminSupabase = getSupabaseAdminClient()
-  let result = await processNextQuestionCore(adminSupabase, runId)
-  let steps = 1
-  while (!result.done && steps < maxSteps) {
-    result = await processNextQuestionCore(adminSupabase, runId)
-    steps++
-  }
-  return result
-}
-
-async function processNextQuestionCore(
-  adminSupabase: ReturnType<typeof getSupabaseAdminClient>,
-  runId: string,
-): Promise<ProcessNextResult> {
     // Charge le run (sans jointure — la jointure brands!inner casse l'inférence TS)
     const { data: run, error: runError } = await adminSupabase
       .from('measurement_runs')
       .select('*')
-      .eq('id', runId)
+      .eq('id', data.runId)
       .single()
 
     if (runError || !run) throw new Error('Run introuvable')
@@ -324,6 +260,9 @@ async function processNextQuestionCore(
       .single()
 
     if (brandError || !brand) throw new Error('Marque introuvable')
+
+    // Vérifie l'appartenance
+    if (brand.owner_id !== auth.user.id) throw new Error('Accès refusé')
 
     // Run déjà terminé → retourne done immédiatement (idempotent)
     if (run.status === 'success' || run.status === 'failed' || run.status === 'partial') {
@@ -497,7 +436,7 @@ async function processNextQuestionCore(
         totalOutput += a.usage?.outputTokens ?? 0
       })
       if (totalInput > 0 || totalOutput > 0) {
-        const actualModel = rawResults[0]?.model || 'gpt-5.6-luna'
+        const actualModel = rawResults[0]?.model || 'gpt-4o-mini'
         try {
           await (adminSupabase as any).from('api_usage_log').insert({
             brand_id: brand.id,
@@ -714,4 +653,4 @@ async function processNextQuestionCore(
         },
       }
     }
-}
+  })
