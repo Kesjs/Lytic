@@ -8,7 +8,6 @@ import { ChevronDown, EyeOff, Lock } from 'lucide-react'
 import { fetchCompetitorsOverview, hideCompetitor, type CompetitorRow } from '~/lib/queries/competitors'
 import { CompetitorsChart } from '~/components/dashboard/CompetitorsChart'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
-import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/concurrents')({
   component: ConcurrentsPage,
@@ -42,10 +41,12 @@ function ConcurrentsPage() {
     return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
   }
 
-  const { brand, latestRun, ownStats, competitors } = data
-  const free = isFreePlan(brand.plan)
-  const visibleCompetitors = free ? competitors.slice(0, FREE_MAX_COMPETITORS_VISIBLE) : competitors
-  const lockedCount = free ? Math.max(0, competitors.length - FREE_MAX_COMPETITORS_VISIBLE) : 0
+  const { brand, latestRun, ownStats, competitors, lockedCount } = data
+  // `competitors` est déjà tronqué côté serveur pour le plan Free
+  // (fetchCompetitorsOverview) — aucune donnée Pro n'atteint le client ici,
+  // `lockedCount` sert uniquement à afficher le nombre de concurrents
+  // supplémentaires sans exposer leurs données.
+  const visibleCompetitors = competitors
 
   async function handleHide(id: string, name: string) {
     setHidingId(id)

@@ -1,4 +1,3 @@
-import { lookup } from 'node:dns/promises'
 import { Buffer } from 'node:buffer'
 import { REFLET_UA } from './constants'
 
@@ -79,6 +78,16 @@ async function assertNotPrivateHost(hostname: string): Promise<void> {
 
   let addresses: string[]
   try {
+    // Import dynamique volontaire : ce module (fetch-safe.ts) est parfois
+    // référencé transitivement depuis un composant client via orchestrate.ts
+    // (createServerFn) — un `import { lookup } from 'node:dns/promises'`
+    // statique en haut de fichier fait échouer le build Vite côté client
+    // ("lookup is not exported by __vite-browser-external"), car Rollup
+    // valide les exports nommés d'un import statique même sur du code censé
+    // être strippé côté serveur. L'import dynamique évite cette validation
+    // au build ; en exécution, ce code ne tourne de toute façon que côté
+    // serveur (dans le handler de la server function).
+    const { lookup } = await import('node:dns/promises')
     const result = await lookup(hostname, { all: true })
     addresses = result.map((r) => r.address)
   } catch {

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
+import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
 
 export interface CompetitorRow {
   id: string
@@ -49,6 +50,7 @@ export const fetchCompetitorsOverview = createServerFn({ method: 'GET' }).handle
     latestRun,
     ownStats: null as OwnStats | null,
     competitors: [] as CompetitorRow[],
+    lockedCount: 0,
   } as const
 
   if (!latestRun || (latestRun.status !== 'success' && latestRun.status !== 'partial')) {
@@ -131,7 +133,17 @@ export const fetchCompetitorsOverview = createServerFn({ method: 'GET' }).handle
     .filter((c): c is CompetitorRow => c !== null)
     .sort((a, b) => b.mentions - a.mentions)
 
-  return { brand, latestRun, ownStats, competitors: competitorRows } as const
+  // Plan Free : on ne renvoie jamais les données des concurrents verrouillés
+  // au client (seul un compte pour l'aperçu flouté est transmis) — le flou
+  // affiché côté UI ne doit pas reposer sur des données Pro déjà présentes
+  // dans la réponse réseau.
+  if (isFreePlan(brand.plan)) {
+    const visible = competitorRows.slice(0, FREE_MAX_COMPETITORS_VISIBLE)
+    const lockedCount = Math.max(0, competitorRows.length - FREE_MAX_COMPETITORS_VISIBLE)
+    return { brand, latestRun, ownStats, competitors: visible, lockedCount } as const
+  }
+
+  return { brand, latestRun, ownStats, competitors: competitorRows, lockedCount: 0 } as const
 })
 
 // Masque un concurrent jugé non pertinent — il n'apparaîtra plus dans les

@@ -33,7 +33,7 @@ export const en = {
     start: "Get Started"
   },
   problem: {
-    heading: "Your website knows what you sell. ChatGPT might say otherwise.",
+    heading: "Your website knows what you sell. AI might say otherwise.",
     items: [
       { title: 'Invisible', body: "Your brand is missing from relevant AI recommendations." },
       { title: 'Poorly positioned', body: "It ranks far behind other alternatives." },
@@ -71,7 +71,7 @@ export const en = {
   },
   questionEngine: {
     heading: "The right questions before the right answers.",
-    description: "Reflet doesn't just ask ChatGPT to talk about you — it asks the exact questions your prospects would actually ask.",
+    description: "Reflet doesn't just ask AI to talk about you — it asks the exact questions your prospects would actually ask.",
     badExample: "\"Tell me about SIKKA\"",
     goodExample: "\"Which invoicing software would you recommend to a craftsman in Benin?\""
   },
@@ -79,10 +79,10 @@ export const en = {
     heading: "What Reflet measures",
     subheading: "The 4 pillars of your visibility across major language models.",
     items: [
-      { title: 'Presence', body: 'Is your brand mentioned in AI responses?' },
+      { title: 'Mentions', body: 'Is your brand mentioned in AI responses?' },
       { title: 'Recommendation', body: 'Is it proposed as the ideal solution, or just neutrally listed?' },
-      { title: 'Positioning', body: 'Where does it appear when a list of solutions is generated?' },
-      { title: 'Competition', body: 'Which competitors appear instead of you, or more frequently?' }
+      { title: 'Average position', body: 'Where does it appear when a list of solutions is generated?' },
+      { title: 'Competitive presence', body: 'Which competitors appear instead of you, or more frequently?' }
     ],
     benchmark: {
       tag: "Real-world Benchmark",
@@ -95,7 +95,7 @@ export const en = {
   history: {
     tag: "Continuous Monitoring",
     heading: "Your visibility isn't a static number.",
-    description: "Reflet automatically monitors your site and queries AI models at regular intervals. Every new mention, rank gain, or loss is archived with its date and impact.",
+    description: "Reflet automatically monitors your site and can re-query AI models as soon as a significant change is detected (Pro plan). Every new mention, rank gain, or loss is archived with its date and impact.",
     previewLabel: "Event feed — History page",
     previewBadge: "Continuous Audit"
   },
@@ -131,9 +131,9 @@ export const en = {
         { label: '1 tracked site' },
         { label: "Up to 50 questions" },
         { label: 'Automatic verification', detail: 'Daily check of your site, automatic remeasurement as soon as a change is detected.' },
-        { label: 'ChatGPT probing' },
-        { label: 'Positioning analysis' },
-        { label: 'Opportunity detection' }
+        { label: 'Unlimited remeasurements, across all AIs' },
+        { label: 'Continuous positioning analysis' },
+        { label: 'Automatic detection of every opportunity' }
       ]
     },
     enterprise: {
@@ -158,11 +158,11 @@ export const en = {
     items: [
       {
         q: "What exactly does Reflet measure?",
-        a: "Reflet measures your brand's presence, recommendation rate, and ranking in AI-generated responses (like ChatGPT), as well as your competitors' presence."
+        a: "Reflet measures your brand's presence, recommendation rate, and ranking in AI-generated responses, as well as your competitors' presence."
       },
       {
-        q: "Does Reflet use ChatGPT directly?",
-        a: "Yes, Reflet prompts ChatGPT with the exact questions your prospects would actually ask, and then analyzes the answers."
+        q: "Does Reflet use AI directly?",
+        a: "Yes, Reflet prompts the leading generative AIs (ChatGPT, Gemini, Claude, etc.) with the exact questions your prospects would actually ask, and then analyzes the answers."
       },
       {
         q: "Why do AI responses vary?",
@@ -185,13 +185,13 @@ export const en = {
         a: "Yes, the Free plan lets you track one question and get a real glimpse of your visibility, without a credit card."
       },
       {
-        q: "Does Reflet guarantee a position in ChatGPT?",
+        q: "Does Reflet guarantee a position in AI?",
         a: "No. Reflet measures and explains your current visibility, providing actionable insights to help you improve it, but no one can guarantee a specific rank in a generative model."
       }
     ]
   },
   ctaFinal: {
-    heading: "Find out what ChatGPT is saying about your brand.",
+    heading: "Find out what AI is saying about your brand.",
     subheading: "Analyze your site, select your key questions, and get your first AI visibility score today.",
     cta: "Analyze my site"
   },
