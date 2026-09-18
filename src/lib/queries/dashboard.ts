@@ -181,19 +181,14 @@ async function computeLatestRunInsights(
     negative: total - mentionedCount
   };
 
-  // 4. Themes (Deterministic mock from text for demo)
-  const possibleThemes = ['UI/UX', 'Performance', 'Pricing', 'Collaboration', 'Security', 'Integrations', 'Support', 'Reliability'];
-  // In a real app, this would be computed by LLM. Here we count occurrences in raw_answers.
+  // 4. Thèmes abordés — comptage réel sur la colonne `observations.themes`,
+  // extraite par l'IA (analyzeAnswer, même appel que brand_mentioned/competitors,
+  // aucun coût supplémentaire). Les observations mesurées avant ce chantier
+  // ont un tableau vide et ne contribuent simplement à rien ici.
   const themeCounts = new Map<string, number>();
   observations.forEach(o => {
-    if (!o.raw_answer) return;
-    const text = o.raw_answer.toLowerCase();
-    possibleThemes.forEach(t => {
-      if (text.includes(t.toLowerCase())) {
-        themeCounts.set(t, (themeCounts.get(t) || 0) + 1);
-      } else if (Math.random() > 0.8) { // Add some random variation for demo
-         themeCounts.set(t, (themeCounts.get(t) || 0) + 1);
-      }
+    (o.themes ?? []).forEach((t: string) => {
+      themeCounts.set(t, (themeCounts.get(t) || 0) + 1);
     });
   });
   const topThemes = Array.from(themeCounts.entries())

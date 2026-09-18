@@ -29,7 +29,7 @@ export function ShareOfVoiceChart({ data }: ShareOfVoiceChartProps) {
           </Pie>
           <Tooltip 
             contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))', borderRadius: '8px' }}
-            itemStyle={{ color: 'rgb(var(--color-text))' }}
+            itemStyle={{ color: 'rgb(var(--color-ink-primary))' }}
           />
           <Legend verticalAlign="bottom" height={36} iconType="circle" />
         </PieChart>

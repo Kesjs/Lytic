@@ -485,6 +485,19 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         }
       }
 
+      // Étape E-bis : thèmes fusionnés — union des échantillons, dédupliqués par
+      // libellé (insensible à la casse), même logique que les concurrents.
+      // Pas de vote majoritaire (aggregate.ts inchangé) : un thème vu sur un seul
+      // échantillon est déjà une extraction réelle du texte, pas une supposition.
+      const themesSeen = new Map<string, string>()
+      for (const a of analyses) {
+        for (const theme of a.parsed.themes ?? []) {
+          const key = theme.trim().toLowerCase()
+          if (key && !themesSeen.has(key)) themesSeen.set(key, theme.trim())
+        }
+      }
+      const mergedThemes = Array.from(themesSeen.values())
+
       // Étape F : insert observation agrégée
       const { data: obs, error: obsError } = await adminSupabase
         .from('observations')
@@ -498,6 +511,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           raw_answer: rawResults[0]?.text ?? null, // 1er échantillon conservé pour affichage rapide ; les 3 sont dans observation_samples
           samples_count: aggregated.samples_count,
           agreement_score: aggregated.agreement_score,
+          themes: mergedThemes,
         })
         .select()
         .single()

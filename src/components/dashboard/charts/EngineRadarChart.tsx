@@ -54,13 +54,13 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
           <XAxis
             type="number"
             domain={[0, 100]}
-            tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 11 }}
+            tick={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
             tickFormatter={percentLabel}
           />
           <YAxis
             type="category"
             dataKey="engine"
-            tick={{ fill: 'rgb(var(--color-text))', fontSize: 12 }}
+            tick={{ fill: 'rgb(var(--color-ink-primary))', fontSize: 12 }}
             width={78}
           />
           <Tooltip
@@ -69,7 +69,7 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
               borderColor: 'rgb(var(--color-border))',
               borderRadius: '8px',
             }}
-            itemStyle={{ color: 'rgb(var(--color-text))' }}
+            itemStyle={{ color: 'rgb(var(--color-ink-primary))' }}
             formatter={(value: number) => percentLabel(value)}
           />
           <Legend verticalAlign="top" height={24} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
@@ -78,7 +78,7 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
               dataKey="mentionsPct"
               position="right"
               formatter={percentLabel}
-              style={{ fill: 'rgb(var(--color-text-muted))', fontSize: 11 }}
+              style={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
             />
           </Bar>
           <Bar name="Recommandations" dataKey="recommendPct" fill="#00E5FF" radius={[0, 4, 4, 0]} barSize={10}>
@@ -86,7 +86,7 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
               dataKey="recommendPct"
               position="right"
               formatter={percentLabel}
-              style={{ fill: 'rgb(var(--color-text-muted))', fontSize: 11 }}
+              style={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
             />
           </Bar>
         </BarChart>

@@ -26,6 +26,7 @@ export interface ParsedObservation {
   brand_recommended: boolean
   brand_position: number | null
   competitors: ParsedCompetitor[]
+  themes: string[]
 }
 
 export interface ParsedCompetitor {
@@ -64,8 +65,13 @@ const RESPONSE_SCHEMA = {
       },
       description: "Toutes les marques concurrentes identifiées dans la réponse (hors la marque analysée elle-même)",
     },
+    themes: {
+      type: "array",
+      items: { type: "string" },
+      description: "2 à 5 thèmes/sujets courts (1-3 mots) réellement abordés dans la réponse, dans la langue de la réponse. Pas de mots vides isolés (ex: 'bien', 'très').",
+    },
   },
-  required: ["brand_mentioned", "brand_recommended", "brand_position", "competitors"],
+  required: ["brand_mentioned", "brand_recommended", "brand_position", "competitors", "themes"],
   additionalProperties: false,
 }
 
@@ -85,6 +91,7 @@ Règles strictes :
 - competitors = TOUTES les autres marques/produits nommés dans la réponse (pas la marque analysée)
 - context_excerpt = courte citation (1-2 phrases) du texte original où le concurrent est mentionné, null si non mentionné
 - Ne pas inventer de concurrents absents de la réponse
+- themes = 2 à 5 sujets courts réellement abordés dans le texte (ex: tarification, sécurité, intégrations), dans la langue de la réponse. Ne pas inventer de thème absent du texte.
 ${knownList}
 Réponse IA à analyser :
 ---

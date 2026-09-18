@@ -127,6 +127,7 @@ export interface Database {
           created_at: string
           samples_count: number
           agreement_score: number | null
+          themes: string[]
         }
         Insert: {
           id?: string
@@ -140,6 +141,7 @@ export interface Database {
           created_at?: string
           samples_count?: number
           agreement_score?: number | null
+          themes?: string[]
         }
         Update: { [key: string]: any }
       }
