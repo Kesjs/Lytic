@@ -17,7 +17,19 @@ const PERIODS: { value: MetricPeriod; label: string }[] = [
   { value: '3m', label: '3 mois' },
 ]
 
-export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
+interface ScoreChartProps {
+  hasAnyRun: boolean
+  /**
+   * 'full' = carte autonome avec sélecteur de période (utilisé sur les pages
+   * qui veulent explorer le détail). 'compact' = sparkline sans axes/tooltip,
+   * pensée pour être intégrée dans la carte score de l'Accueil — l'exploration
+   * détaillée reste disponible sur la page Performance (mêmes données, plus
+   * d'indicateurs).
+   */
+  variant?: 'full' | 'compact'
+}
+
+export function ScoreChart({ hasAnyRun, variant = 'full' }: ScoreChartProps) {
   const [period, setPeriod] = useState<MetricPeriod>('30d')
 
   const { data, isLoading } = useQuery({
@@ -27,6 +39,35 @@ export function ScoreChart({ hasAnyRun }: { hasAnyRun: boolean }) {
   })
 
   const points = (data?.points ?? []).filter((p) => p.score !== null)
+
+  if (variant === 'compact') {
+    // Pas de skeleton/message ici : si rien à montrer, la carte score
+    // affiche juste le chiffre sans sparkline en dessous — pas de bloc vide.
+    if (!hasAnyRun || isLoading || points.length < 2) return null
+    return (
+      <div className="mt-2 h-12 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={points} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="colorScoreCompact" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f2d94e" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#f2d94e" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="linear"
+              dataKey="score"
+              stroke="var(--color-brand, #c9ab1e)"
+              strokeWidth={1.5}
+              fillOpacity={1}
+              fill="url(#colorScoreCompact)"
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-surface p-5">

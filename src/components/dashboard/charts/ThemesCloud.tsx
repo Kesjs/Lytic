@@ -6,13 +6,13 @@ export interface ThemesCloudProps {
 
 export function ThemesCloud({ data }: ThemesCloudProps) {
   if (!data || data.length === 0) {
-    return <div className="h-[250px] flex items-center justify-center text-text-muted">Pas de données</div>;
+    return <div className="flex min-h-[100px] items-center justify-center text-sm text-ink-muted">Pas de données</div>;
   }
   
   const maxCount = Math.max(...data.map(d => d.count));
 
   return (
-    <div className="h-[250px] w-full flex flex-wrap content-center justify-center gap-3 px-6">
+    <div className="flex min-h-[100px] w-full flex-wrap content-center justify-center gap-3 px-2 py-2">
       {data.map((theme, i) => {
         const ratio = theme.count / maxCount;
         // Size between 14px and 28px based on frequency

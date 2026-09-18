@@ -165,6 +165,7 @@ function AccueilPage() {
                           la dernière mesure
                         </p>
                       )}
+                      <ScoreChart hasAnyRun={!!latestRun} variant="compact" />
                       <p className="mt-2 text-xs text-ink-muted">
                         Dernière mesure :{' '}
                         {displayRun.completed_at
@@ -227,15 +228,6 @@ function AccueilPage() {
         </div>
       </motion.header>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="h-[220px]"
-      >
-        <ScoreChart hasAnyRun={!!latestRun} />
-      </motion.div>
-
       {isFreePlan(brand.plan) && latestRun && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} 
@@ -257,6 +249,54 @@ function AccueilPage() {
       )}
 
       {displayRun && (
+        <>
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
+              <Link
+                to="/dashboard/performance"
+                className="text-xs text-ink-muted hover:text-ink-secondary"
+              >
+                Toutes les questions →
+              </Link>
+            </div>
+            <QuestionsPerfTable questions={questionsPerf} hasAnyRun={!!latestRun} />
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-ink-primary">Concurrents</h2>
+                <Link
+                  to="/dashboard/concurrents"
+                  className="text-xs text-ink-muted hover:text-ink-secondary"
+                >
+                  Tous les concurrents →
+                </Link>
+              </div>
+              <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
+            </div>
+
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
+              {pages.length === 0 ? (
+                <p className="mt-3 text-sm text-ink-muted">
+                  Aucune page suivie — configurez votre site dans Paramètres.
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-ink-secondary">
+                  {pages.length} page{pages.length > 1 ? 's' : ''} suivie
+                  {pages.length > 1 ? 's' : ''}, dont{' '}
+                  {pages.filter((p: any) => p.status === 'ok').length} vérifiée
+                  {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
+                </p>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
+      {displayRun && (
         <motion.section 
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
@@ -272,23 +312,17 @@ function AccueilPage() {
           
           <div className="rounded-lg border border-border bg-surface p-4">
             <h2 className="text-sm font-semibold text-ink-primary mb-3">Performance par Moteur IA</h2>
-            <div className="h-[240px]">
-              <EngineRadarChart data={enginePerformance ?? []} />
-            </div>
+            <EngineRadarChart data={enginePerformance ?? []} />
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
             <h2 className="text-sm font-semibold text-ink-primary mb-3">Analyse de Tonalité</h2>
-            <div className="h-[240px]">
-              <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
-            </div>
+            <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
             <h2 className="text-sm font-semibold text-ink-primary mb-3">Thèmes Abordés</h2>
-            <div className="h-[240px]">
-              <ThemesCloud data={topThemes ?? []} />
-            </div>
+            <ThemesCloud data={topThemes ?? []} />
           </div>
         </motion.section>
       )}
@@ -324,7 +358,15 @@ function AccueilPage() {
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="text-sm font-semibold text-ink-primary">Activité récente</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink-primary">Activité récente</h2>
+            <Link
+              to="/dashboard/historique"
+              className="text-xs text-ink-muted hover:text-ink-secondary"
+            >
+              Tout l'historique →
+            </Link>
+          </div>
           {events.length === 0 ? (
             <p className="mt-3 text-sm text-ink-muted">Aucun événement récent.</p>
           ) : (
@@ -338,50 +380,6 @@ function AccueilPage() {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
-          <Link
-            to="/dashboard/performance"
-            className="text-xs text-ink-muted hover:text-ink-secondary"
-          >
-            Toutes les questions →
-          </Link>
-        </div>
-        <QuestionsPerfTable questions={questionsPerf} hasAnyRun={!!latestRun} />
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink-primary">Concurrents</h2>
-            <Link
-              to="/dashboard/concurrents"
-              className="text-xs text-ink-muted hover:text-ink-secondary"
-            >
-              Tous les concurrents →
-            </Link>
-          </div>
-          <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
-        </div>
-
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
-          {pages.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Aucune page suivie — configurez votre site dans Paramètres.
-            </p>
-          ) : (
-            <p className="mt-3 text-sm text-ink-secondary">
-              {pages.length} page{pages.length > 1 ? 's' : ''} suivie
-              {pages.length > 1 ? 's' : ''}, dont{' '}
-              {pages.filter((p: any) => p.status === 'ok').length} vérifiée
-              {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
-            </p>
           )}
         </div>
       </section>
