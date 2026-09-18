@@ -74,7 +74,7 @@ export const Route = createFileRoute('/api/cron/site-check')({
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
 
-        const admin = getSupabaseAdminClient() as any
+        const admin = getSupabaseAdminClient()
 
         // Toutes les marques actives — exclut past_due/canceled (§4.1).
         const { data: brands, error: brandsError } = await admin
@@ -98,9 +98,15 @@ export const Route = createFileRoute('/api/cron/site-check')({
           // ── Crawl automatique — tous plans confondus (§4.2) ─────────────
           let crawlStatus: BrandCronResult['crawl'] = 'skipped'
           try {
-            const crawl = await triggerSiteCrawlForBrandId(brand.id)
+            const crawl = await triggerSiteCrawl({ data: { brandId: brand.id, cronSecret: expectedSecret } })
             if (crawl) {
-              await runCrawlToCompletion(crawl.runId)
+              let done = false;
+              let steps = 0;
+              while (!done && steps < 500) {
+                const res = await processNextPage({ data: { runId: crawl.runId, cronSecret: expectedSecret } })
+                done = res.done
+                steps++
+              }
               crawlStatus = 'ok'
             }
           } catch (err) {
@@ -118,7 +124,7 @@ export const Route = createFileRoute('/api/cron/site-check')({
                 .from('measurement_runs')
                 .select('completed_at')
                 .eq('brand_id', brand.id)
-                .or('status.eq.success,status.eq.partial')
+                .in('status', ['success', 'partial'])
                 .order('completed_at', { ascending: false })
                 .limit(1)
                 .maybeSingle()
@@ -130,9 +136,15 @@ export const Route = createFileRoute('/api/cron/site-check')({
               )
 
               if (allowed && unlock.available) {
-                const run = await triggerMeasurementRunForBrandId(brand.id)
+                const run = await triggerMeasurementRun({ data: { brandId: brand.id, cronSecret: expectedSecret } })
                 if (run) {
-                  await runMeasurementToCompletion(run.runId)
+                  let done = false;
+                  let steps = 0;
+                  while (!done && steps < 200) {
+                    const res = await processNextQuestion({ data: { runId: run.runId, cronSecret: expectedSecret } })
+                    done = res.done
+                    steps++
+                  }
                   remeasureStatus = 'triggered'
                 }
               }

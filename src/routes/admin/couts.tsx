@@ -19,7 +19,7 @@ function AdminCosts() {
   
   const { data: costs, isLoading } = useQuery({
     queryKey: ['admin-costs', period],
-    queryFn: () => fetchAdminCosts(period),
+    queryFn: () => fetchAdminCosts({ data: period }),
   })
 
   // Aggrégation par date pour le graphique

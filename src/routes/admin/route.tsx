@@ -21,7 +21,7 @@ export const Route = createFileRoute('/admin')({
     const supabase = getSupabaseBrowserClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      throw redirect({ to: '/auth/login' })
+      throw redirect({ to: '/login' })
     }
 
     const { data: profile } = await supabase
@@ -105,7 +105,7 @@ function AdminLayout() {
           
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <AccountMenu />
+            <AccountMenu variant="header" />
           </div>
         </header>
 

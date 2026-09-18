@@ -46,9 +46,11 @@ async function checkSiteScanCooldown(
 
 // ─── 1. Déclencher un crawl de site ──────────────────────────────────────────
 export const triggerSiteCrawl = createServerFn({ method: 'POST' })
-  .validator((data: { brandId: string }) => data)
+  .validator((data: { brandId: string; cronSecret?: string }) => data)
   .handler(async ({ data }): Promise<{ runId: string }> => {
-    const supabase = getSupabaseServerClient()
+    const supabaseClient = getSupabaseServerClient()
+      const adminSupabase = getSupabaseAdminClient()
+      const supabase = (data.cronSecret && data.cronSecret === process.env.CRON_SECRET) ? adminSupabase : supabaseClient
     const { data: auth } = await supabase.auth.getUser()
     if (!auth.user) throw new Error('Non authentifié')
 
@@ -186,7 +188,7 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
 
 // ─── 2. Traiter la prochaine page (boucle client) ────────────────────────────
 export const processNextPage = createServerFn({ method: 'POST' })
-  .validator((data: { runId: string }) => data)
+  .validator((data: { runId: string; cronSecret?: string }) => data)
   .handler(async ({ data }): Promise<{ done: boolean, runId: string }> => {
     const admin = getSupabaseAdminClient() as any
 
