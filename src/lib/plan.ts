@@ -28,6 +28,28 @@ export function isFreePlan(plan: string | null | undefined): boolean {
   return plan === 'free'
 }
 
+// Multi-moteur (ajout Perplexity) — répartition du budget d'échantillons
+// EXISTANT entre moteurs, plutôt que d'ajouter des appels en plus.
+// FREE_SAMPLES_PER_QUESTION / PRO_SAMPLES_PER_QUESTION ci-dessus restent la
+// source de vérité pour l'affichage ; measure.ts dérive le nombre réel
+// d'appels de la longueur de ce mix (mix.length === SAMPLES_PER_QUESTION
+// correspondant), donc les deux ne peuvent pas diverger silencieusement —
+// voir la vérification dans measure.ts au chargement du module.
+export type MeasurementEngine = 'openai' | 'perplexity'
+
+// Free reste 100% ChatGPT : c'est déjà l'aperçu gratuit le moins cher
+// (1 seul appel), pas de raison d'y ajouter un deuxième provider.
+export const FREE_ENGINE_MIX: MeasurementEngine[] = ['openai']
+
+// Pro : 2 échantillons ChatGPT + 1 Perplexity au lieu de 3 ChatGPT.
+// Coût neutre (même nombre total d'appels qu'avant), et le score/dashboard
+// affichent désormais un vrai signal cross-IA au lieu d'un seul moteur.
+export const PRO_ENGINE_MIX: MeasurementEngine[] = ['openai', 'openai', 'perplexity']
+
+export function getEngineMix(plan: string | null | undefined): MeasurementEngine[] {
+  return isFreePlan(plan) ? FREE_ENGINE_MIX : PRO_ENGINE_MIX
+}
+
 // Statuts de marque exclus de tout traitement automatique (cron) — abonnement
 // en échec de paiement ou résilié. Aucun crawl ni appel LLM automatique ne
 // doit être déclenché pour ces marques (plan automatisation §4.1).

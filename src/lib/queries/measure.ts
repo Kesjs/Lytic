@@ -4,11 +4,13 @@ import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/
 import type { Database } from '~/lib/supabase/database.types'
 import { runOpenAIQuery } from '~/lib/openai'
 import { calculateCost } from '~/lib/openai-pricing'
+import { runPerplexityQuery } from '~/lib/perplexity'
+import { calculatePerplexityCost } from '~/lib/perplexity-pricing'
 import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
 import { aggregateSamples } from '~/lib/aggregate'
-import { isFreePlan, FREE_SAMPLES_PER_QUESTION, PRO_SAMPLES_PER_QUESTION, MEASUREMENT_DELAY_DAYS } from '~/lib/plan'
+import { isFreePlan, getEngineMix, MEASUREMENT_DELAY_DAYS, type MeasurementEngine } from '~/lib/plan'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
@@ -286,13 +288,23 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         .eq('id', run.id)
     }
 
-    // Questions déjà traitées pour ce run (idempotence)
+    // Moteurs à interroger pour ce plan (multi-moteur — voir plan.ts).
+    // Une question n'est "faite" que quand TOUS ses moteurs ont une
+    // observation, pas juste un seul — sinon une reprise après crash sur le
+    // 2e moteur marquerait la question comme définitivement traitée avec
+    // seulement la moitié des données.
+    const engineMix = getEngineMix(brand.plan)
+    const enginesForQuestion = Array.from(new Set(engineMix))
+
+    // Questions déjà traitées pour ce run (idempotence), par (question, moteur)
     const { data: doneObservations } = await adminSupabase
       .from('observations')
-      .select('question_id')
+      .select('question_id, engine')
       .eq('run_id', run.id)
 
-    const doneQuestionIds = new Set((doneObservations ?? []).map((o) => o.question_id))
+    const doneKeys = new Set((doneObservations ?? []).map((o) => `${o.question_id}:${o.engine}`))
+    const isQuestionFullyDone = (questionId: string) =>
+      enginesForQuestion.every((e) => doneKeys.has(`${questionId}:${e}`))
 
     // Prochaine question à traiter
     const { data: questions } = await adminSupabase
@@ -302,7 +314,8 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       .eq('active', true)
       .order('position', { ascending: true })
 
-    const nextQuestion = (questions ?? []).find((q) => !doneQuestionIds.has(q.id))
+    const nextQuestion = (questions ?? []).find((q) => !isQuestionFullyDone(q.id))
+    const completedQuestionsCount = (questions ?? []).filter((q) => isQuestionFullyDone(q.id)).length
 
     // ─── Plus de questions → finaliser le run ──────────────────────────────
     if (!nextQuestion) {
@@ -313,7 +326,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         .eq('run_id', run.id)
 
       const score = computeRunScore(allObs ?? [])
-      const completedCount = doneQuestionIds.size
+      const completedCount = completedQuestionsCount
 
       // Score delta vs run précédent — .or() au lieu de .in() pour éviter never
       const { data: prevRun } = await adminSupabase
@@ -329,13 +342,17 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       const scoreDelta =
         prevRun?.score != null ? score - Math.round(prevRun.score) : null
 
-      // Détermine le statut final
+      // Détermine le statut final — comparé au nombre d'observations ATTENDU
+      // (questions × moteurs), pas juste au nombre de questions : avec 2
+      // moteurs, une question 100% réussie produit 2 observations, donc
+      // comparer à totalQuestions sous-estimerait systématiquement les échecs.
       const totalQuestions = run.questions_total
+      const expectedObservations = totalQuestions * enginesForQuestion.length
       const successfulCount = (allObs ?? []).filter(o => o.raw_answer !== null).length
       let finalStatus: 'success' | 'partial' | 'failed'
       if (successfulCount === 0) {
         finalStatus = 'failed'
-      } else if (successfulCount < totalQuestions) {
+      } else if (successfulCount < expectedObservations) {
         finalStatus = 'partial'
       } else {
         finalStatus = 'success'
@@ -362,7 +379,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           finalStatus === 'failed'
             ? 'La mesure a échoué'
             : finalStatus === 'partial'
-              ? `Mesure partielle (${successfulCount}/${totalQuestions} réussies)`
+              ? `Mesure partielle (${successfulCount}/${expectedObservations} réussies)`
               : 'Mesure terminée',
         message:
           finalStatus !== 'failed'
@@ -399,224 +416,266 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
 
     // ─── Traitement de la question suivante ────────────────────────────────
     // Refonte v2 (Evidence Engine) : une IA générative n'est pas déterministe,
-    // donc UNE question = SAMPLES_PER_QUESTION appels indépendants, agrégés
+    // donc UNE question = plusieurs appels indépendants par moteur, agrégés
     // par vote majoritaire — jamais une conclusion sur un seul appel.
     // Voir doc de refonte §3.2/3.3 et src/lib/aggregate.ts.
+    //
+    // Multi-moteur : une question peut désormais produire DEUX observations
+    // (une par moteur dans enginesForQuestion), chacune agrégée séparément —
+    // c'est ce qui alimente la comparaison par moteur du dashboard
+    // (EngineRadarChart lit observations.engine directement, sans changement
+    // frontend nécessaire). Le budget total d'appels par question ne change
+    // pas : voir PRO_ENGINE_MIX / FREE_ENGINE_MIX dans plan.ts.
     const brandDomain = brand.website_url ? extractBrandDomain(brand.website_url) : ''
-    const SAMPLES_PER_QUESTION = isFreePlan(brand.plan) ? FREE_SAMPLES_PER_QUESTION : PRO_SAMPLES_PER_QUESTION
 
-    try {
-      // Étape A : SAMPLES_PER_QUESTION appels ChatGPT indépendants, en parallèle
-      // (sinon le temps de traitement par question est multiplié par 3)
-      const rawResults = await Promise.all(
-        Array.from({ length: SAMPLES_PER_QUESTION }, () => runOpenAIQuery(nextQuestion.text, brand.plan as 'free' | 'pro')),
-      )
+    // Ne (re)traite que les moteurs manquants pour cette question — au 1er
+    // passage c'est tous les moteurs, en reprise après échec partiel c'est
+    // seulement celui qui a échoué (l'autre garde son observation existante).
+    const missingEngines = enginesForQuestion.filter((e) => !doneKeys.has(`${nextQuestion.id}:${e}`))
 
-      // Étape B : concurrents déjà connus, injectés dans chaque parsing pour
-      // éviter que l'IA en rate ou change légèrement leur nom d'un échantillon à l'autre.
-      const { data: existingCompetitors } = await adminSupabase
-        .from('competitors')
-        .select('name')
-        .eq('brand_id', brand.id)
-      const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
+    // Concurrents déjà connus, injectés dans chaque parsing pour éviter que
+    // l'IA en rate ou change légèrement leur nom d'un échantillon à l'autre.
+    // Récupéré une fois, partagé entre les moteurs de cette question.
+    const { data: existingCompetitors } = await adminSupabase
+      .from('competitors')
+      .select('name')
+      .eq('brand_id', brand.id)
+    const knownCompetitorNames = (existingCompetitors ?? []).map((c) => c.name)
 
-      const analyses = await Promise.all(
-        rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames, brand.plan as 'free' | 'pro')),
-      )
+    /** Traite un moteur pour la question courante : appels bruts → analyse →
+     *  agrégation → insertion observation + samples + competitors. Isolé par
+     *  moteur pour qu'un échec Perplexity ne fasse pas perdre un succès
+     *  ChatGPT déjà obtenu dans le même appel (et vice-versa). */
+    async function processEngine(engine: MeasurementEngine): Promise<{ engine: MeasurementEngine; ok: boolean }> {
+      const sampleCount = engineMix.filter((e) => e === engine).length
 
-      // Logging des coûts IA
-      let totalInput = 0
-      let totalOutput = 0
-      rawResults.forEach(r => {
-        totalInput += r.usage?.inputTokens ?? 0
-        totalOutput += r.usage?.outputTokens ?? 0
-      })
-      analyses.forEach(a => {
-        totalInput += a.usage?.inputTokens ?? 0
-        totalOutput += a.usage?.outputTokens ?? 0
-      })
-      if (totalInput > 0 || totalOutput > 0) {
-        const actualModel = rawResults[0]?.model || 'gpt-4o-mini'
+      try {
+        // Étape A : sampleCount appels indépendants pour ce moteur, en parallèle
+        const rawResults = await Promise.all(
+          Array.from({ length: sampleCount }, () =>
+            engine === 'perplexity'
+              ? runPerplexityQuery(nextQuestion.text)
+              : runOpenAIQuery(nextQuestion.text, brand.plan as 'free' | 'pro'),
+          ),
+        )
+
+        // Étape B : analyse structurée de chaque échantillon (toujours via le
+        // modèle d'analyse OpenAI — cf. analysis.ts — quel que soit le moteur
+        // qui a produit le texte brut : coût d'analyse minime, cohérence du parsing)
+        const analyses = await Promise.all(
+          rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames, brand.plan as 'free' | 'pro')),
+        )
+
+        // Logging des coûts IA — tarification propre à chaque moteur
+        let totalInput = 0
+        let totalOutput = 0
+        rawResults.forEach((r) => {
+          totalInput += r.usage?.inputTokens ?? 0
+          totalOutput += r.usage?.outputTokens ?? 0
+        })
+        let analysisInput = 0
+        let analysisOutput = 0
+        analyses.forEach((a) => {
+          analysisInput += a.usage?.inputTokens ?? 0
+          analysisOutput += a.usage?.outputTokens ?? 0
+        })
         try {
-          await (adminSupabase as any).from('api_usage_log').insert({
-            brand_id: brand.id,
-            user_id: brand.owner_id,
-            call_type: 'measurement',
-            model: actualModel,
-            tokens_input: totalInput,
-            tokens_output: totalOutput,
-            estimated_cost_usd: calculateCost(actualModel, totalInput, totalOutput),
-          })
+          const rows: Record<string, unknown>[] = []
+          if (totalInput > 0 || totalOutput > 0) {
+            const actualModel = rawResults[0]?.model || (engine === 'perplexity' ? 'sonar' : 'gpt-5.6-luna')
+            const cost =
+              engine === 'perplexity'
+                ? calculatePerplexityCost(actualModel, totalInput, totalOutput, sampleCount)
+                : calculateCost(actualModel, totalInput, totalOutput)
+            rows.push({
+              brand_id: brand.id,
+              user_id: brand.owner_id,
+              call_type: 'measurement',
+              model: actualModel,
+              tokens_input: totalInput,
+              tokens_output: totalOutput,
+              estimated_cost_usd: cost,
+            })
+          }
+          if (analysisInput > 0 || analysisOutput > 0) {
+            rows.push({
+              brand_id: brand.id,
+              user_id: brand.owner_id,
+              call_type: 'analysis',
+              model: 'gpt-5.6-luna',
+              tokens_input: analysisInput,
+              tokens_output: analysisOutput,
+              estimated_cost_usd: calculateCost('gpt-5.6-luna', analysisInput, analysisOutput),
+            })
+          }
+          if (rows.length > 0) {
+            await (adminSupabase as any).from('api_usage_log').insert(rows)
+          }
         } catch (logErr) {
           console.warn('[processNextQuestion] api_usage_log insert skipped:', logErr)
         }
-      }
 
-      // cited déterministe par échantillon (non utilisé dans la DB pour l'instant,
-      // prévu pour la colonne brand_cited dans une future migration §DB-2)
-      const _brandCitedPerSample = rawResults.map((r) => isBrandCited(r.citations, brandDomain))
+        // cited déterministe par échantillon (non utilisé dans la DB pour l'instant,
+        // prévu pour la colonne brand_cited dans une future migration §DB-2)
+        const _brandCitedPerSample = rawResults.map((r) => isBrandCited(r.citations, brandDomain))
 
-      // Étape D : agrégation par vote majoritaire (voir aggregate.ts)
-      const aggregated = aggregateSamples(
-        analyses.map((a) => ({
-          brand_mentioned: a.parsed.brand_mentioned,
-          brand_recommended: a.parsed.brand_recommended,
-          brand_position: a.parsed.brand_position,
-        })),
-      )
-
-      // Étape E : insert/upsert concurrents inconnus, vus sur n'importe quel échantillon
-      const allMentionedCompetitors = analyses.flatMap((a) => a.parsed.competitors).filter((c) => c.mentioned)
-      for (const competitor of allMentionedCompetitors) {
-        const { data: existing } = await adminSupabase
-          .from('competitors')
-          .select('id')
-          .eq('brand_id', brand.id)
-          .ilike('name', competitor.name)
-          .maybeSingle()
-
-        if (!existing) {
-          await adminSupabase.from('competitors').insert({
-            brand_id: brand.id,
-            name: competitor.name,
-            hidden: false,
-            first_seen_at: new Date().toISOString(),
-          })
-        }
-      }
-
-      // Étape E-bis : thèmes fusionnés — union des échantillons, dédupliqués par
-      // libellé (insensible à la casse), même logique que les concurrents.
-      // Pas de vote majoritaire (aggregate.ts inchangé) : un thème vu sur un seul
-      // échantillon est déjà une extraction réelle du texte, pas une supposition.
-      const themesSeen = new Map<string, string>()
-      for (const a of analyses) {
-        for (const theme of a.parsed.themes ?? []) {
-          const key = theme.trim().toLowerCase()
-          if (key && !themesSeen.has(key)) themesSeen.set(key, theme.trim())
-        }
-      }
-      const mergedThemes = Array.from(themesSeen.values())
-
-      // Étape F : insert observation agrégée
-      const { data: obs, error: obsError } = await adminSupabase
-        .from('observations')
-        .insert({
-          run_id: run.id,
-          question_id: nextQuestion.id,
-          engine: 'openai',
-          brand_mentioned: aggregated.brand_mentioned,
-          brand_recommended: aggregated.brand_recommended,
-          brand_position: aggregated.brand_position,
-          raw_answer: rawResults[0]?.text ?? null, // 1er échantillon conservé pour affichage rapide ; les 3 sont dans observation_samples
-          samples_count: aggregated.samples_count,
-          agreement_score: aggregated.agreement_score,
-          themes: mergedThemes,
-        })
-        .select()
-        .single()
-
-      if (obsError || !obs) throw new Error('Erreur insertion observation : ' + obsError?.message)
-
-      // Étape G : insert des échantillons bruts (traçabilité / Evidence Chain)
-      const { error: samplesError } = await adminSupabase.from('observation_samples').insert(
-        rawResults.map((r, i) => ({
-          observation_id: obs.id,
-          sample_index: i + 1,
-          engine: 'openai',
-          brand_mentioned: analyses[i].brand_mentioned,
-          brand_recommended: analyses[i].brand_recommended,
-          brand_position: analyses[i].brand_position,
-          raw_answer: r.text,
-        })),
-      )
-      if (samplesError) {
-        console.error('[measure] Échec insertion observation_samples (non bloquant) :', samplesError)
-      }
-
-      // Étape H : insert observation_competitors (agrégés sur tous les échantillons, dédupliqués par concurrent)
-      if (allMentionedCompetitors.length > 0) {
-        const { data: competitorRows } = await adminSupabase
-          .from('competitors')
-          .select('id, name')
-          .eq('brand_id', brand.id)
-          .in(
-            'name',
-            allMentionedCompetitors.map((c) => c.name),
-          )
-
-        const competitorByName = new Map(
-          (competitorRows ?? []).map((c) => [c.name.toLowerCase(), c.id]),
+        // Étape D : agrégation par vote majoritaire (voir aggregate.ts)
+        const aggregated = aggregateSamples(
+          analyses.map((a) => ({
+            brand_mentioned: a.parsed.brand_mentioned,
+            brand_recommended: a.parsed.brand_recommended,
+            brand_position: a.parsed.brand_position,
+          })),
         )
 
-        // Un seul enregistrement observation_competitors par concurrent : on garde
-        // l'échantillon le plus "favorable" à la détection (recommandé > mentionné,
-        // meilleure position) pour ne pas dupliquer sur les 3 échantillons.
-        const byCompetitor = new Map<string, (typeof allMentionedCompetitors)[number]>()
-        for (const c of allMentionedCompetitors) {
-          const key = c.name.toLowerCase()
-          const existing = byCompetitor.get(key)
-          if (!existing || (c.recommended && !existing.recommended)) {
-            byCompetitor.set(key, c)
+        // Étape E : insert/upsert concurrents inconnus, vus sur n'importe quel échantillon de ce moteur
+        const allMentionedCompetitors = analyses.flatMap((a) => a.parsed.competitors).filter((c) => c.mentioned)
+        for (const competitor of allMentionedCompetitors) {
+          const { data: existing } = await adminSupabase
+            .from('competitors')
+            .select('id')
+            .eq('brand_id', brand.id)
+            .ilike('name', competitor.name)
+            .maybeSingle()
+
+          if (!existing) {
+            await adminSupabase.from('competitors').insert({
+              brand_id: brand.id,
+              name: competitor.name,
+              hidden: false,
+              first_seen_at: new Date().toISOString(),
+            })
           }
         }
 
-        const obsCompetitors = [...byCompetitor.values()]
-          .map((c) => {
-            const competitorId =
-              competitorByName.get(c.name.toLowerCase()) ??
-              competitorByName.get(
-                [...competitorByName.keys()].find((k) =>
-                  k.toLowerCase().includes(c.name.toLowerCase()),
-                ) ?? '',
-              )
-            if (!competitorId) return null
-            return {
-              observation_id: obs.id,
-              competitor_id: competitorId,
-              mentioned: c.mentioned,
-              recommended: c.recommended,
-              position: c.position,
-              context_excerpt: c.context_excerpt ?? null,
-            }
-          })
-          .filter((x): x is NonNullable<typeof x> => x !== null)
-
-        if (obsCompetitors.length > 0) {
-          await adminSupabase.from('observation_competitors').insert(obsCompetitors)
+        // Étape E-bis : thèmes fusionnés — union des échantillons de ce moteur,
+        // dédupliqués par libellé (insensible à la casse).
+        const themesSeen = new Map<string, string>()
+        for (const a of analyses) {
+          for (const theme of a.parsed.themes ?? []) {
+            const key = theme.trim().toLowerCase()
+            if (key && !themesSeen.has(key)) themesSeen.set(key, theme.trim())
+          }
         }
+        const mergedThemes = Array.from(themesSeen.values())
+
+        // Étape F : insert observation agrégée — une par moteur
+        const { data: obs, error: obsError } = await adminSupabase
+          .from('observations')
+          .insert({
+            run_id: run.id,
+            question_id: nextQuestion.id,
+            engine,
+            brand_mentioned: aggregated.brand_mentioned,
+            brand_recommended: aggregated.brand_recommended,
+            brand_position: aggregated.brand_position,
+            raw_answer: rawResults[0]?.text ?? null, // 1er échantillon conservé pour affichage rapide ; le détail est dans observation_samples
+            samples_count: aggregated.samples_count,
+            agreement_score: aggregated.agreement_score,
+            themes: mergedThemes,
+          })
+          .select()
+          .single()
+
+        if (obsError || !obs) throw new Error('Erreur insertion observation : ' + obsError?.message)
+
+        // Étape G : insert des échantillons bruts (traçabilité / Evidence Chain)
+        const { error: samplesError } = await adminSupabase.from('observation_samples').insert(
+          rawResults.map((r, i) => ({
+            observation_id: obs.id,
+            sample_index: i + 1,
+            engine,
+            brand_mentioned: analyses[i].brand_mentioned,
+            brand_recommended: analyses[i].brand_recommended,
+            brand_position: analyses[i].brand_position,
+            raw_answer: r.text,
+          })),
+        )
+        if (samplesError) {
+          console.error('[measure] Échec insertion observation_samples (non bloquant) :', samplesError)
+        }
+
+        // Étape H : insert observation_competitors (dédupliqués par concurrent, pour ce moteur)
+        if (allMentionedCompetitors.length > 0) {
+          const { data: competitorRows } = await adminSupabase
+            .from('competitors')
+            .select('id, name')
+            .eq('brand_id', brand.id)
+            .in(
+              'name',
+              allMentionedCompetitors.map((c) => c.name),
+            )
+
+          const competitorByName = new Map((competitorRows ?? []).map((c) => [c.name.toLowerCase(), c.id]))
+
+          // Un seul enregistrement observation_competitors par concurrent : on garde
+          // l'échantillon le plus "favorable" à la détection (recommandé > mentionné,
+          // meilleure position) pour ne pas dupliquer sur les échantillons.
+          const byCompetitor = new Map<string, (typeof allMentionedCompetitors)[number]>()
+          for (const c of allMentionedCompetitors) {
+            const key = c.name.toLowerCase()
+            const existing = byCompetitor.get(key)
+            if (!existing || (c.recommended && !existing.recommended)) {
+              byCompetitor.set(key, c)
+            }
+          }
+
+          const obsCompetitors = [...byCompetitor.values()]
+            .map((c) => {
+              const competitorId =
+                competitorByName.get(c.name.toLowerCase()) ??
+                competitorByName.get(
+                  [...competitorByName.keys()].find((k) => k.toLowerCase().includes(c.name.toLowerCase())) ?? '',
+                )
+              if (!competitorId) return null
+              return {
+                observation_id: obs.id,
+                competitor_id: competitorId,
+                mentioned: c.mentioned,
+                recommended: c.recommended,
+                position: c.position,
+                context_excerpt: c.context_excerpt ?? null,
+              }
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null)
+
+          if (obsCompetitors.length > 0) {
+            await adminSupabase.from('observation_competitors').insert(obsCompetitors)
+          }
+        }
+
+        return { engine, ok: true }
+      } catch (err) {
+        // Échec sur ce moteur pour cette question : logue mais continue —
+        // l'autre moteur (s'il y en a un) n'est pas affecté, et une observation
+        // vide est insérée pour ne pas reboucler indéfiniment dessus.
+        console.error(`[measure] Échec question ${nextQuestion.id} (moteur ${engine}) :`, err)
+
+        await adminSupabase.from('observations').insert({
+          run_id: run.id,
+          question_id: nextQuestion.id,
+          engine,
+          brand_mentioned: false,
+          brand_recommended: false,
+          brand_position: null,
+          raw_answer: null,
+        })
+
+        return { engine, ok: false }
       }
+    }
 
-      // Étape I : incrémente questions_completed
-      await adminSupabase
-        .from('measurement_runs')
-        .update({ questions_completed: doneQuestionIds.size + 1 })
-        .eq('id', run.id)
+    // Tous les moteurs manquants en parallèle — le temps de traitement d'une
+    // question reste celui du moteur le plus lent, pas la somme des deux.
+    const engineResults = await Promise.all(missingEngines.map((engine) => processEngine(engine)))
+    const anyFailed = engineResults.some((r) => !r.ok)
 
-      return {
-        done: false,
-        run: {
-          id: run.id,
-          status: 'measuring' as RunStatus,
-          questions_completed: doneQuestionIds.size + 1,
-          questions_total: run.questions_total,
-          score: null,
-        },
-      }
-    } catch (err) {
-      // Échec sur cette question : logue mais continue — les questions suivantes
-      // ne sont pas bloquées (impacte seulement partial vs success à la fin)
-      // Le détail complet (ex: rate_limit_exceeded, code, message brut du
-      // fournisseur IA) reste UNIQUEMENT dans ce log serveur — jamais dans
-      // un event visible utilisateur (Historique / Notifications lisent
-      // events.message directement).
-      console.error(`[measure] Échec question ${nextQuestion.id} :`, err)
-
+    if (anyFailed) {
       await adminSupabase.from('events').insert({
         brand_id: brand.id,
         type: 'warning' as Database['public']['Tables']['events']['Row']['type'],
         title: 'Échec sur une question',
-        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée. Réessayez plus tard.`,
+        message: `La question "${nextQuestion.text.slice(0, 80)}..." n'a pas pu être mesurée sur ${engineResults.filter((r) => !r.ok).map((r) => r.engine).join(', ')}. Réessayez plus tard.`,
         source_type: 'measurement_run',
         source_id: run.id,
         show_toast: false,
@@ -624,33 +683,23 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         show_history: true,
         read: false,
       })
+    }
 
-      // Marque la question comme "traitée" avec une observation vide pour ne
-      // pas boucler dessus indéfiniment
-      await adminSupabase.from('observations').insert({
-        run_id: run.id,
-        question_id: nextQuestion.id,
-        engine: 'openai',
-        brand_mentioned: false,
-        brand_recommended: false,
-        brand_position: null,
-        raw_answer: null,
-      })
+    const newlyCompletedCount = completedQuestionsCount + 1 // cette question est désormais faite (succès ou échec géré) sur tous ses moteurs
 
-      await adminSupabase
-        .from('measurement_runs')
-        .update({ questions_completed: doneQuestionIds.size + 1 })
-        .eq('id', run.id)
+    await adminSupabase
+      .from('measurement_runs')
+      .update({ questions_completed: newlyCompletedCount })
+      .eq('id', run.id)
 
-      return {
-        done: false,
-        run: {
-          id: run.id,
-          status: 'measuring' as RunStatus,
-          questions_completed: doneQuestionIds.size + 1,
-          questions_total: run.questions_total,
-          score: null,
-        },
-      }
+    return {
+      done: false,
+      run: {
+        id: run.id,
+        status: 'measuring' as RunStatus,
+        questions_completed: newlyCompletedCount,
+        questions_total: run.questions_total,
+        score: null,
+      },
     }
   })
