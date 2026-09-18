@@ -231,12 +231,29 @@ async function main() {
 
   // 9. Create Events
   await supabase.from('events').insert([
-    { brand_id: brandId, title: 'Nouveau scan terminé', type: 'scan_completed', show_history: true },
-    { brand_id: brandId, title: 'Opportunité détectée (Copilot)', type: 'opportunity_found', show_history: true },
-    { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'alert', show_history: true },
-    { brand_id: brandId, title: 'Amélioration visibilité face à Kustomer', type: 'positive_mention', show_history: true }
+    { brand_id: brandId, title: 'Nouveau scan terminé', type: 'info', source_type: 'measurement_run', show_history: true },
+    { brand_id: brandId, title: 'Opportunité détectée (Copilot)', type: 'success', source_type: 'opportunity', show_history: true },
+    { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'warning', source_type: 'system', show_history: true },
+    { brand_id: brandId, title: 'Amélioration visibilité face à Kustomer', type: 'success', source_type: 'system', show_history: true }
   ]);
   console.log("✅ Events injected");
+
+  // 9.5 Create Bot Access
+  await supabase.from('brand_bot_access').insert([
+    {
+      brand_id: brandId,
+      checked_at: new Date().toISOString(),
+      llms_txt_found: true,
+      bot_rules: {
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed",
+        "Google-Extended": "disallowed",
+        "PerplexityBot": "allowed",
+        "OAI-SearchBot": "disallowed"
+      }
+    }
+  ]);
+  console.log("✅ Bot Access injected");
 
   // 10. Create Site Pages
   await supabase.from('site_pages').insert([
