@@ -6,7 +6,7 @@ import {
   Users,
   Lightbulb,
   History,
-  ChevronRight,
+  Settings,
   Plus,
   X,
 } from 'lucide-react'
@@ -77,16 +77,22 @@ export function Sidebar({
 
             {!isCollapsed && (
               brand ? (
-                // État B — marque configurée : nom de la marque suivie +
-                // raccourci vers Paramètres (pas de switcher, un compte = une marque).
-                <Link
-                  to="/dashboard/parametres"
-                  onClick={onClose}
-                  className="-mx-1.5 flex min-w-0 flex-1 items-center justify-between gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-elevated"
-                >
-                  <span className="truncate text-sm font-semibold text-ink-primary">{brand.name}</span>
-                  <ChevronRight className="size-3.5 shrink-0 text-ink-muted" />
-                </Link>
+                // État B — marque configurée : nom de la marque (non cliquable,
+                // centré) + icône Paramètres cliquable séparée (pas de switcher,
+                // un compte = une marque).
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
+                  <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-ink-primary">
+                    {brand.name}
+                  </span>
+                  <Link
+                    to="/dashboard/parametres"
+                    onClick={onClose}
+                    title="Paramètres"
+                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-elevated hover:text-ink-primary"
+                  >
+                    <Settings className="size-3.5" />
+                  </Link>
+                </div>
               ) : (
                 // État A — compte sans marque : un seul CTA, ouvre le tiroir de setup.
                 <button
