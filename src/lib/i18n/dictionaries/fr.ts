@@ -122,10 +122,10 @@ export const fr = {
       name: "Pro",
       recommended: "Plan recommandé",
       description: "Idéal pour les marques souhaitant maîtriser leur visibilité.",
-      priceMonthly: "75 €",
-      priceAnnual: "60 €",
+      priceMonthly: "49 €",
+      priceAnnual: "39 €",
       perMonth: "/mois",
-      billedAnnually: "Facturé 720 € par an (20% d'économie)",
+      billedAnnually: "Facturé 468 € par an (20% d'économie)",
       cta: "Démarrer avec Pro",
       features: [
         { label: '1 site suivi' },

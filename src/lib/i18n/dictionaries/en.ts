@@ -122,10 +122,10 @@ export const en = {
       name: "Pro",
       recommended: "Recommended plan",
       description: "Ideal for brands wanting to master their visibility.",
-      priceMonthly: "€75",
-      priceAnnual: "€60",
+      priceMonthly: "€49",
+      priceAnnual: "€39",
       perMonth: "/month",
-      billedAnnually: "Billed €720 yearly (save 20%)",
+      billedAnnually: "Billed €468 yearly (save 20%)",
       cta: "Start with Pro",
       features: [
         { label: '1 tracked site' },
