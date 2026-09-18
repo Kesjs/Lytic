@@ -8,87 +8,86 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  LabelList,
 } from 'recharts';
 
 export interface EngineRadarChartProps {
   data: { engine: string; mentioned: number; recommended: number; total: number }[];
 }
 
-// Remplace l'ancien radar à 4 axes (illisible en dessous de 5-6 catégories,
-// se réduisait à un losange décoratif sans info exploitable) par des barres
-// horizontales groupées : une ligne par moteur, deux barres (Mentions /
-// Recommandations) avec le pourcentage affiché directement au bout. Lisible
-// en un coup d'œil, sans avoir à décoder une forme géométrique.
 export function EngineRadarChart({ data }: EngineRadarChartProps) {
-  const chartData = data.map((d) => ({
-    engine: d.engine,
-    mentionsPct: Math.round((d.mentioned / d.total) * 100) || 0,
-    recommendPct: Math.round((d.recommended / d.total) * 100) || 0,
-  }));
-
-  if (chartData.length === 0) {
+  if (data.length === 0) {
     return (
-      <div className="flex h-[140px] w-full items-center justify-center text-sm text-ink-muted">
+      <div className="flex h-[240px] w-full items-center justify-center text-sm text-ink-muted">
         Aucune donnée par moteur pour la dernière mesure.
       </div>
     );
   }
 
-  // Hauteur proportionnelle au nombre de moteurs plutôt que fixe (240px) :
-  // évite le vide sous 3-4 lignes et s'adapte si un moteur est ajouté.
-  const height = Math.max(140, chartData.length * 48 + 40);
+  // Brand color (Yellow) and vibrant modern colors
+  const COLORS = ['#eab308', '#8b5cf6', '#3b82f6', '#ec4899', '#10b981'];
+
+  const engines = data.map(d => d.engine);
+  
+  // Transform data so metrics are on the X axis, and AIs are the bars
+  const mentionsData: any = { metric: 'Mentions' };
+  const recomData: any = { metric: 'Recommandations' };
+  
+  data.forEach(d => {
+    mentionsData[d.engine] = Math.round((d.mentioned / d.total) * 100) || 0;
+    recomData[d.engine] = Math.round((d.recommended / d.total) * 100) || 0;
+  });
+  
+  const chartData = [mentionsData, recomData];
   const percentLabel = (value: number) => `${value}%`;
 
   return (
-    <div style={{ height }} className="w-full">
+    <div className="h-[250px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          layout="vertical"
-          margin={{ top: 4, right: 28, bottom: 4, left: 4 }}
-          barGap={4}
-          barCategoryGap="32%"
+          margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
+          barGap={6}
+          barCategoryGap="25%"
         >
-          <CartesianGrid horizontal={false} stroke="rgb(var(--color-border))" />
+          <CartesianGrid vertical={false} stroke="rgb(var(--color-border))" strokeDasharray="3 3" />
           <XAxis
+            dataKey="metric"
+            tick={{ fill: 'rgb(var(--color-ink-primary))', fontSize: 13, fontWeight: 500 }}
+            axisLine={false}
+            tickLine={false}
+            dy={8}
+          />
+          <YAxis
             type="number"
             domain={[0, 100]}
             tick={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
             tickFormatter={percentLabel}
-          />
-          <YAxis
-            type="category"
-            dataKey="engine"
-            tick={{ fill: 'rgb(var(--color-ink-primary))', fontSize: 12 }}
-            width={78}
+            axisLine={false}
+            tickLine={false}
           />
           <Tooltip
             contentStyle={{
               backgroundColor: 'rgb(var(--color-surface))',
               borderColor: 'rgb(var(--color-border))',
-              borderRadius: '8px',
+              borderRadius: '12px',
+              padding: '8px 12px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
             }}
-            itemStyle={{ color: 'rgb(var(--color-ink-primary))' }}
+            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
             formatter={(value: number) => percentLabel(value)}
+            itemStyle={{ fontWeight: 600 }}
           />
-          <Legend verticalAlign="top" height={24} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-          <Bar name="Mentions" dataKey="mentionsPct" fill="#4c566a" radius={[0, 4, 4, 0]} barSize={10}>
-            <LabelList
-              dataKey="mentionsPct"
-              position="right"
-              formatter={percentLabel}
-              style={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
+          <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px' }} />
+          {engines.map((engine, index) => (
+            <Bar 
+              key={engine} 
+              name={engine} 
+              dataKey={engine} 
+              fill={COLORS[index % COLORS.length]} 
+              radius={[4, 4, 0, 0]} 
+              maxBarSize={40} 
             />
-          </Bar>
-          <Bar name="Recommandations" dataKey="recommendPct" fill="#00E5FF" radius={[0, 4, 4, 0]} barSize={10}>
-            <LabelList
-              dataKey="recommendPct"
-              position="right"
-              formatter={percentLabel}
-              style={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
-            />
-          </Bar>
+          ))}
         </BarChart>
       </ResponsiveContainer>
     </div>

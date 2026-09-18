@@ -14,6 +14,7 @@ import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
+import { QuestionsTable } from '~/components/dashboard/QuestionsTable'
 import { isFreePlan } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
@@ -117,7 +118,7 @@ function AccueilPage() {
     )
   }
 
-  const { brand, latestRun, displayRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes } =
+  const { brand, latestRun, displayRun, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes } =
     data
 
   return (
@@ -133,18 +134,17 @@ function AccueilPage() {
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
             <>
-              <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
-              <div className="mt-3 flex items-center gap-1.5">
-                <p className="text-xs font-medium text-ink-muted">Visibilité IA</p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-ink-muted hover:text-ink-primary transition-colors">
-                      <HelpCircle className="size-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
-                </Tooltip>
-              </div>
+                <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
+                  <p>Bonjour, {brand.name}</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-ink-muted hover:text-ink-primary transition-colors">
+                        <HelpCircle className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
+                  </Tooltip>
+                </div>
 
               {!displayRun ? (
                 <DashboardStateView state="no_data" compact className="mt-4" />
@@ -152,7 +152,7 @@ function AccueilPage() {
                 <>
                   {displayRun.score !== null ? (
                     <>
-                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
+                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand">
                         {Math.round(displayRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
                       </div>
                       {displayRun.score_delta !== null && (
@@ -165,7 +165,6 @@ function AccueilPage() {
                           la dernière mesure
                         </p>
                       )}
-                      <ScoreChart hasAnyRun={!!latestRun} variant="compact" />
                       <p className="mt-2 text-xs text-ink-muted">
                         Dernière mesure :{' '}
                         {displayRun.completed_at
@@ -202,19 +201,16 @@ function AccueilPage() {
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
-            hint="Sur les questions suivies"
             tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
           />
           <KpiCard
             label="Recommandations"
             value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
-            hint="Sur les questions suivies"
             tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
           />
           <KpiCard
             label="Pos. moyenne"
             value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
-            hint="Quand mentionné"
             tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
           />
           <KpiCard
@@ -222,7 +218,6 @@ function AccueilPage() {
             value={
               kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
             }
-            hint="Vs. concurrents détectés"
             tooltip="Votre part de mentions par rapport à vos principaux concurrents."
           />
         </div>
@@ -336,25 +331,17 @@ function AccueilPage() {
       </motion.section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
-          {opportunities.length === 0 ? (
-            <DashboardStateView state={latestRun ? 'no_opportunity' : 'no_data'} compact />
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {opportunities.map((opp: any) => (
-                <li
-                  key={opp.id}
-                  className="rounded-md border border-border bg-elevated px-3 py-2 text-sm text-ink-primary"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>{opp.title}</span>
-                    <PriorityBadge priority={opp.priority} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface pt-5">
+          <div className="flex items-center justify-between px-5">
+            <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
+            <Link
+              to="/dashboard/historique"
+              className="text-xs text-ink-muted hover:text-ink-secondary"
+            >
+              Toutes les questions &rarr;
+            </Link>
+          </div>
+          <QuestionsTable data={questionsPerf} />
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-5">
