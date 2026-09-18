@@ -162,6 +162,24 @@ export const updateProfileName = createServerFn({ method: 'POST' })
     return { success: true } as const
   })
 
+export const updateEmail = createServerFn({ method: 'POST' })
+  .validator((newEmail: string) => newEmail)
+  .handler(async ({ data: newEmail }) => {
+    const supabase = getSupabaseServerClient()
+    await requireUser(supabase)
+    
+    const email = newEmail.trim()
+    if (!email || !email.includes('@')) {
+      throw new Error('Adresse e-mail invalide.')
+    }
+    
+    // Supabase va envoyer un e-mail de confirmation à la nouvelle adresse
+    // (et optionnellement à l'ancienne selon les réglages du projet).
+    const { error } = await supabase.auth.updateUser({ email })
+    if (error) throw new Error(error.message)
+    return { success: true } as const
+  })
+
 // --- Sécurité ---
 
 export const updatePassword = createServerFn({ method: 'POST' })

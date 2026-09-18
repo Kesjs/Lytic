@@ -46,7 +46,7 @@ export function CommandPalette() {
   }, [])
 
   return (
-    <div className="relative hidden sm:block w-48 md:w-64 lg:ml-2" ref={containerRef}>
+    <div className="relative hidden w-full sm:block" ref={containerRef}>
       <style>{`
         [cmdk-list] {
           max-height: 300px;

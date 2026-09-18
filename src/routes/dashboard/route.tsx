@@ -11,7 +11,6 @@ import { ThemeToggle } from '~/components/ui/theme-toggle'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
-import { CommandPalette } from '~/components/dashboard/CommandPalette'
 import { LayoutDashboard, LineChart, Users, Lightbulb, History } from 'lucide-react'
 
 const navItems = [
@@ -57,11 +56,10 @@ function DashboardLayout() {
       setIsManualRefreshing(false)
     }
   }
-  const { data: brand, isLoading: isBrandLoading } = useQuery({
+  const { data: brand } = useQuery({
     queryKey: ['current-brand'],
     queryFn: () => fetchCurrentBrand(),
   })
-  const isBrandConfigured = !isBrandLoading && !!brand
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
@@ -106,6 +104,7 @@ function DashboardLayout() {
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
         navItems={navItems}
+        brand={brand}
       />
 
       {/* Conteneur principal (décalé selon la largeur de la sidebar avec transition animée) */}
@@ -160,15 +159,7 @@ function DashboardLayout() {
               </Link>
               <ChevronRight className="size-3.5 text-ink-muted" />
               <span className="font-medium text-ink-primary lg:text-sm lg:font-semibold">{pageTitles[pathname] || 'Tableau de bord'}</span>
-
-              {isBrandConfigured === false && (
-                <span className="ml-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
-                  Non configuré
-                </span>
-              )}
             </div>
-            
-            <CommandPalette />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

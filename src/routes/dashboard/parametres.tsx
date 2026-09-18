@@ -12,6 +12,7 @@ import { ThemeToggle } from '~/components/ui/theme-toggle'
 import {
   fetchSettings,
   updateProfileName,
+  updateEmail,
   updatePassword,
   updateBrandSite,
   addQuestion,
@@ -155,12 +156,27 @@ function AccountSection({
   onSaved: () => void
 }) {
   const [fullName, setFullName] = useState(profile.fullName ?? '')
+  const [email, setEmail] = useState(profile.email ?? '')
 
   const mutation = useMutation({
-    mutationFn: (name: string) => updateProfileName({ data: name }),
-    onSuccess: () => {
-      toast.success('Profil mis à jour.')
-      onSaved()
+    mutationFn: async () => {
+      let updated = false
+      if (fullName !== (profile.fullName ?? '')) {
+        await updateProfileName({ data: fullName })
+        updated = true
+      }
+      if (email !== profile.email) {
+        await updateEmail({ data: email })
+        updated = true
+        toast.info('Un e-mail de confirmation a été envoyé à ' + email + '.')
+      }
+      return updated
+    },
+    onSuccess: (updated) => {
+      if (updated) {
+        toast.success('Profil mis à jour.')
+        onSaved()
+      }
     },
     onError: (err: Error) => toast.error(err.message || 'Impossible de mettre à jour le profil.'),
   })
@@ -169,17 +185,9 @@ function AccountSection({
     <SectionCard title="Compte" description="Vos informations personnelles.">
       <div className="space-y-3">
         <TextField label="Nom complet" value={fullName} onChange={setFullName} placeholder="Votre nom" />
-        <label className="block">
-          <span className="text-xs font-medium text-ink-secondary">Email</span>
-          <input
-            type="email"
-            value={profile.email}
-            disabled
-            className="mt-1 w-full cursor-not-allowed rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink-muted"
-          />
-        </label>
+        <TextField label="Adresse e-mail" type="email" value={email} onChange={setEmail} placeholder="votre@email.com" />
         <div className="flex justify-end">
-          <SaveButton onClick={() => mutation.mutate(fullName)} saving={mutation.isPending} />
+          <SaveButton onClick={() => mutation.mutate()} saving={mutation.isPending} disabled={fullName === (profile.fullName ?? '') && email === profile.email} />
         </div>
       </div>
     </SectionCard>
