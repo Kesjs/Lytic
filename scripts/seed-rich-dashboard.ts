@@ -30,12 +30,12 @@ async function main() {
   const { data: oldBrand } = await supabase
     .from('brands')
     .select('id')
-    .eq('name', 'Lumail')
+    .eq('name', 'ken 2001')
     .eq('owner_id', userId)
     .single();
 
   if (oldBrand) {
-    console.log("🧹 Deleting old Lumail brand...");
+    console.log("🧹 Deleting old ken 2001 brand...");
     await supabase.from('brands').delete().eq('id', oldBrand.id);
   }
 
@@ -44,17 +44,17 @@ async function main() {
     .from('brands')
     .insert({
       owner_id: userId,
-      name: 'Lumail'
+      name: 'ken 2001'
     })
     .select('id')
     .single();
 
   if (brandError || !brand) throw brandError;
   const brandId = brand.id;
-  console.log(`✅ Brand Lumail created (${brandId})`);
+  console.log(`✅ Brand ken 2001 created (${brandId})`);
 
   // 4. Create Competitors
-  const competitors = ['Zendesk', 'Intercom', 'Front', 'ken2001'];
+  const competitors = ['Zendesk', 'Intercom', 'Front', 'Kustomer'];
   const { data: comps, error: compError } = await supabase
     .from('competitors')
     .insert(competitors.map(name => ({ brand_id: brandId, name })))
@@ -68,9 +68,9 @@ async function main() {
   // 5. Create Questions
   const questionsData = [
     { text: "What is the best email client for Mac?", category: "General", weight: 1.0 },
-    { text: "How does Lumail compare to Front?", category: "Comparison", weight: 1.2 },
+    { text: "How does ken 2001 compare to Front?", category: "Comparison", weight: 1.2 },
     { text: "What are the alternatives to Zendesk for small teams?", category: "Alternatives", weight: 0.9 },
-    { text: "Is Lumail secure for enterprise?", category: "Security", weight: 1.5 },
+    { text: "Is ken 2001 secure for enterprise?", category: "Security", weight: 1.5 },
     { text: "Best collaborative inbox software 2026", category: "General", weight: 1.1 },
     { text: "How much does a ticketing system cost?", category: "Pricing", weight: 1.0 },
     { text: "Top tools for customer support", category: "General", weight: 1.1 }
@@ -132,9 +132,9 @@ async function main() {
 
       let rawAnswer = "";
       if (isRecommended) {
-        rawAnswer = `I highly recommend **Lumail** for this use case. It provides an excellent, fast, and modern interface. While Zendesk is good for traditional ticketing, Lumail shines for email-based collaboration.`;
+        rawAnswer = `I highly recommend **ken 2001** for this use case. It provides an excellent, fast, and modern interface. While Zendesk is good for traditional ticketing, ken 2001 shines for email-based collaboration.`;
       } else if (isMentioned) {
-        rawAnswer = `You could look into Front, Zendesk, or Lumail. Lumail is a newer tool but might lack some enterprise features compared to Intercom.`;
+        rawAnswer = `You could look into Front, Zendesk, or ken 2001. ken 2001 is a newer tool but might lack some enterprise features compared to Intercom.`;
       } else {
         rawAnswer = `The industry leaders in this space are Zendesk and Intercom. For a startup, Front is also a very solid choice.`;
       }
@@ -198,8 +198,8 @@ async function main() {
       confidence: 85,
       status: 'open',
       observations_count: 4,
-      reason: "Copilot ne mentionne Lumail que dans 30% des cas, préférant Front.",
-      proposed_direction: "Créer une page dédiée 'Lumail vs Front' avec un balisage schema.org clair."
+      reason: "Copilot ne mentionne ken 2001 que dans 30% des cas, préférant Front.",
+      proposed_direction: "Créer une page dédiée 'ken 2001 vs Front' avec un balisage schema.org clair."
     },
     {
       brand_id: brandId,
@@ -208,17 +208,17 @@ async function main() {
       confidence: 72,
       status: 'open',
       observations_count: 2,
-      reason: "Les IA doutent des capacités 'Enterprise' et 'Security' de Lumail.",
+      reason: "Les IA doutent des capacités 'Enterprise' et 'Security' de ken 2001.",
       proposed_direction: "Ajouter une section SOC2 et Enterprise Security sur la page d'accueil."
     },
     {
       brand_id: brandId,
-      title: "Se positionner face à ken2001",
+      title: "Se positionner face à Kustomer",
       priority: 'low',
       confidence: 60,
       status: 'open',
       observations_count: 1,
-      reason: "ken2001 émerge comme une alternative montante dans les requêtes liées à la tarification.",
+      reason: "Kustomer émerge comme une alternative montante dans les requêtes liées à la tarification.",
       proposed_direction: "Lancer une campagne comparative ciblée soulignant vos avantages tarifaires."
     }
   ]);
@@ -229,15 +229,15 @@ async function main() {
     { brand_id: brandId, title: 'Nouveau scan terminé', type: 'scan_completed', show_history: true },
     { brand_id: brandId, title: 'Opportunité détectée (Copilot)', type: 'opportunity_found', show_history: true },
     { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'alert', show_history: true },
-    { brand_id: brandId, title: 'Amélioration visibilité face à ken2001', type: 'positive_mention', show_history: true }
+    { brand_id: brandId, title: 'Amélioration visibilité face à Kustomer', type: 'positive_mention', show_history: true }
   ]);
   console.log("✅ Events injected");
 
   // 10. Create Site Pages
   await supabase.from('site_pages').insert([
-    { brand_id: brandId, url: 'https://lumail.com', status: 'ok', is_spa: false },
-    { brand_id: brandId, url: 'https://lumail.com/pricing', status: 'ok', is_spa: false },
-    { brand_id: brandId, url: 'https://lumail.com/about', status: 'ok', is_spa: false }
+    { brand_id: brandId, url: 'https://ken 2001.com', status: 'ok', is_spa: false },
+    { brand_id: brandId, url: 'https://ken 2001.com/pricing', status: 'ok', is_spa: false },
+    { brand_id: brandId, url: 'https://ken 2001.com/about', status: 'ok', is_spa: false }
   ]);
   console.log("✅ Site Pages injected");
 
