@@ -9,6 +9,7 @@ import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import { ThemeToggle } from '~/components/ui/theme-toggle'
+import { UpgradeButton } from '~/components/dashboard/UpgradeButton'
 import {
   fetchSettings,
   updateProfileName,
@@ -706,12 +707,7 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
             <li>• 1 mesure (aperçu) + 1 remesure si changement du site détecté</li>
             <li>• {FREE_MAX_COMPETITORS_VISIBLE} concurrent visible</li>
           </ul>
-          <a
-            href="/#tarifs"
-            className="mt-3 inline-flex items-center rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
-          >
-            Passer Pro
-          </a>
+          <UpgradeButton brandId={brand.id} className="mt-3" />
         </div>
       ) : (
         <p className="mt-3 text-xs text-ink-muted">
