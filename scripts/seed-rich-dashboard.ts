@@ -54,7 +54,7 @@ async function main() {
   console.log(`✅ Brand Lumail created (${brandId})`);
 
   // 4. Create Competitors
-  const competitors = ['Zendesk', 'Intercom', 'Front'];
+  const competitors = ['Zendesk', 'Intercom', 'Front', 'ken2001'];
   const { data: comps, error: compError } = await supabase
     .from('competitors')
     .insert(competitors.map(name => ({ brand_id: brandId, name })))
@@ -139,6 +139,23 @@ async function main() {
         rawAnswer = `The industry leaders in this space are Zendesk and Intercom. For a startup, Front is also a very solid choice.`;
       }
 
+      const simulatedThemesOptions = [
+        ['pricing', 'tarification', 'coût'],
+        ['interface', 'ux', 'facilité d\'utilisation'],
+        ['sécurité', 'enterprise', 'compliance'],
+        ['collaboration', 'équipe', 'partage'],
+        ['support client', 'ticketing', 'automatisation']
+      ];
+      
+      // Select 2-3 random themes for this observation
+      const obsThemes: string[] = [];
+      const numThemes = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      const shuffledOptions = [...simulatedThemesOptions].sort(() => 0.5 - Math.random());
+      for (let i = 0; i < numThemes; i++) {
+        const syns = shuffledOptions[i];
+        obsThemes.push(syns[Math.floor(Math.random() * syns.length)]);
+      }
+
       const { data: obs, error: obsError } = await supabase
         .from('observations')
         .insert({
@@ -149,7 +166,8 @@ async function main() {
           brand_recommended: isRecommended,
           brand_position: isMentioned ? Math.floor(Math.random() * 3) + 1 : null,
           raw_answer: rawAnswer,
-          samples_count: 1
+          samples_count: 1,
+          themes: obsThemes
         })
         .select('id')
         .single();
@@ -192,6 +210,16 @@ async function main() {
       observations_count: 2,
       reason: "Les IA doutent des capacités 'Enterprise' et 'Security' de Lumail.",
       proposed_direction: "Ajouter une section SOC2 et Enterprise Security sur la page d'accueil."
+    },
+    {
+      brand_id: brandId,
+      title: "Se positionner face à ken2001",
+      priority: 'low',
+      confidence: 60,
+      status: 'open',
+      observations_count: 1,
+      reason: "ken2001 émerge comme une alternative montante dans les requêtes liées à la tarification.",
+      proposed_direction: "Lancer une campagne comparative ciblée soulignant vos avantages tarifaires."
     }
   ]);
   console.log("✅ Opportunities injected");
@@ -200,7 +228,8 @@ async function main() {
   await supabase.from('events').insert([
     { brand_id: brandId, title: 'Nouveau scan terminé', type: 'scan_completed', show_history: true },
     { brand_id: brandId, title: 'Opportunité détectée (Copilot)', type: 'opportunity_found', show_history: true },
-    { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'alert', show_history: true }
+    { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'alert', show_history: true },
+    { brand_id: brandId, title: 'Amélioration visibilité face à ken2001', type: 'positive_mention', show_history: true }
   ]);
   console.log("✅ Events injected");
 
