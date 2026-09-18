@@ -27,3 +27,12 @@ export type BrandPlan = 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
 export function isFreePlan(plan: string | null | undefined): boolean {
   return plan === 'free'
 }
+
+// Statuts de marque exclus de tout traitement automatique (cron) — abonnement
+// en échec de paiement ou résilié. Aucun crawl ni appel LLM automatique ne
+// doit être déclenché pour ces marques (plan automatisation §4.1).
+const CRON_EXCLUDED_PLANS: readonly BrandPlan[] = ['past_due', 'canceled']
+
+export function isBrandEligibleForCron(plan: string | null | undefined): boolean {
+  return !!plan && !CRON_EXCLUDED_PLANS.includes(plan as BrandPlan)
+}

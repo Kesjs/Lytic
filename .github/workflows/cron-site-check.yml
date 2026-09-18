@@ -1,0 +1,20 @@
+name: Cron site-check
+
+on:
+  schedule:
+    # 05:00 UTC chaque jour (~6h/7h heure française selon saison).
+    # Ajuste l'heure si besoin — syntaxe cron standard.
+    - cron: '0 5 * * *'
+  workflow_dispatch: {} # permet de le déclencher manuellement depuis l'onglet Actions
+
+jobs:
+  call-cron-route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/site-check
+        run: |
+          curl -sS -X POST "${{ secrets.LYTIC_CRON_URL }}/api/cron/site-check" \
+            -H "Authorization: Bearer ${{ secrets.LYTIC_CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail-with-body \
+            -w "\nHTTP %{http_code}\n"

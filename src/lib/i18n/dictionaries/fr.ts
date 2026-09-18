@@ -130,7 +130,7 @@ export const fr = {
       features: [
         { label: '1 site suivi' },
         { label: "Jusqu'à 50 questions" },
-        { label: 'Mesure continue automatique', detail: 'Vérification automatique de votre visibilité une fois par semaine, sans action de votre part.' },
+        { label: 'Vérification automatique', detail: 'Contrôle quotidien de votre site, remesure automatique dès qu\'un changement est détecté.' },
         { label: 'Interrogation de ChatGPT' },
         { label: 'Analyse de positionnement' },
         { label: 'Détection des opportunités' }

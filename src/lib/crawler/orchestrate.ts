@@ -58,7 +58,11 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
     const { data: brand } = await admin.from('brands').select('*').eq('id', data.brandId).eq('owner_id', auth.user.id).single()
     if (!brand) throw new Error('Marque introuvable')
 
-    // Cooldown de scan manuel — Free uniquement (§5)
+    // Cooldown de scan manuel — Free uniquement (§5). Ne s'applique qu'au
+    // bouton manuel : le crawl automatique quotidien (cron) passe par
+    // triggerSiteCrawlForBrandId → crawlBrandCore directement, sans ce
+    // cooldown (plan automatisation §4.2 — le crawl auto est gratuit et
+    // quotidien pour tous les plans, y compris Free).
     if (isFreePlan(brand.plan)) {
       const { allowed, daysRemaining } = await checkSiteScanCooldown(admin, brand.id)
       if (!allowed) {
@@ -68,6 +72,20 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
       }
     }
 
+    return crawlBrandCore(admin, brand)
+  })
+
+// ─── Variante admin (sans session utilisateur) ─────────────────────────────
+// Utilisée par le cron /api/cron/site-check (plan automatisation §4.1) qui
+// boucle sur toutes les marques actives sans utilisateur connecté.
+export async function triggerSiteCrawlForBrandId(brandId: string): Promise<{ runId: string } | null> {
+  const admin = getSupabaseAdminClient() as any
+  const { data: brand } = await admin.from('brands').select('*').eq('id', brandId).single()
+  if (!brand) return null
+  return crawlBrandCore(admin, brand)
+}
+
+async function crawlBrandCore(admin: any, brand: { id: string; website_url: string | null }): Promise<{ runId: string }> {
     // Cherche un run existant bloqué
     const { data: existingRun } = await admin.from('site_crawl_runs')
       .select('id, updated_at')
@@ -182,15 +200,34 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
     }
 
     return { runId: run.id }
-  })
+}
 
 // ─── 2. Traiter la prochaine page (boucle client) ────────────────────────────
 export const processNextPage = createServerFn({ method: 'POST' })
   .validator((data: { runId: string }) => data)
   .handler(async ({ data }): Promise<{ done: boolean, runId: string }> => {
     const admin = getSupabaseAdminClient() as any
+    return processNextPageCore(admin, data.runId)
+  })
 
-    const { data: run } = await admin.from('site_crawl_runs').select('*').eq('id', data.runId).single()
+// ─── Variante admin (sans session utilisateur) ─────────────────────────────
+// Traite l'intégralité d'un run de crawl (boucle jusqu'à `done`), pour le
+// cron /api/cron/site-check — un seul appel HTTP externe, pas de client qui
+// boucle page par page (plan automatisation §4.1). `maxSteps` est un filet
+// de sécurité pour ne jamais boucler indéfiniment sur un très gros site.
+export async function runCrawlToCompletion(runId: string, maxSteps = 500): Promise<void> {
+  const admin = getSupabaseAdminClient() as any
+  let done = false
+  let steps = 0
+  while (!done && steps < maxSteps) {
+    const result = await processNextPageCore(admin, runId)
+    done = result.done
+    steps++
+  }
+}
+
+async function processNextPageCore(admin: any, runId: string): Promise<{ done: boolean, runId: string }> {
+    const { data: run } = await admin.from('site_crawl_runs').select('*').eq('id', runId).single()
     if (!run) throw new Error('Run introuvable')
 
     if (run.status === 'completed' || run.status === 'failed') {
@@ -276,4 +313,4 @@ export const processNextPage = createServerFn({ method: 'POST' })
       .eq('id', run.id)
 
     return { done: false, runId: run.id }
-  })
+}

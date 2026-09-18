@@ -130,7 +130,7 @@ export const en = {
       features: [
         { label: '1 tracked site' },
         { label: "Up to 50 questions" },
-        { label: 'Automatic continuous tracking', detail: 'Automated check of your visibility once a week, without any manual action.' },
+        { label: 'Automatic verification', detail: 'Daily check of your site, automatic remeasurement as soon as a change is detected.' },
         { label: 'ChatGPT probing' },
         { label: 'Positioning analysis' },
         { label: 'Opportunity detection' }
