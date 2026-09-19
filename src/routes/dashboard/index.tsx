@@ -248,15 +248,25 @@ function AccueilPage() {
           </div>
           
           {displayRun && displayRun.score !== null && (
-            <div className="mt-auto flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent p-4 lg:px-6 shadow-sm">
+            <div className="mt-auto flex flex-col sm:flex-row sm:items-start gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent p-5 lg:p-6 shadow-sm">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
                 <Sparkles className="size-4 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-ink-primary">Insight IA</h3>
-                <p className="text-sm text-ink-secondary leading-snug mt-0.5">
+                <p className="text-sm text-ink-secondary leading-snug mt-1">
                   Bonne progression cette semaine : votre taux de recommandation a augmenté de <span className="font-semibold text-ink-primary">+5%</span> par rapport à vos concurrents principaux.
                 </p>
+                <ul className="mt-3.5 space-y-2 text-xs text-ink-muted">
+                  <li className="flex items-start gap-2">
+                    <div className="mt-1.5 size-1 shrink-0 rounded-full bg-violet-500/50" />
+                    <span><strong className="font-medium text-ink-primary">ChatGPT</strong> vous cite plus souvent sur les requêtes commerciales.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-1.5 size-1 shrink-0 rounded-full bg-violet-500/50" />
+                    <span><strong className="font-medium text-ink-primary">Perplexity</strong> commence à utiliser vos articles de blog récents comme sources.</span>
+                  </li>
+                </ul>
               </div>
             </div>
           )}
