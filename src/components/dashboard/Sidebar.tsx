@@ -66,7 +66,7 @@ export function Sidebar({
       <div>
         {/* En-tête Sidebar : icône Reflet + espace suivi (État A/B) et bouton close mobile */}
         <div
-          className={`flex h-14 items-center border-b border-border px-4 transition-all duration-300 ${
+          className={`flex h-14 lg:h-[65px] lg:pt-[9px] items-center border-b border-border px-4 transition-all duration-300 ${
             isCollapsed ? 'lg:justify-center' : 'justify-between'
           }`}
         >

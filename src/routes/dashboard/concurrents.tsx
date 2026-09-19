@@ -71,7 +71,7 @@ function ConcurrentsPage() {
       <CompetitorsChart brandName={brand.name} ownStats={ownStats} competitors={competitors} />
 
       <section className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="text-sm font-semibold text-ink-primary">Concurrents détectés</h2>
+        <h2 className="mb-4 text-sm font-semibold text-ink-primary">Concurrents détectés</h2>
         <ResponsiveTable
           data={visibleCompetitors}
           getRowKey={(c: CompetitorRow) => c.id}
@@ -155,7 +155,7 @@ function CompetitorRowLine({
   return (
     <>
       <tr className="transition-colors hover:bg-elevated/50">
-        <td className="py-3.5 pl-5 pr-3">
+        <td className="px-3 py-3.5">
           <button
             type="button"
             onClick={onToggle}
@@ -175,7 +175,7 @@ function CompetitorRowLine({
           {competitor.avgPosition !== null ? `#${competitor.avgPosition}` : '—'}
         </td>
         <td className="px-3 py-3.5 text-right text-ink-secondary">{competitor.coveragePct}%</td>
-        <td className="py-3.5 pl-3 pr-5 text-right">
+        <td className="px-3 py-3.5 text-right">
           <Tooltip>
             <TooltipTrigger asChild>
               <button

@@ -28,7 +28,7 @@ export function QuestionsTable({ data, pageSize = 5 }: QuestionsTableProps) {
       ]}
       renderDesktopRow={(q) => (
         <tr className="group transition-colors hover:bg-elevated/50">
-          <td className="py-3.5 pl-5 pr-3">
+          <td className="px-3 py-3.5">
             <div className="max-w-[200px] truncate font-medium text-ink-primary lg:max-w-[240px]" title={q.text}>
               {q.text}
             </div>
@@ -42,7 +42,7 @@ export function QuestionsTable({ data, pageSize = 5 }: QuestionsTableProps) {
           <td className="px-3 py-3.5 tabular-nums text-ink-primary">
             {q.position ? `#${q.position}` : <span className="text-ink-muted">-</span>}
           </td>
-          <td className="py-3.5 pl-3 pr-5 text-right">
+          <td className="px-3 py-3.5 text-right">
             <Link
               to="/dashboard/historique"
               className="inline-flex size-7 items-center justify-center rounded-md text-ink-muted opacity-0 transition-all hover:bg-elevated hover:text-brand group-hover:opacity-100"

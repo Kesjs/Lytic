@@ -389,8 +389,8 @@ function AccueilPage() {
       )}
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface pt-5">
-          <div className="flex items-center justify-between px-5">
+        <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface p-5">
+          <div className="flex items-center justify-between pb-4">
             <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
             <Link
               to="/dashboard/historique"

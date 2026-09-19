@@ -91,10 +91,13 @@ function PerformancePage() {
         )}
       </header>
 
-      <PerformanceChart hasAnyRun={hasAnyRun} free={isFreePlan(data.brand.plan)} />
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <h2 className="mb-4 text-sm font-semibold text-ink-primary">Évolution du score</h2>
+        <PerformanceChart hasAnyRun={hasAnyRun} free={isFreePlan(data.brand.plan)} />
+      </div>
 
       <section className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="text-sm font-semibold text-ink-primary">Questions suivies</h2>
+        <h2 className="mb-4 text-sm font-semibold text-ink-primary">Questions suivies</h2>
         <QuestionsTable
           questions={questions}
           hasAnyRun={hasAnyRun}
@@ -140,7 +143,7 @@ function QuestionsTable({
           onClick={() => onOpen(q.id)}
           className="cursor-pointer transition-colors hover:bg-elevated/50"
         >
-          <td className="py-3.5 pl-5 pr-3">
+          <td className="px-3 py-3.5">
             <div className="max-w-[260px] truncate text-ink-primary lg:max-w-[360px]" title={q.text}>
               {q.text}
             </div>
@@ -157,7 +160,7 @@ function QuestionsTable({
               <td className="px-3 py-3.5 text-right">
                 <BoolDot value={q.recommended} />
               </td>
-              <td className="py-3.5 pl-3 pr-5 text-right text-ink-secondary">
+              <td className="px-3 py-3.5 text-right text-ink-secondary">
                 {q.position !== null ? `#${q.position}` : '—'}
               </td>
             </>

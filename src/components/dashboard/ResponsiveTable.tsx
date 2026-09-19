@@ -78,7 +78,7 @@ export function ResponsiveTable<T>({
   )
 
   return (
-    <div ref={containerRef} className="flex flex-col -mx-5 -mb-5 mt-2">
+    <div ref={containerRef} className="flex flex-col mt-1">
       {isNarrow ? (
         <div className="divide-y divide-border/50">
           {pageData.map((row) => (
@@ -93,7 +93,7 @@ export function ResponsiveTable<T>({
                   <th
                     key={c.key}
                     className={cn(
-                      'px-3 pb-3 font-medium font-display text-xs tracking-wide first:pl-5 last:pr-5',
+                      'px-3 pb-3 font-medium font-display text-xs tracking-wide',
                       c.align === 'right' && 'text-right',
                       c.className,
                     )}
@@ -112,7 +112,7 @@ export function ResponsiveTable<T>({
       )}
 
       {pageCount > 1 && (
-        <div className="flex items-center justify-between border-t border-border px-5 py-3">
+        <div className="flex items-center justify-between border-t border-border px-3 py-3 mt-1">
           <p className="text-xs text-ink-muted">
             Résultats{' '}
             <span className="font-medium text-ink-primary">
