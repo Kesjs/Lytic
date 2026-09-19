@@ -33,13 +33,20 @@ export const fr = {
     start: "Commencer"
   },
   problem: {
+    tag: "Le constat",
     heading: "Votre site sait ce que vous vendez. Les IA, elles, peuvent en dire autre chose.",
     items: [
       { title: 'Invisible', body: "Votre marque n'apparaît pas dans les recommandations pertinentes." },
       { title: 'Mal positionnée', body: "Elle apparaît derrière d'autres solutions." },
       { title: 'Mal comprise', body: "Votre site exprime une offre claire, mais les réponses observées ne la reflètent pas correctement." }
     ],
-    footer: "Reflet mesure cet écart au lieu de vous demander de le deviner."
+    footer: "Reflet mesure cet écart au lieu de vous demander de le deviner.",
+    question: {
+      heading: "Les bonnes questions avant les bonnes réponses.",
+      description: "Reflet ne se contente pas de demander aux IA de parler de vous — il pose les questions que vos prospects poseraient réellement.",
+      badExample: "« Parlez-moi de SIKKA »",
+      goodExample: "« Quel logiciel de facturation recommander à un artisan au Bénin ? »"
+    }
   },
   howItWorks: {
     heading: "Comment ça fonctionne",
@@ -69,13 +76,8 @@ export const fr = {
       previewBadge: "Opportunités prioritaires"
     }
   },
-  questionEngine: {
-    heading: "Les bonnes questions avant les bonnes réponses.",
-    description: "Reflet ne se contente pas de demander aux IA de parler de vous — il pose les questions que vos prospects poseraient réellement.",
-    badExample: "« Parlez-moi de SIKKA »",
-    goodExample: "« Quel logiciel de facturation recommander à un artisan au Bénin ? »"
-  },
   metrics: {
+    tag: "Ce qu'on mesure",
     heading: "Ce que Reflet mesure",
     subheading: "Les 4 piliers de votre visibilité au sein des grands modèles de langage.",
     items: [

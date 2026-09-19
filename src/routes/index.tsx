@@ -3,7 +3,6 @@ import { Navbar } from '~/components/landing/Navbar'
 import { Hero } from '~/components/landing/Hero'
 import { Problem } from '~/components/landing/Problem'
 import { HowItWorks } from '~/components/landing/HowItWorks'
-import { QuestionEngine } from '~/components/landing/QuestionEngine'
 import { Metrics } from '~/components/landing/Metrics'
 import { Evidence } from '~/components/landing/Evidence'
 import { History } from '~/components/landing/History'
@@ -23,7 +22,6 @@ function LandingPage() {
       <Hero />
       <Problem />
       <HowItWorks />
-      <QuestionEngine />
       <Metrics />
       <Evidence />
       <History />

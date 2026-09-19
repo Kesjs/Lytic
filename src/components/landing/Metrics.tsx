@@ -28,6 +28,9 @@ export function Metrics() {
     <section id="metrics" className="bg-canvas px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
+          <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
+            {t.metrics.tag}
+          </span>
           <h2 className="font-display text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
             {t.metrics.heading}
           </h2>

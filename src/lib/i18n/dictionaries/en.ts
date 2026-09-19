@@ -33,13 +33,20 @@ export const en = {
     start: "Get Started"
   },
   problem: {
+    tag: "The problem",
     heading: "Your website knows what you sell. AI might say otherwise.",
     items: [
       { title: 'Invisible', body: "Your brand is missing from relevant AI recommendations." },
       { title: 'Poorly positioned', body: "It ranks far behind other alternatives." },
       { title: 'Misunderstood', body: "Your site has a clear offering, but the AI responses don't reflect it accurately." }
     ],
-    footer: "Reflet measures this gap instead of asking you to guess it."
+    footer: "Reflet measures this gap instead of asking you to guess it.",
+    question: {
+      heading: "The right questions before the right answers.",
+      description: "Reflet doesn't just ask AI to talk about you — it asks the exact questions your prospects would actually ask.",
+      badExample: "\"Tell me about SIKKA\"",
+      goodExample: "\"Which invoicing software would you recommend to a craftsman in Benin?\""
+    }
   },
   howItWorks: {
     heading: "How it works",
@@ -69,13 +76,8 @@ export const en = {
       previewBadge: "Priority Opportunities"
     }
   },
-  questionEngine: {
-    heading: "The right questions before the right answers.",
-    description: "Reflet doesn't just ask AI to talk about you — it asks the exact questions your prospects would actually ask.",
-    badExample: "\"Tell me about SIKKA\"",
-    goodExample: "\"Which invoicing software would you recommend to a craftsman in Benin?\""
-  },
   metrics: {
+    tag: "What we measure",
     heading: "What Reflet measures",
     subheading: "The 4 pillars of your visibility across major language models.",
     items: [

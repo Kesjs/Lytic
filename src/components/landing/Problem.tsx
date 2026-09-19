@@ -40,27 +40,55 @@ export function Problem() {
   const { t } = useTranslation()
 
   return (
-    <section className="border-t border-hairline border-border px-6 py-24">
-      <div className="mx-auto grid max-w-1200 items-center gap-12 lg:grid-cols-2">
-        <div>
-          <h2 className="text-3xl font-medium tracking-tight text-ink-primary">
-            {t.problem.heading}
-          </h2>
-          <div className="mt-8 space-y-4">
-            {t.problem.items.map((item) => (
-              <div key={item.title} className="rounded-xl border border-hairline border-border bg-surface p-5">
-                <p className="text-sm font-medium text-ink-primary">{item.title}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{item.body}</p>
-              </div>
-            ))}
+    <section id="problem" className="border-t border-hairline border-border px-6 py-24">
+      <div className="mx-auto max-w-1200">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
+              {t.problem.tag}
+            </span>
+            <h2 className="text-3xl font-medium tracking-tight text-ink-primary">
+              {t.problem.heading}
+            </h2>
+            <div className="mt-8 space-y-4">
+              {t.problem.items.map((item) => (
+                <div key={item.title} className="rounded-xl border border-hairline border-border bg-surface p-5">
+                  <p className="text-sm font-medium text-ink-primary">{item.title}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{item.body}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-sm text-ink-muted">
+              {t.problem.footer}
+            </p>
           </div>
-          <p className="mt-6 text-sm text-ink-muted">
-            {t.problem.footer}
-          </p>
+
+          <div className="rounded-xl border border-hairline border-border bg-surface p-5">
+            <MissingPieceIllustration />
+          </div>
         </div>
 
-        <div className="rounded-xl border border-hairline border-border bg-surface p-5">
-          <MissingPieceIllustration />
+        {/* Le bon réflexe : poser aux IA les questions que poseraient vraiment
+            vos prospects, pas leur demander de parler de vous. */}
+        <div className="mt-16 grid items-center gap-8 border-t border-hairline border-border pt-16 lg:grid-cols-2">
+          <div>
+            <h3 className="text-2xl font-medium tracking-tight text-ink-primary">
+              {t.problem.question.heading}
+            </h3>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-secondary">
+              {t.problem.question.description}
+            </p>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-md border border-hairline border-danger/30 bg-danger/5 px-4 py-3">
+              <span className="text-sm text-danger">✕</span>
+              <span className="text-sm text-ink-secondary">{t.problem.question.badExample}</span>
+            </div>
+            <div className="flex items-center gap-3 rounded-md border border-hairline border-success/30 bg-success/5 px-4 py-3">
+              <span className="text-sm text-success">✓</span>
+              <span className="text-sm text-ink-primary">{t.problem.question.goodExample}</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

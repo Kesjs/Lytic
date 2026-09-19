@@ -128,7 +128,7 @@ export function Navbar() {
   const productItems: DropdownItem[] = [
     { label: t.navbar.productOverview, href: '/#produit' },
     { label: t.navbar.productAiVisibility, href: '/#metrics' },
-    { label: t.navbar.productQuestions, href: '/#questions' },
+    { label: t.navbar.productQuestions, href: '/#problem' },
     { label: t.navbar.productEvidence, href: '/#preuves' },
     { label: t.navbar.productHistory, href: '/#historique' },
   ]

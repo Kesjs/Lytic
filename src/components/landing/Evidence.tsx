@@ -14,6 +14,9 @@ export function Evidence() {
     <section id="preuves" className="bg-canvas px-6 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
+          <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
+            Traçabilité
+          </span>
           <h2 className="font-display text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
             Pas de score sans preuve.
           </h2>
