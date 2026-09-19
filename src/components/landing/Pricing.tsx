@@ -176,6 +176,9 @@ export function Pricing() {
           {/* Enterprise Plan */}
           <div className="flex flex-col rounded-xl border border-hairline border-border bg-surface p-8 transition-colors hover:border-border-strong hover:bg-elevated">
             <div className="mb-6">
+              <div className="mb-4 flex size-10 items-center justify-center rounded-md border border-hairline border-border bg-elevated text-ink-primary">
+                <Building2 className="size-5" />
+              </div>
               <h3 className="font-display text-2xl font-semibold text-ink-primary">{t.pricing.enterprise.name}</h3>
               <p className="mt-2 text-sm text-ink-secondary">
                 {t.pricing.enterprise.description}

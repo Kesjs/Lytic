@@ -5,8 +5,6 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "vite dev --port 3001",
-    "screenshot:login": "node scripts/capture-dashboard.mjs --setup",
-    "screenshot": "node scripts/capture-dashboard.mjs",
     "build": "node ./scripts/build-vercel.mjs",
     "preview": "vite preview",
     "start": "node server.mjs",
@@ -32,7 +30,6 @@
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "date-fns": "^4.1.0",
     "framer-motion": "^11.18.2",
     "lodash-es": "^4.18.1",
     "lucide-react": "^0.475.0",
@@ -44,7 +41,8 @@
     "recharts": "^2.15.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.0.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

@@ -72,20 +72,16 @@ export function Sidebar({
         >
           <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             <Link to={homeUrl} className="flex shrink-0 items-center" title="Accueil" onClick={onClose}>
-              {brand ? (
-                <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-elevated text-xs font-bold text-ink-primary">
-                  {brand.name.charAt(0).toUpperCase()}
-                </div>
-              ) : (
-                <img src={iconUrl} alt="Reflet" className="h-7 w-7" />
-              )}
+              <img src={iconUrl} alt="Reflet" className="h-7 w-7" />
             </Link>
 
             {!isCollapsed && (
               brand ? (
-                // État B — marque configurée : nom de la marque + icône Paramètres
+                // État B — marque configurée : nom de la marque (non cliquable,
+                // centré) + icône Paramètres cliquable séparée (pas de switcher,
+                // un compte = une marque).
                 <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
-                  <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink-primary ml-1">
+                  <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-ink-primary">
                     {brand.name}
                   </span>
                   <Link
@@ -161,11 +157,10 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Pied de sidebar avec liens et menu profil déroulant */}
-      <div className="flex flex-col">
-        <div className="border-t border-border p-2.5 mt-auto">
-          <AccountMenu variant="sidebar" isCollapsed={isCollapsed} onNavigate={onClose} />
-        </div>
+      {/* Pied de sidebar avec menu profil déroulant (composant partagé
+          avec l'accès rapide au compte dans le Header mobile) */}
+      <div className="border-t border-border p-2.5">
+        <AccountMenu variant="sidebar" isCollapsed={isCollapsed} onNavigate={onClose} />
       </div>
 
       <BrandSetupDrawer open={setupOpen} onClose={() => setSetupOpen(false)} />
