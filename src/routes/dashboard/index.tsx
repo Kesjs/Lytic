@@ -188,7 +188,7 @@ function AccueilPage() {
           )}
         </div>
 
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
+        <div className="flex-1 grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
@@ -218,6 +218,13 @@ function AccueilPage() {
             tooltip="Votre part de mentions par rapport à vos principaux concurrents."
             icon={Radar}
             tone="danger"
+          />
+          <KpiCard
+            label="Opportunités"
+            value={opportunities ? opportunities.length.toString() : null}
+            tooltip="Nombre d'actions détectées pour améliorer votre visibilité."
+            icon={Lightbulb}
+            tone="warning"
           />
         </div>
       </motion.header>

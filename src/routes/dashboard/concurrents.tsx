@@ -8,6 +8,7 @@ import { ChevronDown, EyeOff, Lock } from 'lucide-react'
 import { fetchCompetitorsOverview, hideCompetitor, type CompetitorRow } from '~/lib/queries/competitors'
 import { CompetitorsChart } from '~/components/dashboard/CompetitorsChart'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
+import { ResponsiveTable } from '~/components/dashboard/ResponsiveTable'
 
 export const Route = createFileRoute('/dashboard/concurrents')({
   component: ConcurrentsPage,

@@ -1,11 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
-import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 
-// Teintes limitées aux tokens sémantiques déjà définis dans tailwind.config.js
-// (success/info/warning/danger) — jamais de couleur hors charte, jamais de
-// variante de la couleur d'accent `brand`. Même idiome que opportunites.tsx
-// (bg-x/10 text-x).
 const ICON_TONES = {
   info: 'bg-info/10 text-info',
   success: 'bg-success/10 text-success',
@@ -30,34 +25,37 @@ export function KpiCard({
   icon?: LucideIcon
   tone?: KpiCardTone
 }) {
+  const iconBlock = Icon ? (
+    <div className={`flex size-7 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]} ${tooltip ? 'cursor-help' : ''}`}>
+      <Icon className="size-3.5" />
+    </div>
+  ) : null
+
   return (
-    <div className="flex items-start gap-2.5 p-3 lg:p-3.5">
-      {Icon && (
-        <div className={`flex size-7 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}>
-          <Icon className="size-3.5" />
-        </div>
+    <div className="flex items-start gap-2.5 p-3 lg:p-4">
+      {tooltip && iconBlock ? (
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            {iconBlock}
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px] text-center">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        iconBlock
       )}
       <div className="flex min-w-0 flex-1 flex-col justify-center">
         <div className="flex items-start gap-1.5">
-          <p className="text-xs text-ink-secondary leading-snug" title={label}>
+          <p className="text-xs text-ink-secondary leading-snug truncate" title={label}>
             {label}
           </p>
-          {tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="mt-0.5 shrink-0 text-ink-muted transition-colors hover:text-ink-primary">
-                  <HelpCircle className="size-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{tooltip}</TooltipContent>
-            </Tooltip>
-          )}
         </div>
         <div className="mt-1 truncate font-display text-xl font-semibold tabular-nums text-ink-primary">
           {value ?? '—'}
         </div>
         {hint && (
-          <div className="mt-1 text-[11px] text-ink-muted leading-snug">
+          <div className="mt-1 text-[11px] text-ink-muted leading-snug truncate">
             {typeof hint === 'string' ? (
               <span title={hint}>{hint}</span>
             ) : (
