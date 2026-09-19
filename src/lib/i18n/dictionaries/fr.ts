@@ -33,7 +33,6 @@ export const fr = {
     start: "Commencer"
   },
   problem: {
-    tag: "Le constat",
     heading: "Votre site sait ce que vous vendez. Les IA, elles, peuvent en dire autre chose.",
     items: [
       { title: 'Invisible', body: "Votre marque n'apparaît pas dans les recommandations pertinentes." },
@@ -69,7 +68,6 @@ export const fr = {
       }
     ],
     opportunities: {
-      tag: "Recommandations exploitables",
       heading: "Transformez chaque écart en opportunité d'action",
       description: "Reflet ne se limite pas à constater les manques : chaque anomalie est convertie en recommandation priorisée avec indice de confiance.",
       previewLabel: "Page Opportunités — Recommandations concrètes",
@@ -77,7 +75,6 @@ export const fr = {
     }
   },
   metrics: {
-    tag: "Ce qu'on mesure",
     heading: "Ce que Reflet mesure",
     subheading: "Les 4 piliers de votre visibilité au sein des grands modèles de langage.",
     items: [
@@ -87,7 +84,6 @@ export const fr = {
       { title: 'Présence concurrentielle', body: 'Quels concurrents apparaissent à votre place ou plus fréquemment ?' }
     ],
     benchmark: {
-      tag: "Benchmark en conditions réelles",
       heading: "Comparez votre présence face à vos concurrents directs",
       description: "Chaque score remonte jusqu'à la question posée et la réponse brute de l'IA — observez vos écarts de mentions et de recommandations face aux alternatives du marché.",
       previewLabel: "Benchmark concurrentiel — NovaPay vs Qonto",
@@ -95,7 +91,6 @@ export const fr = {
     }
   },
   history: {
-    tag: "Surveillance continue",
     heading: "Votre visibilité n'est pas un chiffre isolé.",
     description: "Reflet surveille automatiquement votre site et peut réinterroger les modèles dès qu'un changement significatif est détecté (plan Pro). Chaque nouvelle mention, gain ou perte de position est archivé avec sa date et son impact.",
     previewLabel: "Fil d'événements — page Historique",

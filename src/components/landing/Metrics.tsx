@@ -1,6 +1,7 @@
 import { Target, ThumbsUp, Trophy, Users } from 'lucide-react'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { ScreenshotFrame } from './ScreenshotFrame'
+import { Waterline } from './Waterline'
 
 export function Metrics() {
   const { t } = useTranslation()
@@ -27,10 +28,7 @@ export function Metrics() {
   return (
     <section id="metrics" className="bg-canvas px-6 py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
-            {t.metrics.tag}
-          </span>
+        <div className="mb-16 max-w-xl">
           <h2 className="font-display text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
             {t.metrics.heading}
           </h2>
@@ -57,10 +55,12 @@ export function Metrics() {
           })}
         </div>
 
-        {/* Benchmark Concurrentiel & Preuve réelle */}
-        <div className="mx-auto mt-20 max-w-3xl text-center">
-          <span className="text-xs font-mono uppercase tracking-wider text-brand-text">{t.metrics.benchmark.tag}</span>
-          <h3 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
+        <Waterline />
+
+        {/* Benchmark Concurrentiel & Preuve réelle — même mesure, retournée
+            vers un concurrent plutôt que vers vous. */}
+        <div className="mx-auto max-w-3xl text-center">
+          <h3 className="font-display text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
             {t.metrics.benchmark.heading}
           </h3>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">

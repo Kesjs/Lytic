@@ -33,7 +33,6 @@ export const en = {
     start: "Get Started"
   },
   problem: {
-    tag: "The problem",
     heading: "Your website knows what you sell. AI might say otherwise.",
     items: [
       { title: 'Invisible', body: "Your brand is missing from relevant AI recommendations." },
@@ -69,7 +68,6 @@ export const en = {
       }
     ],
     opportunities: {
-      tag: "Actionable Recommendations",
       heading: "Turn every gap into a clear action item",
       description: "Reflet doesn't just point out flaws: every anomaly is converted into a prioritized recommendation with a confidence score.",
       previewLabel: "Opportunities Page — Concrete Recommendations",
@@ -77,7 +75,6 @@ export const en = {
     }
   },
   metrics: {
-    tag: "What we measure",
     heading: "What Reflet measures",
     subheading: "The 4 pillars of your visibility across major language models.",
     items: [
@@ -87,7 +84,6 @@ export const en = {
       { title: 'Competitive presence', body: 'Which competitors appear instead of you, or more frequently?' }
     ],
     benchmark: {
-      tag: "Real-world Benchmark",
       heading: "Compare your presence against direct competitors",
       description: "Every score traces back to the original prompt and the raw AI response — monitor your mention and recommendation gaps against market alternatives.",
       previewLabel: "Competitive Benchmark — NovaPay vs Qonto",
@@ -95,7 +91,6 @@ export const en = {
     }
   },
   history: {
-    tag: "Continuous Monitoring",
     heading: "Your visibility isn't a static number.",
     description: "Reflet automatically monitors your site and can re-query AI models as soon as a significant change is detected (Pro plan). Every new mention, rank gain, or loss is archived with its date and impact.",
     previewLabel: "Event feed — History page",

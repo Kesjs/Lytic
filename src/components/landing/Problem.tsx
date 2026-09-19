@@ -1,4 +1,5 @@
 import { useTranslation } from '~/lib/i18n/LanguageContext'
+import { Waterline } from './Waterline'
 
 // Illustration conceptuelle, pas un mockup d'UI : un cube manque dans le
 // cluster (contour pointillé) — la marque absente de la réponse. Pure
@@ -44,10 +45,7 @@ export function Problem() {
       <div className="mx-auto max-w-1200">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
-            <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
-              {t.problem.tag}
-            </span>
-            <h2 className="text-3xl font-medium tracking-tight text-ink-primary">
+            <h2 className="max-w-lg text-3xl font-medium leading-[1.15] tracking-tight text-ink-primary sm:text-4xl">
               {t.problem.heading}
             </h2>
             <div className="mt-8 space-y-4">
@@ -63,14 +61,28 @@ export function Problem() {
             </p>
           </div>
 
+          {/* L'illustration se prolonge dans son propre reflet, atténué — le
+              premier rappel visuel, discret, du nom du produit. */}
           <div className="rounded-xl border border-hairline border-border bg-surface p-5">
             <MissingPieceIllustration />
+            <div
+              aria-hidden="true"
+              className="-mt-6 scale-y-[-1] opacity-[0.18]"
+              style={{
+                maskImage: 'linear-gradient(to bottom, black, transparent 70%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent 70%)',
+              }}
+            >
+              <MissingPieceIllustration />
+            </div>
           </div>
         </div>
 
+        <Waterline />
+
         {/* Le bon réflexe : poser aux IA les questions que poseraient vraiment
             vos prospects, pas leur demander de parler de vous. */}
-        <div className="mt-16 grid items-center gap-8 border-t border-hairline border-border pt-16 lg:grid-cols-2">
+        <div className="grid items-center gap-8 lg:grid-cols-2">
           <div>
             <h3 className="text-2xl font-medium tracking-tight text-ink-primary">
               {t.problem.question.heading}

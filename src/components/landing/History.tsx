@@ -30,8 +30,7 @@ export function History() {
     <section id="historique" className="border-t border-hairline border-border px-6 py-24">
       <div className="mx-auto grid max-w-1200 items-center gap-12 lg:grid-cols-2">
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-brand-text">{t.history.tag}</span>
-          <h2 className="mt-2 text-3xl font-medium tracking-tight text-ink-primary sm:text-4xl">
+          <h2 className="text-3xl font-medium tracking-tight text-ink-primary sm:text-4xl">
             {t.history.heading}
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-secondary">

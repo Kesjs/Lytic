@@ -181,9 +181,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
     >
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <span className="mb-3 inline-block text-xs font-mono uppercase tracking-wider text-brand-text">
-            Comment ça marche
-          </span>
           <h2 className="text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
             {t.howItWorks.heading}
           </h2>
@@ -226,8 +223,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
         {/* Showcase de l'écran Opportunités */}
         <div className="mx-auto mt-20 max-w-5xl">
           <div className="mb-8 text-center">
-            <span className="text-xs font-mono uppercase tracking-wider text-brand-text">{t.howItWorks.opportunities.tag}</span>
-            <h3 className="mt-2 text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
+            <h3 className="text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
               {t.howItWorks.opportunities.heading}
             </h3>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">
