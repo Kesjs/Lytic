@@ -16,13 +16,16 @@ export function CTAFinal() {
           {t.ctaFinal.subheading}
         </p>
 
-        <Link
-          to="/login"
-          className="group mt-9 inline-flex items-center justify-center gap-2.5 rounded-md border border-border bg-transparent px-7 py-3.5 text-sm font-medium text-ink-primary transition-all duration-200 hover:border-brand/60 hover:text-brand-text"
-        >
-          <span>{t.ctaFinal.cta}</span>
-          <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
-        </Link>
+        {/* Wrapper pour simuler la bordure avec clip-path */}
+        <div className="group mt-9 relative p-[1px] transition-colors duration-200 bg-border hover:bg-brand/60 [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]">
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center gap-2.5 bg-canvas px-7 py-3.5 text-sm font-medium text-ink-primary transition-colors hover:text-brand-text [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]"
+          >
+            <span>{t.ctaFinal.cta}</span>
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+          </Link>
+        </div>
       </div>
     </section>
   )

@@ -20,12 +20,8 @@ export interface HeroProps {
 
 export function Hero({
   eyebrow = 'Testez votre marque',
-  title = (
-    <>
-      Faites de votre marque l'unique réponse des <span className="text-brand">IA.</span>
-    </>
-  ),
-  description = "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
+  title,
+  description,
   primaryCta = { label: 'Analyser mon site', to: '/login' },
   secondaryCta = { label: 'Voir le produit', href: '#produit' },
   engines,
@@ -45,114 +41,94 @@ export function Hero({
   )
 
   return (
-    <section className="relative overflow-hidden">
-      {/* Halo d'ambiance ultra-fluide en CSS pur (GPU accéléré, 0 lag) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden"
-        aria-hidden="true"
-      >
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 h-[500px] w-[850px] max-w-full rounded-full bg-[radial-gradient(ellipse_at_center,rgba(201,171,30,0.18)_0%,rgba(201,171,30,0.03)_50%,transparent_75%)] blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(255,255,255,0.03),transparent_70%)]" />
-      </div>
-
-      {/* Contenu textuel Hero : parfaitement centré au chargement dans la hauteur de l'écran */}
-      <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6 pt-20">
-        <motion.div className="flex flex-col items-center text-center">
-
-
-        {/* Badge d'annonce, façon pill — relié au plan Free */}
-        <motion.a
-          href="#tarifs"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-          className="group inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/60 px-4 py-1.5 text-xs text-ink-secondary backdrop-blur-md transition-colors hover:border-brand/40"
-        >
-          {t.hero.eyebrow}
-        </motion.a>
-
-        {/* Titre principal avec apparition en fondu */}
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-7 font-display text-4xl font-medium leading-[1.08] tracking-tight text-ink-primary sm:text-6xl md:text-[68px]"
-        >
-          {t.hero.title.part1}<span className="text-brand">{t.hero.title.highlight}</span>{t.hero.title.part2}
-        </motion.h1>
-
-        {/* Cycle des IA animées */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-2"
-        >
-          <AiCycle engines={engines} />
-        </motion.div>
-
-        {/* Paragraphe descriptif avec apparition progressive */}
-        <motion.p
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto mt-6 max-w-[560px] text-base leading-relaxed text-ink-secondary sm:text-lg"
-        >
-          {t.hero.description}
-        </motion.p>
-
-        {/* Boutons d'action avec effet shimmer sur le CTA principal */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-9 flex flex-wrap items-center justify-center gap-3.5"
-        >
-          {/* Bouton Shimmer CTA animé */}
-          <Link
-            to={primaryCta.to}
-            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-md bg-brand px-6 py-3.5 text-sm font-medium text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(201,171,30,0.45)] active:scale-[0.98]"
-          >
-            {/* Rayon de lumière shimmer traversant */}
-            <span
-              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-              aria-hidden="true"
-            />
-            <span className="relative z-10">{t.hero.primaryCta}</span>
-            <ArrowRight className="relative z-10 size-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
-
-          {/* Bouton secondaire sleek glassmorphic */}
-          <a
-            href={secondaryCta.href}
-            className="inline-flex items-center rounded-md border border-hairline border-border/80 bg-surface/50 px-5 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 hover:border-brand/40 hover:bg-surface hover:text-white"
-          >
-            {t.hero.secondaryCta}
-          </a>
-        </motion.div>
-
-        {/* Mention rassurante */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-6 text-xs text-ink-muted"
-        >
-          {t.hero.freeToStart}
-        </motion.p>
-      </motion.div>
-      </div>
-
-      {/* Aperçu du produit avec apparition fluide et espace de respiration en bas */}
+    <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24">
+      {/* Contenu textuel Hero */}
       <motion.div
-        id="produit"
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 mx-auto w-full max-w-1200 px-6"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 lg:gap-8">
+          
+          {/* Colonne de gauche : Texte */}
+          <div className="flex max-w-3xl flex-col items-start text-left flex-1">
+            {/* Pill Eyebrow */}
+            <div className="mb-8 inline-flex items-center rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-sm font-medium text-ink-secondary backdrop-blur-md transition-colors hover:bg-white/10">
+              <span className="mr-2 flex h-2 w-2 rounded-full bg-brand shadow-[0_0_8px_rgba(201,171,30,0.8)]"></span>
+              <span className="text-white/60 mr-2">Nouveau ?</span>
+              <span className="text-white">{eyebrow}</span>
+            </div>
+
+            {/* Titre principal */}
+            <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight text-ink-primary sm:text-5xl lg:text-6xl text-balance">
+              {t.hero.title.part1}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand/90 to-[#b59918]">
+                {t.hero.title.highlight}
+              </span>
+              {t.hero.title.part2}
+            </h1>
+
+            {/* Paragraphe descriptif */}
+            <p className="mt-6 max-w-[560px] text-base leading-relaxed text-ink-secondary sm:text-lg lg:text-xl font-light">
+              {t.hero.description}
+            </p>
+          </div>
+
+          {/* Colonne de droite : Boutons et Stats */}
+          <div className="flex flex-col items-start lg:items-end flex-shrink-0 lg:pb-2">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Bouton Shimmer CTA animé */}
+              <Link
+                to={primaryCta.to}
+                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden bg-brand px-7 py-3.5 text-sm font-medium text-black transition-all duration-300 hover:bg-brand-hover hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(201,171,30,0.45)] active:scale-[0.98] [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]"
+              >
+                <span
+                  className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+                  aria-hidden="true"
+                />
+                <span className="relative z-10">{t.hero.primaryCta}</span>
+                <ArrowRight className="relative z-10 size-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </Link>
+
+              {/* Bouton secondaire sleek glassmorphic avec contour hexagonal */}
+              <div className="group relative p-[1px] transition-all duration-300 bg-white/10 hover:bg-white/20 [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]">
+                <a
+                  href={secondaryCta.href}
+                  className="inline-flex items-center bg-surface/50 px-6 py-3.5 text-sm font-medium text-ink-primary backdrop-blur-md transition-all duration-300 group-hover:bg-surface group-hover:text-white [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]"
+                >
+                  {t.hero.secondaryCta}
+                  <ArrowRight className="ml-2 size-4 text-ink-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-white" />
+                </a>
+              </div>
+            </div>
+
+            {/* Mention rassurante (Stats) */}
+            <p className="mt-5 text-sm text-ink-muted flex items-center gap-2">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-green-500"></span>
+              {t.hero.freeToStart}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Cycle des IA animées (déplacé au centre entre le texte et la preview) */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.4 }}
+        className="relative z-10 mx-auto mt-16 flex w-full max-w-1200 justify-center px-6"
+      >
+        <AiCycle engines={engines} />
+      </motion.div>
+
+      {/* Aperçu du produit avec espace de respiration en bas */}
+      <div
+        id="produit"
         className="relative z-10 mx-auto mt-16 mb-28 sm:mb-36 w-full max-w-1200 px-4 sm:px-6"
       >
         {defaultPreview}
-      </motion.div>
+      </div>
     </section>
   )
 }

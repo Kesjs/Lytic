@@ -4,7 +4,7 @@ export const en = {
     title: {
       part1: "Make your brand the only answer ",
       highlight: "AI",
-      part2: " gives."
+      part2: " gives"
     },
     description: "Reflet measures your visibility in AI responses, compares your ranking with competitors, and turns every gap into actionable insights.",
     primaryCta: "Analyze my site",

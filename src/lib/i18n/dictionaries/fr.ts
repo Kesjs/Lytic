@@ -4,7 +4,7 @@ export const fr = {
     title: {
       part1: "Faites de votre marque l'unique réponse des ",
       highlight: "IA",
-      part2: "."
+      part2: ""
     },
     description: "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
     primaryCta: "Analyser mon site",

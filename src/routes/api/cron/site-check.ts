@@ -25,8 +25,8 @@ import { getFreeRemeasureUnlock } from '~/lib/reliability'
 //
 // Le code ne dépend pas de l'hébergeur — seul le déclencheur externe change
 // (§4.3). Cette route ne duplique pas la logique métier : elle réutilise
-// triggerSiteCrawlForBrandId / runCrawlToCompletion et
-// triggerMeasurementRunForBrandId / runMeasurementToCompletion, qui
+// triggerSiteCrawl / processNextPage et
+// triggerMeasurementRun / processNextQuestion, qui
 // encapsulent exactement la même logique que les boutons manuels
 // (HeaderMeasureButton, BotAccessCard), avec le client admin à la place
 // d'une session utilisateur.
@@ -50,10 +50,12 @@ async function checkMeasurementDelay(
     .limit(1)
     .maybeSingle()
 
-  if (!lastRun?.completed_at) return { allowed: true, daysRemaining: 0 }
+  const run = lastRun as { completed_at: string | null } | null
+
+  if (!run?.completed_at) return { allowed: true, daysRemaining: 0 }
 
   const elapsedDays =
-    (Date.now() - new Date(lastRun.completed_at).getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - new Date(run.completed_at).getTime()) / (1000 * 60 * 60 * 24)
   const daysRemaining = Math.max(0, Math.ceil(MEASUREMENT_DELAY_DAYS - elapsedDays))
 
   return { allowed: daysRemaining === 0, daysRemaining }
