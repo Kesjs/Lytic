@@ -29,7 +29,7 @@ function AccueilPage() {
     queryKey: ['dashboard-home'],
     queryFn: () => fetchDashboardHome(),
   })
-  
+
   const { data: botAccess, isLoading: isBotAccessLoading } = useQuery({
     queryKey: ['bot-access'],
     queryFn: () => fetchBotAccess(),
@@ -122,9 +122,9 @@ function AccueilPage() {
 
   return (
     <div className="space-y-4">
-      <motion.header 
-        initial={{ opacity: 0, y: 10 }} 
-        animate={{ opacity: 1, y: 0 }} 
+      <motion.header
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className="flex flex-col lg:flex-row lg:items-start gap-4"
       >
@@ -133,9 +133,9 @@ function AccueilPage() {
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
             <>
-                <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
-                  <p>Bonjour, {brand.name}</p>
-                </div>
+              <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
+                <p>Bonjour, {brand.name}</p>
+              </div>
 
               {!displayRun ? (
                 <DashboardStateView state="no_data" compact className="mt-4" />
@@ -148,9 +148,8 @@ function AccueilPage() {
                       </div>
                       {displayRun.score_delta !== null && (
                         <p
-                          className={`mt-1 text-xs ${
-                            displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'
-                          }`}
+                          className={`mt-1 text-xs ${displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'
+                            }`}
                         >
                           {displayRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(displayRun.score_delta)} depuis
                           la dernière mesure
@@ -188,51 +187,62 @@ function AccueilPage() {
           )}
         </div>
 
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
-          <KpiCard
-            label="Mentions"
-            value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
-            tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
-            icon={MessageSquare}
-            tone="info"
-          />
-          <KpiCard
-            label="Recommandations"
-            value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
-            tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
-            icon={ThumbsUp}
-            tone="success"
-          />
-          <KpiCard
-            label="Pos. moyenne"
-            value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
-            tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
-            icon={TrendingUp}
-            tone="warning"
-          />
-          <KpiCard
-            label="Présence"
-            value={
-              kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
-            }
-            tooltip="Votre part de mentions par rapport à vos principaux concurrents."
-            icon={Radar}
-            tone="danger"
-          />
-          <KpiCard
-            label="Opportunités"
-            value={opportunities ? opportunities.length.toString() : null}
-            tooltip="Nombre d'actions détectées pour améliorer votre visibilité."
-            icon={Lightbulb}
-            tone="warning"
-          />
+        <div className="flex-1 flex flex-col gap-4 min-w-0">
+          <div className="w-full grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
+            <KpiCard
+              label="Mentions"
+              value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
+              tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
+              icon={MessageSquare}
+              tone="info"
+            />
+            <KpiCard
+              label="Recommandations"
+              value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
+              tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
+              icon={ThumbsUp}
+              tone="success"
+            />
+            <KpiCard
+              label="Pos. moyenne"
+              value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
+              tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
+              icon={TrendingUp}
+              tone="warning"
+            />
+            <KpiCard
+              label="Présence"
+              value={
+                kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
+              }
+              tooltip="Votre part de mentions par rapport à vos principaux concurrents."
+              icon={Radar}
+              tone="danger"
+            />
+            <KpiCard
+              label="Opportunités"
+              value={opportunities ? opportunities.length.toString() : null}
+              tooltip="Nombre d'actions détectées pour améliorer votre visibilité."
+              icon={Lightbulb}
+              tone="warning"
+            />
+          </div>
+          
+          {displayRun && displayRun.score !== null && (
+            <div className="flex items-center gap-3 rounded-lg border border-brand/20 bg-brand/5 px-4 py-3">
+              <Lightbulb className="size-4 shrink-0 text-brand" />
+              <p className="text-sm text-ink-primary leading-snug">
+                Bonne progression cette semaine, votre taux de recommandation a augmenté de 5% par rapport à vos concurrents principaux.
+              </p>
+            </div>
+          )}
         </div>
       </motion.header>
 
       {isFreePlan(brand.plan) && latestRun && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3"
         >
@@ -303,9 +313,9 @@ function AccueilPage() {
         </motion.section>
       )}
 
-      <motion.section 
-        initial={{ opacity: 0, y: 10 }} 
-        animate={{ opacity: 1, y: 0 }} 
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
       >
         <BotAccessCard data={botAccess ?? null} brandId={brand.id} />
