@@ -126,58 +126,79 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-col lg:flex-row lg:items-start gap-4"
+        className="flex flex-col lg:flex-row lg:items-stretch gap-5 lg:gap-6"
       >
-        <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
+        {/* Score Card - Plus aérée (p-6) avec une largeur fixe légèrement augmentée pour respirer */}
+        <div className="flex w-full lg:w-[320px] shrink-0 flex-col justify-center rounded-xl border border-border bg-surface p-5 lg:p-6 shadow-sm">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
             <>
-              <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
-                <p>Bonjour, {brand.name}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-ink-secondary">Score global</p>
+                <div className="text-[11px] font-medium text-ink-muted bg-elevated px-2 py-0.5 rounded-full">
+                  {brand.name}
+                </div>
               </div>
 
               {!displayRun ? (
-                <DashboardStateView state="no_data" compact className="mt-4" />
+                <DashboardStateView state="no_data" compact className="mt-6" />
               ) : (
                 <>
                   {displayRun.score !== null ? (
-                    <>
-                      <div className="mt-1 font-display text-3xl font-bold tabular-nums text-brand">
-                        {Math.round(displayRun.score)} <span className="text-sm text-ink-muted">/ 100</span>
+                    <div className="mt-4 flex flex-col">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-display text-5xl font-bold tabular-nums tracking-tight text-brand">
+                          {Math.round(displayRun.score)}
+                        </span>
+                        <span className="text-lg font-medium text-ink-muted">/ 100</span>
                       </div>
+                      
                       {displayRun.score_delta !== null && (
-                        <p
-                          className={`mt-1 text-xs ${displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'
-                            }`}
-                        >
-                          {displayRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(displayRun.score_delta)} depuis
-                          la dernière mesure
-                        </p>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "flex items-center px-1.5 py-0.5 rounded text-xs font-semibold",
+                              displayRun.score_delta >= 0 
+                                ? 'bg-success/10 text-success' 
+                                : 'bg-danger/10 text-danger'
+                            )}
+                          >
+                            {displayRun.score_delta >= 0 ? '↑' : '↓'} {Math.abs(displayRun.score_delta)} pts
+                          </span>
+                          <span className="text-xs text-ink-muted">depuis la dernière mesure</span>
+                        </div>
                       )}
-                      <p className="mt-2 text-xs text-ink-muted">
-                        Dernière mesure :{' '}
-                        {displayRun.completed_at
-                          ? new Date(displayRun.completed_at).toLocaleDateString('fr-FR')
-                          : '—'}
-                      </p>
-                      {isFreePlan(brand.plan) && (
-                        <p className="mt-1 text-[11px] text-ink-muted">
-                          Basé sur 1 seul échantillon — moins fiable que la mesure Pro multi-échantillons.
+
+                      <div className="mt-5 pt-5 border-t border-border/50 flex flex-col gap-1.5">
+                        <p className="text-[11px] text-ink-muted flex justify-between">
+                          <span>Dernière mise à jour</span>
+                          <span className="font-medium text-ink-primary">
+                            {displayRun.completed_at
+                              ? new Date(displayRun.completed_at).toLocaleDateString('fr-FR')
+                              : '—'}
+                          </span>
                         </p>
-                      )}
-                      {latestRun?.status === 'failed' && (
-                        <p className="mt-2 text-xs font-semibold text-danger">
-                          La dernière tentative de mesure a échoué.
-                        </p>
-                      )}
+                        {isFreePlan(brand.plan) && (
+                          <p className="text-[11px] text-ink-muted flex justify-between">
+                            <span>Précision</span>
+                            <span className="text-warning font-medium">Basse (1 échantillon)</span>
+                          </p>
+                        )}
+                        {latestRun?.status === 'failed' && (
+                          <p className="text-[11px] font-semibold text-danger">
+                            Échec de la dernière tentative.
+                          </p>
+                        )}
+                      </div>
+                      
                       {deriveRunFreshness(displayRun.completed_at) === 'stale' && (
-                        <DashboardStateView state="stale" compact className="mt-2 !py-0" />
+                        <DashboardStateView state="stale" compact className="mt-3 !py-0" />
                       )}
                       {displayRun.status === 'partial' && (
-                        <DashboardStateView state="partial" compact className="mt-2 !py-0" />
+                        <DashboardStateView state="partial" compact className="mt-3 !py-0" />
                       )}
-                    </>
+                    </div>
                   ) : (
                     <RunStatusState status={displayRun.status} run={displayRun} />
                   )}
@@ -187,8 +208,9 @@ function AccueilPage() {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
-          <div className="w-full grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
+        {/* Right Column: 4 KPIs (Distilled from 5) + AI Insight */}
+        <div className="flex-1 flex flex-col gap-5 lg:gap-6 min-w-0">
+          <div className="w-full grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
             <KpiCard
               label="Mentions"
               value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
@@ -219,21 +241,19 @@ function AccueilPage() {
               icon={Radar}
               tone="danger"
             />
-            <KpiCard
-              label="Opportunités"
-              value={opportunities ? opportunities.length.toString() : null}
-              tooltip="Nombre d'actions détectées pour améliorer votre visibilité."
-              icon={Lightbulb}
-              tone="warning"
-            />
           </div>
           
           {displayRun && displayRun.score !== null && (
-            <div className="flex items-center gap-3 rounded-lg border border-brand/20 bg-brand/5 px-4 py-3">
-              <Lightbulb className="size-4 shrink-0 text-brand" />
-              <p className="text-sm text-ink-primary leading-snug">
-                Bonne progression cette semaine, votre taux de recommandation a augmenté de 5% par rapport à vos concurrents principaux.
-              </p>
+            <div className="mt-auto flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-brand/20 bg-gradient-to-r from-brand/10 to-brand/5 p-4 lg:px-6 shadow-sm">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/20">
+                <Lightbulb className="size-4 text-brand" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-ink-primary">Insight IA</h3>
+                <p className="text-sm text-ink-secondary leading-snug mt-0.5">
+                  Bonne progression cette semaine, votre taux de recommandation a augmenté de <span className="font-semibold text-ink-primary">5%</span> par rapport à vos concurrents principaux.
+                </p>
+              </div>
             </div>
           )}
         </div>
