@@ -1,10 +1,10 @@
 import React from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
   ResponsiveContainer,
   Tooltip,
   Legend,
@@ -14,56 +14,56 @@ export interface EngineRadarChartProps {
   data: { engine: string; mentioned: number; recommended: number; total: number }[];
 }
 
+// Vrai radar (spider chart) — un axe par moteur IA, deux séries superposées
+// (Mentions / Recommandations en %). L'ancienne version de ce composant
+// était en réalité un bar chart malgré son nom ; ce rendu correspond à la
+// maquette (forme en losange, axes = moteurs).
 export function EngineRadarChart({ data }: EngineRadarChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-[240px] w-full items-center justify-center text-sm text-ink-muted">
+      <div className="flex h-[180px] w-full items-center justify-center text-center text-xs text-ink-muted">
         Aucune donnée par moteur pour la dernière mesure.
       </div>
     );
   }
 
-  // Brand color (Yellow) and vibrant modern colors
-  const COLORS = ['#eab308', '#8b5cf6', '#3b82f6', '#ec4899', '#10b981'];
+  const chartData = data.map((d) => ({
+    engine: d.engine,
+    Mentions: Math.round((d.mentioned / d.total) * 100) || 0,
+    Recommandations: Math.round((d.recommended / d.total) * 100) || 0,
+  }));
 
-  const engines = data.map(d => d.engine);
-  
-  // Transform data so metrics are on the X axis, and AIs are the bars
-  const mentionsData: any = { metric: 'Mentions' };
-  const recomData: any = { metric: 'Recommandations' };
-  
-  data.forEach(d => {
-    mentionsData[d.engine] = Math.round((d.mentioned / d.total) * 100) || 0;
-    recomData[d.engine] = Math.round((d.recommended / d.total) * 100) || 0;
-  });
-  
-  const chartData = [mentionsData, recomData];
   const percentLabel = (value: number) => `${value}%`;
 
   return (
-    <div className="h-[250px] w-full">
+    <div className="h-[180px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
-          barGap={6}
-          barCategoryGap="25%"
-        >
-          <CartesianGrid vertical={false} stroke="rgb(var(--color-border))" strokeDasharray="3 3" />
-          <XAxis
-            dataKey="metric"
-            tick={{ fill: 'rgb(var(--color-ink-primary))', fontSize: 13, fontWeight: 500 }}
-            axisLine={false}
-            tickLine={false}
-            dy={8}
+        <RadarChart data={chartData} outerRadius="65%">
+          <PolarGrid stroke="rgb(var(--color-border))" />
+          <PolarAngleAxis
+            dataKey="engine"
+            tick={{ fill: 'rgb(var(--color-ink-secondary))', fontSize: 11 }}
           />
-          <YAxis
-            type="number"
+          <PolarRadiusAxis
+            angle={90}
             domain={[0, 100]}
-            tick={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 11 }}
+            tick={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 9 }}
             tickFormatter={percentLabel}
             axisLine={false}
-            tickLine={false}
+          />
+          <Radar
+            name="Mentions"
+            dataKey="Mentions"
+            stroke="#eab308"
+            fill="#eab308"
+            fillOpacity={0.25}
+          />
+          <Radar
+            name="Recommandations"
+            dataKey="Recommandations"
+            stroke="#3b82f6"
+            fill="#3b82f6"
+            fillOpacity={0.15}
           />
           <Tooltip
             contentStyle={{
@@ -71,24 +71,17 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
               borderColor: 'rgb(var(--color-border))',
               borderRadius: '12px',
               padding: '8px 12px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
             }}
-            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
             formatter={(value: number) => percentLabel(value)}
             itemStyle={{ fontWeight: 600 }}
           />
-          <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px' }} />
-          {engines.map((engine, index) => (
-            <Bar 
-              key={engine} 
-              name={engine} 
-              dataKey={engine} 
-              fill={COLORS[index % COLORS.length]} 
-              radius={[4, 4, 0, 0]} 
-              maxBarSize={40} 
-            />
-          ))}
-        </BarChart>
+          <Legend
+            verticalAlign="bottom"
+            height={24}
+            iconType="circle"
+            wrapperStyle={{ fontSize: '11px' }}
+          />
+        </RadarChart>
       </ResponsiveContainer>
     </div>
   );

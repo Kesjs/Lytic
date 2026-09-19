@@ -92,7 +92,7 @@ export function PerformanceChart({ hasAnyRun, free = false }: { hasAnyRun: boole
           <ChartMessage text="Aucune donnée exploitable pour cet indicateur sur cette période." />
         ) : (
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+            <AreaChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f2d94e" stopOpacity={0.3} />
@@ -116,7 +116,7 @@ export function PerformanceChart({ hasAnyRun, free = false }: { hasAnyRun: boole
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                width={36}
+                width={44}
               />
               <Tooltip
                 contentStyle={{

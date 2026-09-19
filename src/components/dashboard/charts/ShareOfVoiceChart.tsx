@@ -10,15 +10,15 @@ export function ShareOfVoiceChart({ data }: ShareOfVoiceChartProps) {
   const COLORS = ['#eab308', '#8b5cf6', '#3b82f6', '#ec4899', '#10b981'];
 
   return (
-    <div className="h-[250px] w-full">
+    <div className="h-[180px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
             cx="50%"
-            cy="50%"
-            innerRadius={65}
-            outerRadius={95}
+            cy="42%"
+            innerRadius={40}
+            outerRadius={62}
             paddingAngle={5}
             dataKey="mentions"
             stroke="none"
@@ -32,7 +32,7 @@ export function ShareOfVoiceChart({ data }: ShareOfVoiceChartProps) {
             contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))', borderRadius: '12px', padding: '8px 12px' }}
             itemStyle={{ color: 'rgb(var(--color-ink-primary))', fontWeight: 600 }}
           />
-          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px' }} />
+          <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

@@ -124,14 +124,14 @@ function QuestionsTable({
   }
 
   return (
-    <div className="mt-3 overflow-x-auto">
+    <div className="mt-3 max-h-[420px] overflow-y-auto overflow-x-auto rounded-md border border-border/60">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="sticky top-0 z-10 bg-surface">
           <tr className="border-b border-border text-left text-xs font-medium text-ink-muted">
-            <th className="pb-2 font-medium">Question</th>
-            <th className="pb-2 pl-4 text-right font-medium">Mention</th>
-            <th className="pb-2 pl-4 text-right font-medium">Recommandation</th>
-            <th className="pb-2 pl-4 text-right font-medium">Position</th>
+            <th className="pb-2 pt-2.5 pl-3 font-medium">Question</th>
+            <th className="pb-2 pt-2.5 pl-4 text-right font-medium">Mention</th>
+            <th className="pb-2 pt-2.5 pl-4 text-right font-medium">Recommandation</th>
+            <th className="pb-2 pt-2.5 pl-4 pr-3 text-right font-medium">Position</th>
           </tr>
         </thead>
         <tbody>
@@ -141,9 +141,9 @@ function QuestionsTable({
               onClick={() => onOpen(q.id)}
               className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-elevated"
             >
-              <td className="py-2.5 pr-4 text-ink-primary">{q.text}</td>
+              <td className="py-2.5 pl-3 pr-4 text-ink-primary">{q.text}</td>
               {!hasAnyRun || !q.hasObservation ? (
-                <td colSpan={3} className="py-2.5 pl-4 text-right text-xs text-ink-muted">
+                <td colSpan={3} className="py-2.5 pl-4 pr-3 text-right text-xs text-ink-muted">
                   {hasAnyRun ? 'Pas de donnée pour la dernière mesure' : 'Pas encore mesurée'}
                 </td>
               ) : (
@@ -154,7 +154,7 @@ function QuestionsTable({
                   <td className="py-2.5 pl-4 text-right">
                     <BoolDot value={q.recommended} />
                   </td>
-                  <td className="py-2.5 pl-4 text-right text-ink-secondary">
+                  <td className="py-2.5 pl-4 pr-3 text-right text-ink-secondary">
                     {q.position !== null ? `#${q.position}` : '—'}
                   </td>
                 </>

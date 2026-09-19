@@ -31,10 +31,10 @@ export function KpiCard({
   tone?: KpiCardTone
 }) {
   return (
-    <div className="flex items-start gap-3 p-3 lg:p-4">
+    <div className="flex items-start gap-2.5 p-3 lg:p-3.5">
       {Icon && (
-        <div className={`flex size-8 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}>
-          <Icon className="size-4" />
+        <div className={`flex size-7 shrink-0 items-center justify-center rounded-md ${ICON_TONES[tone]}`}>
+          <Icon className="size-3.5" />
         </div>
       )}
       <div className="flex min-w-0 flex-1 flex-col justify-center">
@@ -53,7 +53,7 @@ export function KpiCard({
             </Tooltip>
           )}
         </div>
-        <div className="mt-1 truncate font-display text-2xl font-semibold tabular-nums text-ink-primary">
+        <div className="mt-1 truncate font-display text-xl font-semibold tabular-nums text-ink-primary">
           {value ?? '—'}
         </div>
         {hint && (

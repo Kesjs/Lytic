@@ -152,12 +152,12 @@ function AccueilPage() {
                 <>
                   {displayRun.score !== null ? (
                     <>
-                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand">
-                        {Math.round(displayRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
+                      <div className="mt-1 font-display text-3xl font-bold tabular-nums text-brand">
+                        {Math.round(displayRun.score)} <span className="text-sm text-ink-muted">/ 100</span>
                       </div>
                       {displayRun.score_delta !== null && (
                         <p
-                          className={`mt-1 text-sm ${
+                          className={`mt-1 text-xs ${
                             displayRun.score_delta >= 0 ? 'text-success' : 'text-danger'
                           }`}
                         >
@@ -251,80 +251,46 @@ function AccueilPage() {
         </motion.div>
       )}
 
+      {/* Rangée compacte : Opportunités + les 4 graphiques côte à côte, comme
+          dans la maquette "Reflet", plutôt que 3 blocs empilés en grandes
+          cartes 2 colonnes. */}
       {displayRun && (
-        <>
-          <section className="rounded-lg border border-border bg-surface p-5">
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+        >
+          <div className="rounded-lg border border-border bg-surface p-4 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
               <Link
                 to="/dashboard/opportunites"
                 className="text-xs text-ink-muted hover:text-ink-secondary"
               >
-                Toutes les opportunités →
+                Tout →
               </Link>
             </div>
             <OpportunitiesPreview opportunities={opportunities ?? []} hasAnyRun={!!latestRun} />
-          </section>
-
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-lg border border-border bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-ink-primary">Concurrents</h2>
-                <Link
-                  to="/dashboard/concurrents"
-                  className="text-xs text-ink-muted hover:text-ink-secondary"
-                >
-                  Tous les concurrents →
-                </Link>
-              </div>
-              <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
-            </div>
-
-            <div className="rounded-lg border border-border bg-surface p-5">
-              <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
-              {pages.length === 0 ? (
-                <p className="mt-3 text-sm text-ink-muted">
-                  Aucune page suivie — configurez votre site dans Paramètres.
-                </p>
-              ) : (
-                <p className="mt-3 text-sm text-ink-secondary">
-                  {pages.length} page{pages.length > 1 ? 's' : ''} suivie
-                  {pages.length > 1 ? 's' : ''}, dont{' '}
-                  {pages.filter((p: any) => p.status === 'ok').length} vérifiée
-                  {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
-                </p>
-              )}
-            </div>
-          </section>
-        </>
-      )}
-
-      {displayRun && (
-        <motion.section 
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="grid grid-cols-1 gap-4 lg:grid-cols-2"
-        >
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold text-ink-primary mb-3">Part de Voix (Top Concurrents)</h2>
-            <div className="h-[240px]">
-              <ShareOfVoiceChart data={shareOfVoice ?? []} />
-            </div>
           </div>
-          
+
           <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold text-ink-primary mb-3">Performance par Moteur IA</h2>
+            <h2 className="mb-3 text-sm font-semibold text-ink-primary">Part de Voix</h2>
+            <ShareOfVoiceChart data={shareOfVoice ?? []} />
+          </div>
+
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="mb-3 text-sm font-semibold text-ink-primary">Moteurs IA</h2>
             <EngineRadarChart data={enginePerformance ?? []} />
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold text-ink-primary mb-3">Analyse de Tonalité</h2>
+            <h2 className="mb-3 text-sm font-semibold text-ink-primary">Tonalité</h2>
             <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold text-ink-primary mb-3">Thèmes Abordés</h2>
+            <h2 className="mb-3 text-sm font-semibold text-ink-primary">Thèmes</h2>
             <ThemesCloud data={topThemes ?? []} />
           </div>
         </motion.section>
@@ -337,6 +303,39 @@ function AccueilPage() {
       >
         <BotAccessCard data={botAccess ?? null} brandId={brand.id} />
       </motion.section>
+
+      {displayRun && (
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-primary">Concurrents</h2>
+              <Link
+                to="/dashboard/concurrents"
+                className="text-xs text-ink-muted hover:text-ink-secondary"
+              >
+                Tous les concurrents →
+              </Link>
+            </div>
+            <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
+          </div>
+
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
+            {pages.length === 0 ? (
+              <p className="mt-3 text-sm text-ink-muted">
+                Aucune page suivie — configurez votre site dans Paramètres.
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-ink-secondary">
+                {pages.length} page{pages.length > 1 ? 's' : ''} suivie
+                {pages.length > 1 ? 's' : ''}, dont{' '}
+                {pages.filter((p: any) => p.status === 'ok').length} vérifiée
+                {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface pt-5">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { Settings, LogOut, ChevronsUpDown, Shield } from 'lucide-react'
@@ -203,31 +204,41 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
         </button>
       )}
 
-      {/* Modal de Déconnexion */}
-      {isLogoutModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-surface shadow-2xl p-6">
-            <h3 className="text-lg font-medium text-ink-primary mb-2">Déconnexion</h3>
-            <p className="text-sm text-ink-secondary mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsLogoutModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-ink-secondary hover:text-ink-primary transition-colors hover:bg-elevated"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-md bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
-              >
-                Me déconnecter
-              </button>
+      {/* Modal de Déconnexion — rendue via un portail vers document.body.
+          La Sidebar a une classe translate-x-0 (transform CSS actif en
+          permanence) ; un descendant `fixed` d'un ancêtre transformé se
+          positionne par rapport à cet ancêtre, pas par rapport à l'écran.
+          C'est ce qui coinçait la modale dans le coin de la sidebar au lieu
+          de la centrer plein écran. bg-bg/80 référençait aussi un token de
+          couleur inexistant dans la palette (tokens réels : canvas/surface/
+          elevated…), donc l'overlay sombre était invisible. */}
+      {isLogoutModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="w-full max-w-sm rounded-xl border border-border bg-surface shadow-2xl p-6">
+              <h3 className="text-lg font-medium text-ink-primary mb-2">Déconnexion</h3>
+              <p className="text-sm text-ink-secondary mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsLogoutModalOpen(false)}
+                  className="rounded-md px-4 py-2 text-sm font-medium text-ink-secondary hover:text-ink-primary transition-colors hover:bg-elevated"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-md bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
+                >
+                  Me déconnecter
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

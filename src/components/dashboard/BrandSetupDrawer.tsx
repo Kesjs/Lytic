@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
@@ -81,7 +82,14 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
     !hasOverlongQuestion &&
     !mutation.isPending
 
-  return (
+  // Rendu via un portail vers document.body : ce tiroir est ouvert depuis
+  // <Sidebar>, qui porte une classe translate-x-0 (transform CSS actif en
+  // permanence). Un descendant `fixed` d'un ancêtre transformé se positionne
+  // par rapport à cet ancêtre et non par rapport à l'écran — même bug racine
+  // que la modale de déconnexion dans AccountMenu.tsx.
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
@@ -232,6 +240,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   )
 }

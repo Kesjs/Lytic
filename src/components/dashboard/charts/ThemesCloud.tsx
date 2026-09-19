@@ -16,7 +16,7 @@ export function ThemesCloud({ data }: ThemesCloudProps) {
       {data.map((theme, i) => {
         const ratio = theme.count / maxCount;
         // Size between 14px and 28px based on frequency
-        const fontSize = 14 + (ratio * 14); 
+        const fontSize = 11 + (ratio * 9); 
         // Opacity mapping (more frequent = more opaque)
         const opacity = 0.5 + (ratio * 0.5); 
 

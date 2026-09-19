@@ -28,7 +28,7 @@ export function SentimentGauge({ data }: SentimentGaugeProps) {
       <div className="flex w-full justify-between">
         {chartData.map((d, i) => (
           <div key={i} className="text-center">
-            <div className="text-2xl font-light tracking-tight" style={{ color: d.color }}>
+            <div className="text-lg font-light tracking-tight" style={{ color: d.color }}>
               {Math.round((d.value / total) * 100)}
               <span className="text-base">%</span>
             </div>
