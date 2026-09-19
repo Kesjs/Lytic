@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info, MessageSquare, ThumbsUp, Radar, Lightbulb } from 'lucide-react'
+import { Plus, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info, MessageSquare, ThumbsUp, Radar, Lightbulb, Sparkles } from 'lucide-react'
 import { KpiCard } from '~/components/ui/kpi-card'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDashboardHome, type CompetitorMini } from '~/lib/queries/dashboard'
@@ -210,10 +210,11 @@ function AccueilPage() {
 
         {/* Right Column: 4 KPIs (Distilled from 5) + AI Insight */}
         <div className="flex-1 flex flex-col gap-5 lg:gap-6 min-w-0">
-          <div className="w-full grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
+          <div className="w-full grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-xl border-0 ring-1 ring-border/50 bg-surface overflow-hidden shadow-md">
             <KpiCard
               label="Mentions"
               value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
+              trend={{ value: 2, suffix: 'vs sem. dernière' }}
               tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
               icon={MessageSquare}
               tone="info"
@@ -221,6 +222,7 @@ function AccueilPage() {
             <KpiCard
               label="Recommandations"
               value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
+              trend={{ value: 5, suffix: 'vs sem. dernière' }}
               tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
               icon={ThumbsUp}
               tone="success"
@@ -228,6 +230,7 @@ function AccueilPage() {
             <KpiCard
               label="Pos. moyenne"
               value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
+              trend={{ value: -0.2, suffix: 'vs sem. dernière' }}
               tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
               icon={TrendingUp}
               tone="warning"
@@ -237,6 +240,7 @@ function AccueilPage() {
               value={
                 kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
               }
+              hint="sur les 30 derniers jours"
               tooltip="Votre part de mentions par rapport à vos principaux concurrents."
               icon={Radar}
               tone="danger"
@@ -244,14 +248,14 @@ function AccueilPage() {
           </div>
           
           {displayRun && displayRun.score !== null && (
-            <div className="mt-auto flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-brand/20 bg-gradient-to-r from-brand/10 to-brand/5 p-4 lg:px-6 shadow-sm">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/20">
-                <Lightbulb className="size-4 text-brand" />
+            <div className="mt-auto flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent p-4 lg:px-6 shadow-sm">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
+                <Sparkles className="size-4 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-ink-primary">Insight IA</h3>
                 <p className="text-sm text-ink-secondary leading-snug mt-0.5">
-                  Bonne progression cette semaine, votre taux de recommandation a augmenté de <span className="font-semibold text-ink-primary">5%</span> par rapport à vos concurrents principaux.
+                  Bonne progression cette semaine : votre taux de recommandation a augmenté de <span className="font-semibold text-ink-primary">+5%</span> par rapport à vos concurrents principaux.
                 </p>
               </div>
             </div>
