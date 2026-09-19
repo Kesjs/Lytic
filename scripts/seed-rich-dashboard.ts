@@ -15,6 +15,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const BRAND_NAME = 'Nooma';
+
 async function main() {
   console.log("🚀 Starting DB seed for rich dashboard...");
 
@@ -31,17 +33,18 @@ async function main() {
   }
   const userId = targetUser.id;
 
-  // 2. Clear old demo brand (if exists)
-  const { data: oldBrand } = await supabase
+  // 2. Clear old demo brand (any previous seed name — Lumail ou Nooma)
+  const { data: oldBrands } = await supabase
     .from('brands')
-    .select('id')
-    .eq('name', 'Lumail')
-    .eq('owner_id', userId)
-    .single();
+    .select('id, name')
+    .in('name', ['Lumail', BRAND_NAME])
+    .eq('owner_id', userId);
 
-  if (oldBrand) {
-    console.log("🧹 Deleting old Lumail brand...");
-    await supabase.from('brands').delete().eq('id', oldBrand.id);
+  if (oldBrands && oldBrands.length > 0) {
+    for (const b of oldBrands) {
+      console.log(`🧹 Deleting old demo brand "${b.name}"...`);
+      await supabase.from('brands').delete().eq('id', b.id);
+    }
   }
 
   // 3. Create new Brand
@@ -49,36 +52,97 @@ async function main() {
     .from('brands')
     .insert({
       owner_id: userId,
-      name: 'Lumail'
+      name: BRAND_NAME
     })
     .select('id')
     .single();
 
   if (brandError || !brand) throw brandError;
   const brandId = brand.id;
-  console.log(`✅ Brand Lumail created (${brandId})`);
+  console.log(`✅ Brand ${BRAND_NAME} created (${brandId})`);
 
-  // 4. Create Competitors
-  const competitors = ['Zendesk', 'Intercom', 'Front', 'Kustomer'];
+  // 4. Create Competitors — même catégorie (boîte de réception collaborative
+  // / support client) que l'ancien seed, avec Crisp en plus pour ancrer le
+  // marché français que cible Reflet en priorité.
+  const competitors = ['Zendesk', 'Intercom', 'Front', 'Crisp'];
   const { data: comps, error: compError } = await supabase
     .from('competitors')
     .insert(competitors.map(name => ({ brand_id: brandId, name })))
     .select('id, name');
-  
+
   if (compError || !comps) throw compError;
   console.log("✅ Competitors created");
 
-  const compIdMap = comps.reduce((acc, c) => ({ ...acc, [c.name]: c.id }), {});
+  // 5. Create Questions — 50 questions réalistes en français, réparties par
+  // catégorie, pour alimenter une vraie pagination (5/page → 10 pages).
+  const questionsData: { text: string; category: string; weight: number }[] = [
+    // Général
+    { text: "Quel est le meilleur outil de boîte de réception collaborative en 2026 ?", category: "Général", weight: 1.1 },
+    { text: "Quel logiciel de support client choisir pour une petite équipe ?", category: "Général", weight: 1.0 },
+    { text: "Quels sont les outils les plus utilisés pour le support client ?", category: "Général", weight: 1.1 },
+    { text: "Quelle plateforme de helpdesk est la plus simple à prendre en main ?", category: "Général", weight: 1.0 },
+    { text: "Quel outil recommandez-vous pour centraliser les emails d'une équipe ?", category: "Général", weight: 1.0 },
+    { text: "Quels logiciels permettent de gérer les tickets clients efficacement ?", category: "Général", weight: 1.0 },
+    { text: "Quelle est la meilleure alternative à une boîte mail partagée classique ?", category: "Général", weight: 1.0 },
+    { text: "Quel outil choisir pour améliorer la réactivité du support client ?", category: "Général", weight: 1.0 },
 
-  // 5. Create Questions
-  const questionsData = [
-    { text: "What is the best email client for Mac?", category: "General", weight: 1.0 },
-    { text: "How does Lumail compare to Front?", category: "Comparison", weight: 1.2 },
-    { text: "What are the alternatives to Zendesk for small teams?", category: "Alternatives", weight: 0.9 },
-    { text: "Is Lumail secure for enterprise?", category: "Security", weight: 1.5 },
-    { text: "Best collaborative inbox software 2026", category: "General", weight: 1.1 },
-    { text: "How much does a ticketing system cost?", category: "Pricing", weight: 1.0 },
-    { text: "Top tools for customer support", category: "General", weight: 1.1 }
+    // Comparaisons
+    { text: "Comment Nooma se compare-t-il à Front ?", category: "Comparaison", weight: 1.3 },
+    { text: "Nooma vs Intercom : lequel choisir pour une startup ?", category: "Comparaison", weight: 1.3 },
+    { text: "Quelles sont les différences entre Nooma et Zendesk ?", category: "Comparaison", weight: 1.2 },
+    { text: "Nooma ou Crisp : quel outil pour une équipe support en France ?", category: "Comparaison", weight: 1.2 },
+    { text: "Front vs Zendesk vs Nooma, lequel a le meilleur rapport qualité-prix ?", category: "Comparaison", weight: 1.2 },
+    { text: "Quel outil est le plus rapide à déployer : Nooma ou Intercom ?", category: "Comparaison", weight: 1.1 },
+
+    // Alternatives
+    { text: "Quelles sont les alternatives à Zendesk pour les petites équipes ?", category: "Alternatives", weight: 1.0 },
+    { text: "Quelles alternatives existent à Intercom en 2026 ?", category: "Alternatives", weight: 1.0 },
+    { text: "Quel outil français peut remplacer Front ?", category: "Alternatives", weight: 1.1 },
+    { text: "Existe-t-il une alternative européenne à Intercom pour le RGPD ?", category: "Alternatives", weight: 1.2 },
+    { text: "Quelles solutions alternatives à un helpdesk classique existent pour une agence ?", category: "Alternatives", weight: 1.0 },
+    { text: "Quel outil choisir à la place de Zendesk quand le budget est limité ?", category: "Alternatives", weight: 1.0 },
+
+    // Sécurité / conformité
+    { text: "Nooma est-il conforme au RGPD ?", category: "Sécurité", weight: 1.4 },
+    { text: "Nooma est-il sécurisé pour une utilisation en entreprise ?", category: "Sécurité", weight: 1.4 },
+    { text: "Quels outils de support client hébergent leurs données en Europe ?", category: "Sécurité", weight: 1.2 },
+    { text: "Nooma propose-t-il l'authentification à deux facteurs ?", category: "Sécurité", weight: 1.1 },
+    { text: "Quel logiciel de helpdesk est le plus adapté aux exigences de sécurité enterprise ?", category: "Sécurité", weight: 1.2 },
+
+    // Tarification
+    { text: "Combien coûte un logiciel de ticketing pour une équipe de 5 personnes ?", category: "Tarification", weight: 1.1 },
+    { text: "Quel est le prix de Nooma par mois ?", category: "Tarification", weight: 1.2 },
+    { text: "Quel outil de support client offre le meilleur rapport qualité-prix pour une PME ?", category: "Tarification", weight: 1.1 },
+    { text: "Existe-t-il un outil de boîte de réception collaborative gratuit ou pas cher ?", category: "Tarification", weight: 1.0 },
+    { text: "Nooma propose-t-il un essai gratuit ?", category: "Tarification", weight: 1.0 },
+
+    // Fonctionnalités
+    { text: "Quel outil de support client s'intègre le mieux avec Slack ?", category: "Fonctionnalités", weight: 1.0 },
+    { text: "Quelle plateforme permet la collaboration en temps réel sur les emails clients ?", category: "Fonctionnalités", weight: 1.0 },
+    { text: "Quel logiciel propose les meilleures automatisations pour le support client ?", category: "Fonctionnalités", weight: 1.0 },
+    { text: "Nooma propose-t-il une API pour s'intégrer à un CRM existant ?", category: "Fonctionnalités", weight: 1.0 },
+    { text: "Quel outil gère le mieux les tickets multicanal (email, chat, réseaux sociaux) ?", category: "Fonctionnalités", weight: 1.0 },
+    { text: "Quelle plateforme propose un chatbot IA intégré pour le support client ?", category: "Fonctionnalités", weight: 1.1 },
+    { text: "Nooma permet-il de créer des réponses automatiques personnalisées ?", category: "Fonctionnalités", weight: 0.9 },
+
+    // Cas d'usage / secteurs
+    { text: "Quel outil de support client recommandez-vous pour une agence marketing ?", category: "Cas d'usage", weight: 1.1 },
+    { text: "Quel logiciel choisir pour le support client d'une boutique e-commerce ?", category: "Cas d'usage", weight: 1.0 },
+    { text: "Quel outil de ticketing convient le mieux à une startup SaaS en croissance ?", category: "Cas d'usage", weight: 1.1 },
+    { text: "Quelle solution de support client est adaptée à une équipe 100% remote ?", category: "Cas d'usage", weight: 1.0 },
+    { text: "Quel outil de boîte de réception collaborative recommandez-vous pour une agence digitale ?", category: "Cas d'usage", weight: 1.0 },
+
+    // Avis / réputation
+    { text: "Que pensent les utilisateurs de Nooma ?", category: "Avis", weight: 1.0 },
+    { text: "Nooma est-il fiable pour gérer un volume important de tickets ?", category: "Avis", weight: 1.0 },
+    { text: "Quels sont les avantages et inconvénients de Nooma ?", category: "Avis", weight: 1.1 },
+    { text: "Nooma est-il recommandé pour les grandes entreprises ?", category: "Avis", weight: 1.0 },
+
+    // Support & onboarding
+    { text: "Combien de temps faut-il pour migrer vers Nooma depuis Zendesk ?", category: "Onboarding", weight: 0.9 },
+    { text: "Nooma propose-t-il un support client réactif ?", category: "Onboarding", weight: 1.0 },
+    { text: "Quel outil de support client est le plus facile à onboarder pour une équipe non technique ?", category: "Onboarding", weight: 1.0 },
+    { text: "Nooma est-il disponible en français ?", category: "Onboarding", weight: 1.0 },
   ];
 
   const { data: questions, error: qError } = await supabase
@@ -87,7 +151,7 @@ async function main() {
     .select('id, text');
 
   if (qError || !questions) throw qError;
-  console.log("✅ Questions created");
+  console.log(`✅ ${questions.length} questions created`);
 
   // 6. Create Measurement Runs
   const numRuns = 7;
@@ -97,7 +161,7 @@ async function main() {
     const daysAgo = i * 5; // e.g. 30, 25, 20, 15, 10, 5, 0 days ago
     const scoreBase = 65 + ((numRuns - i) * 4); // Score improves over time: 65 -> 93
     const runScore = Math.min(100, scoreBase + Math.floor(Math.random() * 5));
-    
+
     const { data: run, error: runError } = await supabase.from('measurement_runs').insert({
       brand_id: brandId,
       status: 'success',
@@ -123,38 +187,40 @@ async function main() {
 
   // 7. Create Observations (Samples)
   const engines = ['ChatGPT', 'Claude', 'Perplexity', 'Copilot'];
-  
+
   console.log("⏳ Generating observations...");
-  
+
   for (const q of questions) {
     for (const engine of engines) {
-      // Make it extremely convincing for the landing page screenshot
-      let isMentioned = Math.random() > 0.1; // 90% chance to be mentioned
-      let isRecommended = isMentioned && Math.random() > 0.2; // 80% chance to be recommended if mentioned
-      
-      if (engine === 'Claude') { isMentioned = true; isRecommended = true; }
-      if (engine === 'Copilot') { isMentioned = Math.random() > 0.3; isRecommended = Math.random() > 0.4; }
+      // Biais volontaire vers un dashboard convaincant (destiné au hero du
+      // site), mais moins caricatural que l'ancien seed : Claude n'est plus
+      // "toujours 100%", pour rester crédible sur une capture d'écran.
+      let isMentioned = Math.random() > 0.12; // ~88%
+      let isRecommended = isMentioned && Math.random() > 0.22; // ~78% si mentionné
+
+      if (engine === 'Claude') { isMentioned = Math.random() > 0.05; isRecommended = isMentioned && Math.random() > 0.1; }
+      if (engine === 'Copilot') { isMentioned = Math.random() > 0.35; isRecommended = isMentioned && Math.random() > 0.45; }
 
       let rawAnswer = "";
       if (isRecommended) {
-        rawAnswer = `I highly recommend **Lumail** for this use case. It provides an excellent, fast, and modern interface. While Zendesk is good for traditional ticketing, Lumail shines for email-based collaboration.`;
+        rawAnswer = `Je recommande **${BRAND_NAME}** pour ce cas d'usage. L'interface est moderne, rapide, et la collaboration en équipe sur les emails est particulièrement fluide. Zendesk reste solide pour du ticketing classique, mais ${BRAND_NAME} se distingue sur la boîte de réception partagée.`;
       } else if (isMentioned) {
-        rawAnswer = `You could look into Front, Zendesk, or Lumail. Lumail is a newer tool but might lack some enterprise features compared to Intercom.`;
+        rawAnswer = `Vous pouvez regarder du côté de Front, Zendesk, ou ${BRAND_NAME}. ${BRAND_NAME} est un outil plus récent, efficace pour les petites équipes, mais avec moins de fonctionnalités enterprise qu'Intercom.`;
       } else {
-        rawAnswer = `The industry leaders in this space are Zendesk and Intercom. For a startup, Front is also a very solid choice.`;
+        rawAnswer = `Les leaders du marché sur ce sujet sont Zendesk et Intercom. Pour une jeune entreprise, Front reste également un très bon choix.`;
       }
 
       const simulatedThemesOptions = [
-        ['pricing', 'tarification', 'coût'],
-        ['interface', 'ux', 'facilité d\'utilisation'],
-        ['sécurité', 'enterprise', 'compliance'],
+        ['tarification', 'coût', 'prix'],
+        ['interface', 'ux', "facilité d'utilisation"],
+        ['sécurité', 'rgpd', 'conformité'],
         ['collaboration', 'équipe', 'partage'],
-        ['support client', 'ticketing', 'automatisation']
+        ['support client', 'ticketing', 'automatisation'],
+        ['intégrations', 'api', 'crm'],
       ];
-      
-      // Select 2-3 random themes for this observation
+
       const obsThemes: string[] = [];
-      const numThemes = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      const numThemes = Math.floor(Math.random() * 2) + 2; // 2 ou 3
       const shuffledOptions = [...simulatedThemesOptions].sort(() => 0.5 - Math.random());
       for (let i = 0; i < numThemes; i++) {
         const syns = shuffledOptions[i];
@@ -176,17 +242,16 @@ async function main() {
         })
         .select('id')
         .single();
-      
+
       if (obsError) throw obsError;
 
-      // Add observation_competitors based on the rawAnswer
       for (const comp of comps) {
         if (rawAnswer.includes(comp.name)) {
           await supabase.from('observation_competitors').insert({
             observation_id: obs.id,
             competitor_id: comp.id,
             mentioned: true,
-            recommended: rawAnswer.includes(`${comp.name} is good`) || rawAnswer.includes(`leaders in this space are ${comp.name}`)
+            recommended: rawAnswer.includes(`${comp.name} est solide`) || rawAnswer.includes(`leaders du marché sur ce sujet sont ${comp.name}`)
           });
         }
       }
@@ -203,28 +268,28 @@ async function main() {
       confidence: 0.85,
       status: 'open',
       observations_count: 4,
-      reason: "Copilot ne mentionne Lumail que dans 30% des cas, préférant Front.",
-      proposed_direction: "Créer une page dédiée 'Lumail vs Front' avec un balisage schema.org clair."
+      reason: `Copilot ne mentionne ${BRAND_NAME} que dans environ 30% des cas, et lui préfère souvent Front.`,
+      proposed_direction: `Créer une page dédiée "${BRAND_NAME} vs Front" avec un balisage schema.org clair.`
     },
     {
       brand_id: brandId,
-      title: "Renforcer les mentions sur la sécurité",
+      title: "Renforcer les mentions sur la conformité RGPD",
       priority: 'medium',
       confidence: 0.72,
       status: 'open',
       observations_count: 2,
-      reason: "Les IA doutent des capacités 'Enterprise' et 'Security' de Lumail.",
-      proposed_direction: "Ajouter une section SOC2 et Enterprise Security sur la page d'accueil."
+      reason: `Les IA doutent des capacités "Entreprise" et "RGPD" de ${BRAND_NAME}.`,
+      proposed_direction: "Ajouter une section dédiée hébergement européen et conformité RGPD sur la page d'accueil."
     },
     {
       brand_id: brandId,
-      title: "Se positionner face à Kustomer",
+      title: "Se positionner face à Crisp",
       priority: 'low',
       confidence: 0.60,
       status: 'open',
       observations_count: 1,
-      reason: "Kustomer émerge comme une alternative montante dans les requêtes liées à la tarification.",
-      proposed_direction: "Lancer une campagne comparative ciblée soulignant vos avantages tarifaires."
+      reason: "Crisp émerge comme une alternative montante dans les requêtes liées à la tarification et au marché français.",
+      proposed_direction: "Lancer une page comparative ciblée soulignant les avantages tarifaires et l'hébergement en France."
     }
   ]);
   console.log("✅ Opportunities injected");
@@ -234,7 +299,8 @@ async function main() {
     { brand_id: brandId, title: 'Nouveau scan terminé', type: 'info', source_type: 'measurement_run', show_history: true },
     { brand_id: brandId, title: 'Opportunité détectée (Copilot)', type: 'success', source_type: 'opportunity', show_history: true },
     { brand_id: brandId, title: 'Baisse de recommandation sur ChatGPT', type: 'warning', source_type: 'system', show_history: true },
-    { brand_id: brandId, title: 'Amélioration visibilité face à Kustomer', type: 'success', source_type: 'system', show_history: true }
+    { brand_id: brandId, title: 'Amélioration de la visibilité face à Crisp', type: 'success', source_type: 'system', show_history: true },
+    { brand_id: brandId, title: 'Nouvelle question suivie ajoutée', type: 'info', source_type: 'system', show_history: true }
   ]);
   console.log("✅ Events injected");
 
@@ -257,9 +323,9 @@ async function main() {
 
   // 10. Create Site Pages
   await supabase.from('site_pages').insert([
-    { brand_id: brandId, url: 'https://Lumail.com', status: 'ok', is_spa: false },
-    { brand_id: brandId, url: 'https://Lumail.com/pricing', status: 'ok', is_spa: false },
-    { brand_id: brandId, url: 'https://Lumail.com/about', status: 'ok', is_spa: false }
+    { brand_id: brandId, url: `https://${BRAND_NAME.toLowerCase()}.com`, status: 'ok', is_spa: false },
+    { brand_id: brandId, url: `https://${BRAND_NAME.toLowerCase()}.com/pricing`, status: 'ok', is_spa: false },
+    { brand_id: brandId, url: `https://${BRAND_NAME.toLowerCase()}.com/about`, status: 'ok', is_spa: false }
   ]);
   console.log("✅ Site Pages injected");
 

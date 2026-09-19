@@ -32,7 +32,7 @@ export function ScreenshotFrame({
   if (src) {
     return (
       <div className={`group relative ${className}`}>
-        {/* Annotation décorative style Lumail avec flèche incurvée */}
+        {/* Annotation décorative style Nooma avec flèche incurvée */}
         {annotation && (
           <div className="absolute -top-9 right-3 z-30 hidden md:flex items-center gap-2 select-none">
             <span className="text-xs italic tracking-wide text-brand-text font-medium">

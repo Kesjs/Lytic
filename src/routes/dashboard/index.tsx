@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, HelpCircle, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info } from 'lucide-react'
+import { Plus, HelpCircle, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info, MessageSquare, ThumbsUp, Radar, Lightbulb } from 'lucide-react'
 import { KpiCard } from '~/components/ui/kpi-card'
 import { useQuery } from '@tanstack/react-query'
-import { fetchDashboardHome, type QuestionPerf, type CompetitorMini } from '~/lib/queries/dashboard'
+import { fetchDashboardHome, type CompetitorMini } from '~/lib/queries/dashboard'
 import { fetchBotAccess } from '~/lib/queries/bot-access'
 import { ScoreChart } from '~/components/dashboard/ScoreChart'
 import { ShareOfVoiceChart } from '~/components/dashboard/charts/ShareOfVoiceChart'
@@ -14,6 +14,7 @@ import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
+import { QuestionsTable } from '~/components/dashboard/QuestionsTable'
 import { isFreePlan } from '~/lib/plan'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
@@ -117,7 +118,7 @@ function AccueilPage() {
     )
   }
 
-  const { brand, latestRun, displayRun, opportunities, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes } =
+  const { brand, latestRun, displayRun, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes, opportunities } =
     data
 
   return (
@@ -126,25 +127,24 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className="flex flex-col lg:flex-row lg:items-start gap-4"
+        className="flex flex-col lg:flex-row gap-4"
       >
         <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
             <RunStatusState status={latestRun.status} run={latestRun} />
           ) : (
             <>
-              <p className="text-sm text-ink-secondary">Bonjour, {brand.name}</p>
-              <div className="mt-3 flex items-center gap-1.5">
-                <p className="text-xs font-medium text-ink-muted">Visibilité IA</p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-ink-muted hover:text-ink-primary transition-colors">
-                      <HelpCircle className="size-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
-                </Tooltip>
-              </div>
+                <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
+                  <p>Bonjour, {brand.name}</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-ink-muted hover:text-ink-primary transition-colors">
+                        <HelpCircle className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
+                  </Tooltip>
+                </div>
 
               {!displayRun ? (
                 <DashboardStateView state="no_data" compact className="mt-4" />
@@ -152,7 +152,7 @@ function AccueilPage() {
                 <>
                   {displayRun.score !== null ? (
                     <>
-                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand-text">
+                      <div className="mt-1 font-display text-4xl font-bold tabular-nums text-brand">
                         {Math.round(displayRun.score)} <span className="text-lg text-ink-muted">/ 100</span>
                       </div>
                       {displayRun.score_delta !== null && (
@@ -165,7 +165,6 @@ function AccueilPage() {
                           la dernière mesure
                         </p>
                       )}
-                      <ScoreChart hasAnyRun={!!latestRun} variant="compact" />
                       <p className="mt-2 text-xs text-ink-muted">
                         Dernière mesure :{' '}
                         {displayRun.completed_at
@@ -198,32 +197,36 @@ function AccueilPage() {
           )}
         </div>
 
-        <div className="flex-1 grid grid-cols-2 xl:grid-cols-4 divide-y xl:divide-y-0 xl:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
+        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-lg border border-border bg-surface overflow-hidden">
           <KpiCard
             label="Mentions"
             value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
-            hint="Sur les questions suivies"
             tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
+            icon={MessageSquare}
+            tone="info"
           />
           <KpiCard
-            label="Recos"
+            label="Recommandations"
             value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
-            hint="Sur les questions suivies"
             tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
+            icon={ThumbsUp}
+            tone="success"
           />
           <KpiCard
             label="Pos. moyenne"
             value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
-            hint="Quand mentionné"
             tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
+            icon={TrendingUp}
+            tone="warning"
           />
           <KpiCard
             label="Présence"
             value={
               kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
             }
-            hint="Vs. concurrents"
             tooltip="Votre part de mentions par rapport à vos principaux concurrents."
+            icon={Radar}
+            tone="danger"
           />
         </div>
       </motion.header>
@@ -252,15 +255,15 @@ function AccueilPage() {
         <>
           <section className="rounded-lg border border-border bg-surface p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
+              <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
               <Link
-                to="/dashboard/performance"
+                to="/dashboard/opportunites"
                 className="text-xs text-ink-muted hover:text-ink-secondary"
               >
-                Toutes les questions →
+                Toutes les opportunités →
               </Link>
             </div>
-            <QuestionsPerfTable questions={questionsPerf} hasAnyRun={!!latestRun} />
+            <OpportunitiesPreview opportunities={opportunities ?? []} hasAnyRun={!!latestRun} />
           </section>
 
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -336,25 +339,17 @@ function AccueilPage() {
       </motion.section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
-          {opportunities.length === 0 ? (
-            <DashboardStateView state={latestRun ? 'no_opportunity' : 'no_data'} compact />
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {opportunities.map((opp: any) => (
-                <li
-                  key={opp.id}
-                  className="rounded-md border border-border bg-elevated px-3 py-2 text-sm text-ink-primary"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>{opp.title}</span>
-                    <PriorityBadge priority={opp.priority} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface pt-5">
+          <div className="flex items-center justify-between px-5">
+            <h2 className="text-sm font-semibold text-ink-primary">Performance des questions</h2>
+            <Link
+              to="/dashboard/historique"
+              className="text-xs text-ink-muted hover:text-ink-secondary"
+            >
+              Toutes les questions &rarr;
+            </Link>
+          </div>
+          <QuestionsTable data={questionsPerf} />
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-5">
@@ -387,56 +382,51 @@ function AccueilPage() {
   )
 }
 
-function QuestionsPerfTable({
-  questions,
+// Preview compacte des opportunités sur l'Accueil — même vocabulaire visuel
+// (PriorityBadge, confiance) que la page /dashboard/opportunites, sans les
+// actions (résoudre/ignorer) qui restent réservées à la page dédiée.
+function OpportunitiesPreview({
+  opportunities,
   hasAnyRun,
 }: {
-  questions: QuestionPerf[]
+  opportunities: any[]
   hasAnyRun: boolean
 }) {
   if (!hasAnyRun) {
     return (
       <p className="mt-3 text-sm text-ink-muted">
-        Aucune mesure effectuée pour le moment — les questions suivies apparaîtront ici.
+        Aucune mesure effectuée pour le moment — les opportunités apparaîtront ici.
       </p>
     )
   }
-  if (questions.length === 0) {
+  if (opportunities.length === 0) {
     return (
-      <p className="mt-3 text-sm text-ink-muted">
-        Aucune donnée par question pour la dernière mesure.
-      </p>
+      <div className="mt-3 rounded-md bg-elevated/50 p-3">
+        <p className="text-sm text-ink-primary">👑 Rien à signaler</p>
+        <p className="mt-1 text-xs text-ink-muted">
+          Aucune opportunité ouverte détectée pour l'instant.
+        </p>
+      </div>
     )
   }
   return (
-    <div className="mt-3 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-xs font-medium text-ink-muted">
-            <th className="pb-2 font-medium">Question</th>
-            <th className="pb-2 pl-4 text-right font-medium">Mention</th>
-            <th className="pb-2 pl-4 text-right font-medium">Reco.</th>
-            <th className="pb-2 pl-4 text-right font-medium">Position</th>
-          </tr>
-        </thead>
-        <tbody>
-          {questions.map((q) => (
-            <tr key={q.id} className="border-b border-border/50 last:border-0">
-              <td className="py-2 pr-4 text-ink-primary">{q.text}</td>
-              <td className="py-2 pl-4 text-right">
-                <BoolDot value={q.mentioned} />
-              </td>
-              <td className="py-2 pl-4 text-right">
-                <BoolDot value={q.recommended} />
-              </td>
-              <td className="py-2 pl-4 text-right text-ink-secondary">
-                {q.position !== null ? `#${q.position}` : '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="mt-3 space-y-2">
+      {opportunities.slice(0, 3).map((o) => (
+        <li
+          key={o.id}
+          className="rounded-md border border-border bg-elevated px-3 py-2.5"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm font-medium text-ink-primary">{o.title}</p>
+            <PriorityBadge priority={o.priority} />
+          </div>
+          <p className="mt-1 text-xs text-ink-muted line-clamp-2">{o.reason}</p>
+          <p className="mt-1.5 text-[11px] text-ink-muted">
+            Confiance {Math.round((o.confidence ?? 0) * 100)}%
+          </p>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -478,15 +468,6 @@ function CompetitorsMiniList({
         </li>
       ))}
     </ul>
-  )
-}
-
-function BoolDot({ value }: { value: boolean }) {
-  return (
-    <span
-      className={`inline-block size-2 rounded-full ${value ? 'bg-success' : 'bg-ink-muted/40'}`}
-      aria-label={value ? 'Oui' : 'Non'}
-    />
   )
 }
 

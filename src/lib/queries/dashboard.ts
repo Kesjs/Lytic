@@ -123,6 +123,8 @@ async function computeLatestRunInsights(
     .slice(0, visibleLimit)
     .map(([id, mentions]) => ({ id, name: competitorById.get(id)!, mentions }))
 
+  // Pas de `.slice(0, 5)` ici : QuestionsTable pagine côté client sur
+  // l'ensemble des questions, il lui faut donc la liste complète.
   const observationByQuestion = new Map(observations.map((o) => [o.question_id, o]))
   const questionsPerf: QuestionPerf[] = (questions ?? [])
     .map((q) => {
@@ -137,7 +139,6 @@ async function computeLatestRunInsights(
       }
     })
     .filter((q): q is QuestionPerf => q !== null)
-    .slice(0, 5)
 
   const kpis: HomeKpis = {
     mentionsPct: Math.round((mentionedCount / total) * 100),

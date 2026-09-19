@@ -36,7 +36,7 @@ export function Hero({
     <ScreenshotFrame
       label={t.hero.previewLabel}
       src="/images/dashboard/overview.png"
-      urlPath="app.reflet.io/dashboard/accueil"
+      urlPath="app.reflet.io/dashboard"
       glow
       fadeBottom
       annotation={t.hero.previewAnnotation}

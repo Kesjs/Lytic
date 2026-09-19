@@ -113,7 +113,7 @@ function DashboardLayout() {
           isCollapsed ? 'lg:pl-[68px]' : 'lg:pl-60'
         }`}
       >
-        {/* La "Carte" du Dashboard style Lumail */}
+        {/* La "Carte" du Dashboard style Nooma */}
         <div className="flex-1 flex flex-col bg-surface lg:m-2 lg:rounded-2xl border border-border overflow-hidden shadow-sm relative">
           {/* VRAI Header Permanent (Desktop ET Mobile) */}
           <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-surface/90 px-4 sm:px-6 backdrop-blur-md">

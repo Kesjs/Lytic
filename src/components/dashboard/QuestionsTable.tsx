@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, ChevronLeft, Search, CheckCircle2, XCircle } from 'lucide-react'
 import type { QuestionPerf } from '~/lib/queries/dashboard'
@@ -6,6 +6,7 @@ import { cn } from '~/lib/utils'
 
 export interface QuestionsTableProps {
   data: QuestionPerf[]
+  pageSize?: number
 }
 
 function StatusBadge({ active, label }: { active: boolean; label: string }) {
@@ -29,7 +30,19 @@ function StatusBadge({ active, label }: { active: boolean; label: string }) {
   )
 }
 
-export function QuestionsTable({ data }: QuestionsTableProps) {
+export function QuestionsTable({ data, pageSize = 5 }: QuestionsTableProps) {
+  const [page, setPage] = useState(0)
+
+  const pageCount = Math.max(1, Math.ceil(data.length / pageSize))
+  // Si la donnée change (nouveau run, filtre) et que la page courante
+  // dépasse le nombre de pages disponible, on revient sur la première
+  // plutôt que d'afficher une page vide.
+  const safePage = Math.min(page, pageCount - 1)
+  const pageData = useMemo(
+    () => data.slice(safePage * pageSize, safePage * pageSize + pageSize),
+    [data, safePage, pageSize],
+  )
+
   if (data.length === 0) {
     return (
       <div className="flex h-32 w-full flex-col items-center justify-center text-sm text-ink-muted">
@@ -38,6 +51,15 @@ export function QuestionsTable({ data }: QuestionsTableProps) {
       </div>
     )
   }
+
+  const rangeStart = safePage * pageSize + 1
+  const rangeEnd = Math.min(data.length, safePage * pageSize + pageSize)
+
+  // Fenêtre de pages compacte (max 3 numéros visibles) pour rester lisible
+  // même avec beaucoup de pages, plutôt que d'afficher tous les numéros.
+  const pageWindow = Array.from({ length: pageCount }, (_, i) => i).filter(
+    (i) => i === 0 || i === pageCount - 1 || Math.abs(i - safePage) <= 1,
+  )
 
   return (
     <div className="flex flex-col -mx-5 -mb-5 mt-2">
@@ -53,7 +75,7 @@ export function QuestionsTable({ data }: QuestionsTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
-            {data.map((q) => (
+            {pageData.map((q) => (
               <tr
                 key={q.id}
                 className="group transition-colors hover:bg-elevated/50"
@@ -87,25 +109,50 @@ export function QuestionsTable({ data }: QuestionsTableProps) {
         </table>
       </div>
 
-      {/* Pagination Footer (Décoratif/Immersif pour la page d'accueil) */}
+      {/* Pagination réelle : navigue dans `data`, boutons actifs/désactivés
+          selon la position, fenêtre de pages compacte avec "…" si besoin. */}
       <div className="flex items-center justify-between border-t border-border px-5 py-3">
         <p className="text-xs text-ink-muted">
-          Résultats <span className="font-medium text-ink-primary">1-{data.length}</span> sur <span className="font-medium text-ink-primary">50</span>
+          Résultats{' '}
+          <span className="font-medium text-ink-primary">
+            {rangeStart}-{rangeEnd}
+          </span>{' '}
+          sur <span className="font-medium text-ink-primary">{data.length}</span>
         </p>
         <div className="flex items-center gap-1">
-          <button className="flex size-6 items-center justify-center rounded-md border border-border bg-surface text-ink-muted hover:bg-elevated disabled:opacity-50">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="flex size-6 items-center justify-center rounded-md border border-border bg-surface text-ink-muted hover:bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <ChevronLeft className="size-3.5" />
           </button>
-          <button className="flex size-6 items-center justify-center rounded-md bg-brand text-xs font-semibold text-black">
-            1
-          </button>
-          <button className="flex size-6 items-center justify-center rounded-md border border-transparent text-xs text-ink-muted hover:bg-elevated">
-            2
-          </button>
-          <button className="flex size-6 items-center justify-center rounded-md border border-transparent text-xs text-ink-muted hover:bg-elevated">
-            3
-          </button>
-          <button className="flex size-6 items-center justify-center rounded-md border border-border bg-surface text-ink-muted hover:bg-elevated">
+          {pageWindow.map((i, idx) => (
+            <React.Fragment key={i}>
+              {idx > 0 && pageWindow[idx - 1] !== i - 1 && (
+                <span className="px-0.5 text-xs text-ink-muted">…</span>
+              )}
+              <button
+                type="button"
+                onClick={() => setPage(i)}
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-md text-xs font-semibold transition-colors',
+                  i === safePage
+                    ? 'bg-brand text-black'
+                    : 'border border-transparent text-ink-muted hover:bg-elevated',
+                )}
+              >
+                {i + 1}
+              </button>
+            </React.Fragment>
+          ))}
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={safePage >= pageCount - 1}
+            className="flex size-6 items-center justify-center rounded-md border border-border bg-surface text-ink-muted hover:bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <ChevronRight className="size-3.5" />
           </button>
         </div>
