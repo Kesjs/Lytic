@@ -5,6 +5,7 @@ import { Problem } from '~/components/landing/Problem'
 import { HowItWorks } from '~/components/landing/HowItWorks'
 import { QuestionEngine } from '~/components/landing/QuestionEngine'
 import { Metrics } from '~/components/landing/Metrics'
+import { Evidence } from '~/components/landing/Evidence'
 import { History } from '~/components/landing/History'
 import { Pricing } from '~/components/landing/Pricing'
 import { FAQ } from '~/components/landing/FAQ'
@@ -24,6 +25,7 @@ function LandingPage() {
       <HowItWorks />
       <QuestionEngine />
       <Metrics />
+      <Evidence />
       <History />
       <Pricing />
       <FAQ />

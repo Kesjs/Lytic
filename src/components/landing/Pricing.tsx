@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Check, Sparkles, Building2 } from 'lucide-react'
+import { Check, Star, Building2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 
@@ -135,14 +135,14 @@ export function Pricing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="relative flex flex-col rounded-xl border border-brand/50 bg-surface p-8 shadow-2xl shadow-brand/10 ring-1 ring-brand/50">
-            <div className="absolute -top-4 left-0 right-0 flex justify-center">
-              <span className="flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
-                <Sparkles className="size-3.5" /> {t.pricing.pro.recommended}
+          <div className="relative flex flex-col rounded-xl border border-ink-primary/40 bg-surface p-8 shadow-2xl">
+            <div className="absolute right-4 top-4">
+              <span className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-black">
+                <Star className="size-3.5 fill-black" /> {t.pricing.pro.recommended}
               </span>
             </div>
-            
-            <div className="mb-6">
+
+            <div className="mb-6 pr-24">
               <h3 className="font-display text-2xl font-semibold text-ink-primary">{t.pricing.pro.name}</h3>
               <p className="mt-2 text-sm text-ink-secondary">
                 {t.pricing.pro.description}

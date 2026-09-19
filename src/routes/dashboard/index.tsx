@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, HelpCircle, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info, MessageSquare, ThumbsUp, Radar, Lightbulb } from 'lucide-react'
+import { Plus, ArrowRight, Trophy, Zap, AlertCircle, TrendingUp, Info, MessageSquare, ThumbsUp, Radar, Lightbulb } from 'lucide-react'
 import { KpiCard } from '~/components/ui/kpi-card'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDashboardHome, type CompetitorMini } from '~/lib/queries/dashboard'
@@ -16,7 +16,6 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
 import { QuestionsTable } from '~/components/dashboard/QuestionsTable'
 import { isFreePlan } from '~/lib/plan'
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
 import { motion } from 'framer-motion'
 
@@ -127,7 +126,7 @@ function AccueilPage() {
         initial={{ opacity: 0, y: 10 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.3 }}
-        className="flex flex-col lg:flex-row gap-4"
+        className="flex flex-col lg:flex-row lg:items-start gap-4"
       >
         <div className="flex w-full lg:w-[280px] shrink-0 flex-col justify-center rounded-lg border border-border bg-surface p-4">
           {latestRun?.status === 'measuring' || latestRun?.status === 'pending' ? (
@@ -136,14 +135,6 @@ function AccueilPage() {
             <>
                 <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
                   <p>Bonjour, {brand.name}</p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="text-ink-muted hover:text-ink-primary transition-colors">
-                        <HelpCircle className="size-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Le score global de votre marque sur 100.</TooltipContent>
-                  </Tooltip>
                 </div>
 
               {!displayRun ? (
@@ -290,11 +281,18 @@ function AccueilPage() {
             <h2 className="mb-3 text-sm font-semibold text-ink-primary">Tonalité</h2>
             <SentimentGauge data={sentimentDistribution ?? { positive: 0, neutral: 0, negative: 0 }} />
           </div>
+        </motion.section>
+      )}
 
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="mb-3 text-sm font-semibold text-ink-primary">Thèmes</h2>
-            <ThemesCloud data={topThemes ?? []} />
-          </div>
+      {displayRun && (
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+          className="rounded-lg border border-border bg-surface p-4"
+        >
+          <h2 className="mb-3 text-sm font-semibold text-ink-primary">Thèmes</h2>
+          <ThemesCloud data={topThemes ?? []} />
         </motion.section>
       )}
 

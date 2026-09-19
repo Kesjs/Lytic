@@ -25,7 +25,7 @@ export function Metrics() {
   ]
 
   return (
-    <section className="bg-canvas px-6 py-24">
+    <section id="metrics" className="bg-canvas px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <h2 className="font-display text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">

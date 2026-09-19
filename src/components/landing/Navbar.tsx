@@ -1,63 +1,80 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Menu, X, ArrowRight } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { Menu, X, ArrowRight, ChevronDown } from 'lucide-react'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import logoUrl from '~/assets/reflet-horizontal-dark.svg'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 
-function NavDropdown({ label, items }: { label: string; items: { label: string; href: string }[] }) {
+type DropdownItem = { label: string; href: string; isRoute?: boolean }
+
+// Menu déroulant desktop générique (Produit / Ressources) : ouverture au
+// clic, fermeture au clic extérieur — même pattern que AccountMenu.
+function NavDropdown({ label, items }: { label: string; items: DropdownItem[] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
     }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
 
   return (
-    <div 
-      ref={ref} 
-      className="relative" 
-      onMouseEnter={() => setOpen(true)} 
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false)
-      }}
-    >
+    <div className="relative" ref={ref}>
       <button
         type="button"
+        onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-1.5 py-2 text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-ink-primary"
+        aria-haspopup="true"
+        className="flex items-center gap-1 text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary"
       >
         {label}
         <ChevronDown className={`size-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
+
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-56 border border-border bg-canvas p-1.5 shadow-sm">
-          {items.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="block px-3 py-2 text-sm text-ink-secondary transition-colors hover:bg-surface hover:text-ink-primary focus:bg-surface focus:text-ink-primary focus:outline-none"
-            >
-              {item.label}
-            </a>
-          ))}
+        <div className="absolute left-0 top-full mt-3 w-60 rounded-lg border border-border bg-elevated p-1.5 shadow-2xl z-50">
+          {items.map((item) =>
+            item.isRoute ? (
+              <Link
+                key={item.label}
+                to={item.href}
+                onClick={() => setOpen(false)}
+                className="block rounded-md px-3 py-2 text-sm font-medium text-ink-secondary transition-colors hover:bg-white/5 hover:text-ink-primary"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="block rounded-md px-3 py-2 text-sm font-medium text-ink-secondary transition-colors hover:bg-white/5 hover:text-ink-primary"
+              >
+                {item.label}
+              </a>
+            ),
+          )}
         </div>
       )}
     </div>
   )
 }
 
-// Groupe repliable pour le menu mobile — reproduit le regroupement des
-// dropdowns desktop (Produit / Ressources) au lieu d'afficher les 9 liens
-// à plat, qui rendait le menu mobile trop long et peu lisible.
-function MobileNavGroup({ label, items, onNavigate }: { label: string; items: { label: string; href: string }[]; onNavigate: () => void }) {
+// Section repliable pour le menu mobile (Produit / Ressources).
+function MobileNavSection({
+  label,
+  items,
+  onNavigate,
+}: {
+  label: string
+  items: DropdownItem[]
+  onNavigate: () => void
+}) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -65,24 +82,34 @@ function MobileNavGroup({ label, items, onNavigate }: { label: string; items: { 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between py-3 text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary"
-        aria-expanded={open}
+        className="flex w-full items-center justify-between py-3 text-sm font-medium text-ink-primary"
       >
         {label}
         <ChevronDown className={`size-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="flex flex-col gap-1 pb-3 pl-3">
-          {items.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={onNavigate}
-              className="py-2 text-sm text-ink-secondary transition-colors hover:text-ink-primary"
-            >
-              {item.label}
-            </a>
-          ))}
+          {items.map((item) =>
+            item.isRoute ? (
+              <Link
+                key={item.label}
+                to={item.href}
+                onClick={onNavigate}
+                className="py-1.5 text-sm text-ink-secondary hover:text-ink-primary"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={onNavigate}
+                className="py-1.5 text-sm text-ink-secondary hover:text-ink-primary"
+              >
+                {item.label}
+              </a>
+            ),
+          )}
         </div>
       )}
     </div>
@@ -95,20 +122,24 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
-  // Listes partagées entre le dropdown desktop et l'accordéon mobile, pour
-  // ne jamais les laisser diverger.
-  const productItems = [
+  // Items du dropdown "Produit" : ancres vers les sections de la home.
+  // Préfixées par "/" pour rester valides depuis n'importe quelle page
+  // (Tarifs, Blog, etc.) — pas seulement depuis la home.
+  const productItems: DropdownItem[] = [
     { label: t.navbar.productOverview, href: '/#produit' },
-    { label: t.navbar.productAiVisibility, href: '/#produit' },
+    { label: t.navbar.productAiVisibility, href: '/#metrics' },
     { label: t.navbar.productQuestions, href: '/#questions' },
     { label: t.navbar.productEvidence, href: '/#preuves' },
     { label: t.navbar.productHistory, href: '/#historique' },
   ]
-  const resourceItems = [
-    { label: t.navbar.resourcesBlog, href: '#' },
-    { label: t.navbar.resourcesGuides, href: '#' },
-    { label: t.navbar.resourcesStudies, href: '#' },
-    { label: t.navbar.resourcesGlossary, href: '#' },
+
+  // Items du dropdown "Ressources" : routes dédiées créées en stub,
+  // contenu à venir plus tard.
+  const resourcesItems: DropdownItem[] = [
+    { label: t.navbar.resourcesBlog, href: '/blog', isRoute: true },
+    { label: t.navbar.resourcesGuides, href: '/guides', isRoute: true },
+    { label: t.navbar.resourcesStudies, href: '/etudes', isRoute: true },
+    { label: t.navbar.resourcesGlossary, href: '/glossaire', isRoute: true },
   ]
 
   useEffect(() => {
@@ -155,10 +186,10 @@ export function Navbar() {
         <div className="hidden items-center gap-8 md:flex">
           <nav className="flex items-center gap-6">
             <NavDropdown label={t.navbar.product} items={productItems} />
-            <NavDropdown label={t.navbar.resources} items={resourceItems} />
-            <a href="#tarifs" className="text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary">
+            <NavDropdown label={t.navbar.resources} items={resourcesItems} />
+            <Link to="/tarifs" className="text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary">
               {t.navbar.pricing}
-            </a>
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -201,15 +232,23 @@ export function Navbar() {
       {mobileOpen && (
         <div className="border-t border-border bg-canvas md:hidden">
           <div className="flex flex-col px-6 py-4">
-            <MobileNavGroup label={t.navbar.product} items={productItems} onNavigate={() => setMobileOpen(false)} />
-            <MobileNavGroup label={t.navbar.resources} items={resourceItems} onNavigate={() => setMobileOpen(false)} />
-            <a
-              href="#tarifs"
+            <MobileNavSection
+              label={t.navbar.product}
+              items={productItems}
+              onNavigate={() => setMobileOpen(false)}
+            />
+            <MobileNavSection
+              label={t.navbar.resources}
+              items={resourcesItems}
+              onNavigate={() => setMobileOpen(false)}
+            />
+            <Link
+              to="/tarifs"
               onClick={() => setMobileOpen(false)}
               className="border-b border-border/60 py-3 text-sm font-medium text-ink-secondary hover:text-ink-primary"
             >
               {t.navbar.pricing}
-            </a>
+            </Link>
 
             <div className="mt-4 flex flex-col gap-3">
               {isAuthenticated ? (

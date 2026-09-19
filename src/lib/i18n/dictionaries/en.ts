@@ -120,7 +120,7 @@ export const en = {
     },
     pro: {
       name: "Pro",
-      recommended: "Recommended plan",
+      recommended: "Popular",
       description: "Ideal for brands wanting to master their visibility.",
       priceMonthly: "€49",
       priceAnnual: "€39",

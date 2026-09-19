@@ -86,8 +86,7 @@ export function ResponsiveTable<T>({
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-ink-muted">
                 {columns.map((c) => (
@@ -110,7 +109,6 @@ export function ResponsiveTable<T>({
               ))}
             </tbody>
           </table>
-        </div>
       )}
 
       {pageCount > 1 && (
