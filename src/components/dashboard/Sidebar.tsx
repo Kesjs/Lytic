@@ -163,15 +163,7 @@ export function Sidebar({
 
       {/* Pied de sidebar avec liens et menu profil déroulant */}
       <div className="flex flex-col">
-        {!isCollapsed && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pb-3 pt-2 text-[11px] font-medium text-ink-muted">
-            <a href="#" className="hover:text-ink-primary transition-colors">Docs</a>
-            <a href="#" className="hover:text-ink-primary transition-colors">Changelog</a>
-            <a href="#" className="hover:text-ink-primary transition-colors">Support</a>
-            <a href="#" className="hover:text-ink-primary transition-colors">C.G.U.</a>
-          </div>
-        )}
-        <div className="border-t border-border p-2.5">
+        <div className="border-t border-border p-2.5 mt-auto">
           <AccountMenu variant="sidebar" isCollapsed={isCollapsed} onNavigate={onClose} />
         </div>
       </div>
