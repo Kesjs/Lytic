@@ -1,23 +1,26 @@
 import React from 'react';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from 'recharts';
 
 export interface EngineRadarChartProps {
   data: { engine: string; mentioned: number; recommended: number; total: number }[];
 }
 
-// Vrai radar (spider chart) — un axe par moteur IA, deux séries superposées
-// (Mentions / Recommandations en %). L'ancienne version de ce composant
-// était en réalité un bar chart malgré son nom ; ce rendu correspond à la
-// maquette (forme en losange, axes = moteurs).
+// Palette fixe pour les moteurs connus, fallback tournant pour les autres —
+// garde une couleur stable pour "ChatGPT" d'une mesure à l'autre plutôt que
+// de dépendre de l'ordre du tableau.
+const ENGINE_COLORS: Record<string, string> = {
+  ChatGPT: 'rgb(var(--color-brand))',
+  Claude: '#8b5cf6',
+  Perplexity: '#3b82f6',
+  Copilot: '#ec4899',
+  Gemini: 'rgb(var(--color-success))',
+};
+const FALLBACK_COLORS = ['rgb(var(--color-brand))', '#8b5cf6', '#3b82f6', '#ec4899', 'rgb(var(--color-success))'];
+
+// Ex-radar (spider chart) : remplacé par des barres horizontales. Le radar
+// n'avait jamais assez de largeur dans une colonne étroite pour afficher
+// ses 4 labels d'axes sans les tronquer ("Clauc", "pilot") — une barre par
+// moteur reste lisible à n'importe quelle largeur de conteneur, y compris
+// en dessous de 190px.
 export function EngineRadarChart({ data }: EngineRadarChartProps) {
   if (data.length === 0) {
     return (
@@ -27,62 +30,37 @@ export function EngineRadarChart({ data }: EngineRadarChartProps) {
     );
   }
 
-  const chartData = data.map((d) => ({
-    engine: d.engine,
-    Mentions: Math.round((d.mentioned / d.total) * 100) || 0,
-    Recommandations: Math.round((d.recommended / d.total) * 100) || 0,
-  }));
-
-  const percentLabel = (value: number) => `${value}%`;
+  const rows = data
+    .map((d, i) => ({
+      engine: d.engine,
+      mentionedPct: d.total > 0 ? Math.round((d.mentioned / d.total) * 100) : 0,
+      recommendedPct: d.total > 0 ? Math.round((d.recommended / d.total) * 100) : 0,
+      color: ENGINE_COLORS[d.engine] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+    }))
+    .sort((a, b) => b.mentionedPct - a.mentionedPct);
 
   return (
-    <div className="h-[180px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={chartData} outerRadius="65%">
-          <PolarGrid stroke="rgb(var(--color-border))" />
-          <PolarAngleAxis
-            dataKey="engine"
-            tick={{ fill: 'rgb(var(--color-ink-secondary))', fontSize: 11 }}
-          />
-          <PolarRadiusAxis
-            angle={90}
-            domain={[0, 100]}
-            tick={{ fill: 'rgb(var(--color-ink-muted))', fontSize: 9 }}
-            tickFormatter={percentLabel}
-            axisLine={false}
-          />
-          <Radar
-            name="Mentions"
-            dataKey="Mentions"
-            stroke="#eab308"
-            fill="#eab308"
-            fillOpacity={0.25}
-          />
-          <Radar
-            name="Recommandations"
-            dataKey="Recommandations"
-            stroke="#3b82f6"
-            fill="#3b82f6"
-            fillOpacity={0.15}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))',
-              borderRadius: '12px',
-              padding: '8px 12px',
-            }}
-            formatter={(value: number) => percentLabel(value)}
-            itemStyle={{ fontWeight: 600 }}
-          />
-          <Legend
-            verticalAlign="bottom"
-            height={24}
-            iconType="circle"
-            wrapperStyle={{ fontSize: '11px' }}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+    <div className="flex w-full flex-col justify-center gap-2.5 py-1">
+      {rows.map((r) => (
+        <div
+          key={r.engine}
+          className="flex items-center gap-2"
+          title={`${r.engine} — Mentionné ${r.mentionedPct}%, Recommandé ${r.recommendedPct}%`}
+        >
+          <span className="w-14 shrink-0 truncate text-xs text-ink-secondary sm:w-[70px]" title={r.engine}>
+            {r.engine}
+          </span>
+          <div className="h-[7px] min-w-[24px] flex-1 overflow-hidden rounded-full bg-canvas">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${r.mentionedPct}%`, backgroundColor: r.color }}
+            />
+          </div>
+          <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-ink-primary">
+            {r.mentionedPct}%
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

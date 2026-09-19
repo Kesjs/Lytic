@@ -54,6 +54,7 @@ export interface CompetitorMini {
 async function computeLatestRunInsights(
   supabase: ReturnType<typeof getSupabaseServerClient>,
   brandId: string,
+  brandName: string,
   latestRun: { id: string; status: string } | null,
   opts: { isFree?: boolean } = {},
 ) {
@@ -159,7 +160,7 @@ async function computeLatestRunInsights(
 
   // 1. Share of Voice (Brand vs Top Competitors)
   const shareOfVoice = [
-    { name: 'Your Brand', mentions: mentionedCount },
+    { name: brandName, mentions: mentionedCount },
     ...topCompetitors.map(c => ({ name: c.name, mentions: c.mentions }))
   ];
 
@@ -270,6 +271,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
   } = await computeLatestRunInsights(
     supabase,
     brand.id,
+    brand.name,
     dataRun,
     { isFree: isFreePlan(brand.plan) },
   )

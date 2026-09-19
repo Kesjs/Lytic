@@ -251,17 +251,19 @@ function AccueilPage() {
         </motion.div>
       )}
 
-      {/* Rangée compacte : Opportunités + les 4 graphiques côte à côte, comme
-          dans la maquette "Reflet", plutôt que 3 blocs empilés en grandes
-          cartes 2 colonnes. */}
+      {/* Rangée compacte : Opportunités + les 4 graphiques côte à côte.
+          Grille auto-fit : chaque carte garde au moins 190px avant de
+          passer à la ligne suivante, en continu selon la largeur réelle
+          disponible (sidebar ouverte/réduite, mobile, etc.) — pas de
+          paliers fixes qui peuvent laisser des colonnes trop étroites. */}
       {displayRun && (
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+          className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4"
         >
-          <div className="rounded-lg border border-border bg-surface p-4 sm:col-span-2 lg:col-span-1">
+          <div className="rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-ink-primary">Opportunités</h2>
               <Link
@@ -381,9 +383,9 @@ function AccueilPage() {
   )
 }
 
-// Preview compacte des opportunités sur l'Accueil — même vocabulaire visuel
-// (PriorityBadge, confiance) que la page /dashboard/opportunites, sans les
-// actions (résoudre/ignorer) qui restent réservées à la page dédiée.
+// Preview compacte des opportunités sur l'Accueil — pastille de sévérité +
+// confiance, sans les actions (résoudre/ignorer) qui restent réservées à
+// la page dédiée /dashboard/opportunites.
 function OpportunitiesPreview({
   opportunities,
   hasAnyRun,
@@ -409,25 +411,35 @@ function OpportunitiesPreview({
     )
   }
   return (
-    <ul className="mt-3 space-y-2">
+    <ul className="mt-3 divide-y divide-border">
       {opportunities.slice(0, 3).map((o) => (
-        <li
-          key={o.id}
-          className="rounded-md border border-border bg-elevated px-3 py-2.5"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-ink-primary">{o.title}</p>
-            <PriorityBadge priority={o.priority} />
+        <li key={o.id} className="flex gap-2.5 py-2.5 first:pt-0 last:pb-0">
+          {/* Pastille de sévérité plutôt qu'un badge texte : plus rapide à
+              scanner d'un coup d'œil, et le titre garde toute la largeur
+              disponible au lieu de la partager avec un pill. */}
+          <span className={cn('mt-1 size-2 shrink-0 rounded-full', PRIORITY_DOT[o.priority as 'low' | 'medium' | 'high'])} />
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink-primary" title={o.title}>
+              {o.title}
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <span className={cn('text-[10px] font-semibold uppercase tracking-wide', PRIORITY_TEXT[o.priority as 'low' | 'medium' | 'high'])}>
+                {PRIORITY_LABEL[o.priority as 'low' | 'medium' | 'high']}
+              </span>
+              <span className="text-[10.5px] text-ink-muted">
+                · Confiance {Math.round((o.confidence ?? 0) * 100)}%
+              </span>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-ink-muted line-clamp-2">{o.reason}</p>
-          <p className="mt-1.5 text-[11px] text-ink-muted">
-            Confiance {Math.round((o.confidence ?? 0) * 100)}%
-          </p>
         </li>
       ))}
     </ul>
   )
 }
+
+const PRIORITY_DOT = { low: 'bg-ink-muted', medium: 'bg-warning', high: 'bg-danger' } as const
+const PRIORITY_TEXT = { low: 'text-ink-secondary', medium: 'text-warning', high: 'text-danger' } as const
+const PRIORITY_LABEL = { low: 'Faible', medium: 'Moyenne', high: 'Haute' } as const
 
 function CompetitorsMiniList({
   competitors,
@@ -524,20 +536,7 @@ function AccueilSkeleton() {
 
 
 
-function PriorityBadge({ priority }: { priority: 'low' | 'medium' | 'high' }) {
-  const styles = {
-    low: 'bg-ink-muted/15 text-ink-secondary',
-    medium: 'bg-warning/15 text-warning',
-    high: 'bg-danger/15 text-danger',
-  } as const
-  const labels = { low: 'Faible', medium: 'Moyenne', high: 'Haute' } as const
 
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[priority]}`}>
-      {labels[priority]}
-    </span>
-  )
-}
 
 function RunStatusState({
   status,

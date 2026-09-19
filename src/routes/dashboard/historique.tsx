@@ -46,6 +46,13 @@ const EVENT_TYPE_CLASS: Record<string, string> = {
   error: 'bg-danger/10 text-danger border-danger/30',
 }
 
+const EVENT_TYPE_LABEL: Record<string, string> = {
+  success: 'Bonne nouvelle',
+  info: 'Information',
+  warning: 'À surveiller',
+  error: 'Erreur',
+}
+
 const FIELD_LABELS: Record<string, string> = {
   title: 'Titre',
   meta: 'Méta-données',
@@ -319,7 +326,7 @@ function EventEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'e
         <span
           className={`rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${EVENT_TYPE_CLASS[entry.type]}`}
         >
-          {entry.type}
+          {EVENT_TYPE_LABEL[entry.type] ?? entry.type}
         </span>
       </div>
       {entry.message && <p className="mt-1.5 text-xs text-ink-secondary">{entry.message}</p>}

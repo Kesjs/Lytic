@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { fetchPerformanceOverview, type PerformanceQuestionRow } from '~/lib/queries/performance'
 import { PerformanceChart } from '~/components/dashboard/PerformanceChart'
+import { ResponsiveTable } from '~/components/dashboard/ResponsiveTable'
 import { QuestionDrawer } from '~/components/dashboard/QuestionDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { isFreePlan } from '~/lib/plan'
@@ -124,46 +125,72 @@ function QuestionsTable({
   }
 
   return (
-    <div className="mt-3 max-h-[420px] overflow-y-auto overflow-x-auto rounded-md border border-border/60">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 z-10 bg-surface">
-          <tr className="border-b border-border text-left text-xs font-medium text-ink-muted">
-            <th className="pb-2 pt-2.5 pl-3 font-medium">Question</th>
-            <th className="pb-2 pt-2.5 pl-4 text-right font-medium">Mention</th>
-            <th className="pb-2 pt-2.5 pl-4 text-right font-medium">Recommandation</th>
-            <th className="pb-2 pt-2.5 pl-4 pr-3 text-right font-medium">Position</th>
-          </tr>
-        </thead>
-        <tbody>
-          {questions.map((q) => (
-            <tr
-              key={q.id}
-              onClick={() => onOpen(q.id)}
-              className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-elevated"
-            >
-              <td className="py-2.5 pl-3 pr-4 text-ink-primary">{q.text}</td>
-              {!hasAnyRun || !q.hasObservation ? (
-                <td colSpan={3} className="py-2.5 pl-4 pr-3 text-right text-xs text-ink-muted">
-                  {hasAnyRun ? 'Pas de donnée pour la dernière mesure' : 'Pas encore mesurée'}
-                </td>
-              ) : (
-                <>
-                  <td className="py-2.5 pl-4 text-right">
-                    <BoolDot value={q.mentioned} />
-                  </td>
-                  <td className="py-2.5 pl-4 text-right">
-                    <BoolDot value={q.recommended} />
-                  </td>
-                  <td className="py-2.5 pl-4 pr-3 text-right text-ink-secondary">
-                    {q.position !== null ? `#${q.position}` : '—'}
-                  </td>
-                </>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ResponsiveTable
+      data={questions}
+      getRowKey={(q) => q.id}
+      pageSize={8}
+      columns={[
+        { key: 'q', header: 'Question' },
+        { key: 'mention', header: 'Mention', align: 'right' },
+        { key: 'reco', header: 'Recommandation', align: 'right' },
+        { key: 'pos', header: 'Position', align: 'right' },
+      ]}
+      renderDesktopRow={(q) => (
+        <tr
+          onClick={() => onOpen(q.id)}
+          className="cursor-pointer transition-colors hover:bg-elevated/50"
+        >
+          <td className="py-3.5 pl-5 pr-3">
+            <div className="max-w-[260px] truncate text-ink-primary lg:max-w-[360px]" title={q.text}>
+              {q.text}
+            </div>
+          </td>
+          {!hasAnyRun || !q.hasObservation ? (
+            <td colSpan={3} className="px-3 py-3.5 text-right text-xs text-ink-muted">
+              {hasAnyRun ? 'Pas de donnée pour la dernière mesure' : 'Pas encore mesurée'}
+            </td>
+          ) : (
+            <>
+              <td className="px-3 py-3.5 text-right">
+                <BoolDot value={q.mentioned} />
+              </td>
+              <td className="px-3 py-3.5 text-right">
+                <BoolDot value={q.recommended} />
+              </td>
+              <td className="py-3.5 pl-3 pr-5 text-right text-ink-secondary">
+                {q.position !== null ? `#${q.position}` : '—'}
+              </td>
+            </>
+          )}
+        </tr>
+      )}
+      renderMobileCard={(q) => (
+        <button
+          type="button"
+          onClick={() => onOpen(q.id)}
+          className="flex w-full flex-col items-start gap-1.5 px-5 py-3 text-left"
+        >
+          <p className="line-clamp-2 text-sm font-medium leading-snug text-ink-primary">{q.text}</p>
+          {!hasAnyRun || !q.hasObservation ? (
+            <span className="text-xs text-ink-muted">
+              {hasAnyRun ? 'Pas de donnée pour la dernière mesure' : 'Pas encore mesurée'}
+            </span>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-ink-secondary">
+              <span className="inline-flex items-center gap-1.5">
+                <BoolDot value={q.mentioned} /> Mention
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <BoolDot value={q.recommended} /> Reco
+              </span>
+              <span className="tabular-nums text-ink-muted">
+                {q.position !== null ? `#${q.position}` : '—'}
+              </span>
+            </div>
+          )}
+        </button>
+      )}
+    />
   )
 }
 

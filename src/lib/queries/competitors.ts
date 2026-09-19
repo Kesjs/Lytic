@@ -84,14 +84,20 @@ export const fetchCompetitorsOverview = createServerFn({ method: 'GET' }).handle
     mentions: number
     recommended: number
     positions: number[]
-    questionIds: Set<string>
+    mentionedQuestionIds: Set<string>
+    trackedQuestionIds: Set<string>
     excerpts: string[]
   }
   const obsById = new Map(observations.map((o) => [o.id, o]))
   const aggByCompetitor = new Map<string, Agg>()
 
+  // On parcourt TOUTES les lignes observation_competitors, y compris celles
+  // où mentioned = false : ce sont les questions où ce concurrent fait
+  // partie du paysage concurrentiel détecté (analysé par l'IA) mais n'est
+  // pas cité dans la réponse pour cette question précise. `Couverture`
+  // mesure cette étendue de suivi ; `Mentions` mesure la citation effective
+  // dans la réponse — Couverture est donc toujours ≥ Mentions.
   for (const oc of obsCompetitors ?? []) {
-    if (!oc.mentioned) continue
     const obs = obsById.get(oc.observation_id)
     if (!obs) continue
 
@@ -99,14 +105,18 @@ export const fetchCompetitorsOverview = createServerFn({ method: 'GET' }).handle
       mentions: 0,
       recommended: 0,
       positions: [],
-      questionIds: new Set<string>(),
+      mentionedQuestionIds: new Set<string>(),
+      trackedQuestionIds: new Set<string>(),
       excerpts: [],
     }
-    agg.mentions += 1
-    if (oc.recommended) agg.recommended += 1
-    if (oc.position !== null) agg.positions.push(oc.position)
-    agg.questionIds.add(obs.question_id)
-    if (oc.context_excerpt && agg.excerpts.length < 3) agg.excerpts.push(oc.context_excerpt)
+    agg.trackedQuestionIds.add(obs.question_id)
+    if (oc.mentioned) {
+      agg.mentions += 1
+      if (oc.recommended) agg.recommended += 1
+      if (oc.position !== null) agg.positions.push(oc.position)
+      agg.mentionedQuestionIds.add(obs.question_id)
+      if (oc.context_excerpt && agg.excerpts.length < 3) agg.excerpts.push(oc.context_excerpt)
+    }
     aggByCompetitor.set(oc.competitor_id, agg)
   }
 
@@ -126,7 +136,7 @@ export const fetchCompetitorsOverview = createServerFn({ method: 'GET' }).handle
             ? Math.round((agg.positions.reduce((a, b) => a + b, 0) / agg.positions.length) * 10) /
               10
             : null,
-        coveragePct: Math.round((agg.questionIds.size / totalQuestions) * 100),
+        coveragePct: Math.round((agg.trackedQuestionIds.size / totalQuestions) * 100),
         excerpts: agg.excerpts,
       }
     })

@@ -4,9 +4,10 @@ export interface SentimentGaugeProps {
   data: { positive: number; neutral: number; negative: number };
 }
 
-// Ce composant n'affiche que 3 chiffres + une barre : il n'a pas besoin
-// d'une hauteur figée à 250px (ça créait un grand vide sous le contenu).
-// La hauteur suit maintenant le contenu réel.
+// Anneau (donut gauge) avec le % positif dominant au centre, plus une
+// légende compacte en dessous — remplace la version "3 chiffres en ligne +
+// barre linéaire", qui restait correcte mais moins immédiatement lisible
+// que l'anneau (le score qui compte le plus, en gros, au centre).
 export function SentimentGauge({ data }: SentimentGaugeProps) {
   const total = data.positive + data.neutral + data.negative;
   if (total === 0) {
@@ -17,43 +18,62 @@ export function SentimentGauge({ data }: SentimentGaugeProps) {
     );
   }
 
-  const chartData = [
-    { name: 'Positif', value: data.positive, color: '#10b981' }, // emerald-500
-    { name: 'Neutre', value: data.neutral, color: '#94a3b8' },   // slate-400
-    { name: 'Négatif', value: data.negative, color: '#ef4444' }, // red-500
-  ];
+  const segments = [
+    { key: 'positive', value: data.positive, color: 'rgb(var(--color-success))', label: 'Positif' },
+    { key: 'neutral', value: data.neutral, color: 'rgb(var(--color-ink-muted))', label: 'Neutre' },
+    { key: 'negative', value: data.negative, color: 'rgb(var(--color-danger))', label: 'Négatif' },
+  ] as const;
+
+  const r = 32;
+  const cx = 40;
+  const cy = 40;
+  const circumference = 2 * Math.PI * r;
+  let acc = 0;
+  const positivePct = Math.round((data.positive / total) * 100);
 
   return (
-    <div className="w-full px-1">
-      <div className="flex w-full justify-between">
-        {chartData.map((d, i) => (
-          <div key={i} className="text-center">
-            <div className="text-lg font-light tracking-tight" style={{ color: d.color }}>
-              {Math.round((d.value / total) * 100)}
-              <span className="text-base">%</span>
-            </div>
-            <div className="mt-0.5 text-xs uppercase tracking-wider font-medium text-ink-muted">
-              {d.name}
-            </div>
-          </div>
-        ))}
+    <div className="flex w-full flex-col items-center gap-2.5 py-1">
+      <svg viewBox="0 0 80 80" className="h-[92px] w-[92px]" role="img" aria-label={`${positivePct}% de tonalité positive`}>
+        {segments.map((s) => {
+          if (s.value === 0) return null;
+          const len = (s.value / total) * circumference;
+          const dashOffset = -acc;
+          acc += len;
+          return (
+            <circle
+              key={s.key}
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke={s.color}
+              strokeWidth="9"
+              strokeDasharray={`${len} ${circumference - len}`}
+              strokeDashoffset={dashOffset}
+              transform={`rotate(-90 ${cx} ${cy})`}
+            />
+          );
+        })}
+        <text x={cx} y={cy - 1} textAnchor="middle" className="fill-ink-primary text-[15px] font-bold">
+          {positivePct}%
+        </text>
+        <text x={cx} y={cy + 11} textAnchor="middle" className="fill-ink-muted text-[7px] uppercase tracking-wide">
+          positif
+        </text>
+      </svg>
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-ink-secondary">
+        {segments
+          .filter((s) => s.value > 0)
+          .map((s) => (
+            <span key={s.key} className="inline-flex items-center gap-1.5">
+              <span className="inline-block size-[6px] rounded-full" style={{ backgroundColor: s.color }} />
+              {s.label} {Math.round((s.value / total) * 100)}%
+            </span>
+          ))}
       </div>
-
-      {/* Progress Bar Gauge */}
-      <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-canvas shadow-inner">
-        {chartData.map((d, i) => (
-          <div
-            key={i}
-            style={{ width: `${(d.value / total) * 100}%`, backgroundColor: d.color }}
-            className="h-full transition-all duration-1000 ease-out hover:opacity-90"
-            title={`${d.name}: ${d.value} mentions`}
-          />
-        ))}
-      </div>
-
-      <div className="mt-2.5 text-center text-xs text-ink-muted">
+      <p className="text-center text-[10.5px] text-ink-muted">
         Analyse sémantique basée sur les {total} dernières observations.
-      </div>
+      </p>
     </div>
   );
 }
