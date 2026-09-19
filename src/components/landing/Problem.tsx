@@ -1,38 +1,108 @@
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { Waterline } from './Waterline'
 
-// Illustration conceptuelle, pas un mockup d'UI : un cube manque dans le
-// cluster (contour pointillé) — la marque absente de la réponse. Pure
-// géométrie isométrique, façon FIG 0.x de Linear.
-function MissingPieceIllustration() {
+function TerminalIllustration() {
   return (
-    <div className="flex aspect-square w-full items-center justify-center text-ink-muted">
-      <svg viewBox="0 0 320 280" className="h-full w-full max-w-xs" aria-hidden="true">
-        <text x="8" y="20" className="fill-ink-muted text-[10px] uppercase tracking-widest">
-          Fig 01
-        </text>
+    <div className="w-full rounded-xl overflow-hidden bg-[#0a0a0a] border border-border shadow-2xl shadow-black/50 font-mono text-xs">
+      {/* Fenêtre header */}
+      <div className="flex items-center px-4 py-3 border-b border-white/5 bg-[#141414]">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-white/10 hover:bg-danger transition-colors cursor-default"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-white/10 hover:bg-warning transition-colors cursor-default"></div>
+          <div className="w-2.5 h-2.5 rounded-full bg-white/10 hover:bg-success transition-colors cursor-default"></div>
+        </div>
+        <div className="mx-auto text-[10px] text-ink-muted uppercase tracking-widest font-semibold">agent_log.sh</div>
+      </div>
+      
+      {/* Contenu du terminal */}
+      <div className="p-6 space-y-4 text-ink-secondary leading-relaxed">
+        <div className="flex items-start gap-3">
+          <span className="text-brand mt-0.5">➜</span>
+          <span className="text-ink-primary font-medium">query: "alternatives pour la gestion de projet B2B"</span>
+        </div>
+        
+        <div className="space-y-1 pl-6">
+          <div className="text-ink-muted opacity-60">[LLM] Searching knowledge base...</div>
+          <div className="text-ink-muted opacity-60">[LLM] Synthesizing context & scoring...</div>
+        </div>
+        
+        <div className="pl-6">
+          <span className="text-success font-medium">✔</span> Top recommendations retrieved:
+        </div>
+        
+        <div className="pl-12 border-l border-white/5 space-y-3 mt-2">
+          <div className="flex items-center justify-between group">
+            <span className="text-ink-primary group-hover:text-white transition-colors">1. Competitor_A</span>
+            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.98</span>
+          </div>
+          <div className="flex items-center justify-between group">
+            <span className="text-ink-primary group-hover:text-white transition-colors">2. Competitor_B</span>
+            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.85</span>
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t border-danger/10">
+            <span className="text-danger flex items-center gap-2">
+              3. [Votre_Marque]
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 bg-danger/10 text-danger border border-danger/20 rounded font-mono">
+              ERR: Entity not found
+            </span>
+          </div>
+        </div>
+        
+        <div className="pt-2 flex items-center gap-2 text-ink-muted pl-6">
+          <span className="inline-block w-2 h-4 bg-brand/50 animate-pulse"></span>
+          Awaiting next instruction...
+        </div>
+      </div>
+    </div>
+  )
+}
 
-        {/* Cube 1 — solide */}
-        <g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.85">
-          <path d="M90,70 L135,96 L90,122 L45,96 Z" />
-          <path d="M135,96 L90,122 L90,177 L135,151 Z" />
-          <path d="M45,96 L90,122 L90,177 L45,151 Z" />
-        </g>
+function ChatIllustration({ good, bad }: { good: string, bad: string }) {
+  return (
+    <div className="flex flex-col gap-6 relative">
+      {/* Ligne de connexion subtile derrière */}
+      <div className="absolute left-6 top-10 bottom-10 w-px bg-gradient-to-b from-danger/20 via-border to-brand/20 -z-10"></div>
 
-        {/* Cube 2 — solide */}
-        <g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.85">
-          <path d="M210,50 L255,76 L210,102 L165,76 Z" />
-          <path d="M255,76 L210,102 L210,157 L255,131 Z" />
-          <path d="M165,76 L210,102 L210,157 L165,131 Z" />
-        </g>
+      {/* Bad Question (Ce qu'ils font) */}
+      <div className="group relative rounded-2xl border border-danger/10 bg-surface/30 p-5 hover:bg-surface/50 transition-colors">
+        <div className="flex gap-4">
+          <div className="w-10 h-10 rounded-full bg-danger/10 border border-danger/20 flex items-center justify-center shrink-0">
+             <span className="text-danger text-sm">✕</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-danger uppercase tracking-wider">Prompt Ego-centré</p>
+            </div>
+            <div className="bg-elevated p-4 rounded-xl rounded-tl-sm border border-border/50 text-sm text-ink-secondary mb-3 shadow-sm">
+              "{bad}"
+            </div>
+            <p className="text-[13px] text-ink-muted">
+              L'IA récitera bêtement le contenu de votre site web sans prouver qu'elle vous recommandera à un vrai prospect.
+            </p>
+          </div>
+        </div>
+      </div>
 
-        {/* Cube 3 — manquant : marque absente de la réponse */}
-        <g stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" fill="none" opacity="0.45">
-          <path d="M200,140 L245,166 L200,192 L155,166 Z" />
-          <path d="M245,166 L200,192 L200,247 L245,221 Z" />
-          <path d="M155,166 L200,192 L200,247 L155,221 Z" />
-        </g>
-      </svg>
+      {/* Good Question (Ce qu'il faut faire) */}
+      <div className="group relative rounded-2xl border border-brand/20 bg-brand/5 p-5 hover:bg-brand/10 transition-colors shadow-[0_0_30px_-15px_rgba(var(--color-brand)/0.3)]">
+        <div className="flex gap-4">
+          <div className="w-10 h-10 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center shrink-0 text-brand shadow-inner shadow-white/10">
+             <span className="text-sm">✓</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-brand uppercase tracking-wider">Prompt Diagnostique</p>
+            </div>
+            <div className="bg-brand text-canvas p-4 rounded-xl rounded-tl-sm text-sm font-medium mb-3 shadow-md shadow-brand/20">
+              "{good}"
+            </div>
+            <p className="text-[13px] text-ink-secondary">
+              Simule la vraie requête de votre cible. Vous découvrirez si l'IA vous positionne naturellement comme la solution.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -41,67 +111,62 @@ export function Problem() {
   const { t } = useTranslation()
 
   return (
-    <section id="problem" className="border-t border-hairline border-border px-6 py-24">
-      <div className="mx-auto max-w-1200">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+    <section id="problem" className="border-t border-hairline border-border px-6 py-24 bg-canvas relative overflow-hidden">
+      {/* Background glow subtil */}
+      <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[800px] h-[600px] bg-brand/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+      <div className="mx-auto max-w-1200 relative z-10">
+        
+        {/* TOP PART : Le Terminal (Variante A) */}
+        <div className="grid items-center gap-16 lg:grid-cols-2">
           <div>
-            <h2 className="max-w-lg text-3xl font-medium leading-[1.15] tracking-tight text-ink-primary sm:text-4xl">
+            <h2 className="max-w-lg text-3xl font-medium leading-[1.15] tracking-tight text-ink-primary sm:text-5xl">
               {t.problem.heading}
             </h2>
-            <div className="mt-8 space-y-4">
-              {t.problem.items.map((item) => (
-                <div key={item.title} className="rounded-xl border border-hairline border-border bg-surface p-5">
-                  <p className="text-sm font-medium text-ink-primary">{item.title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{item.body}</p>
+            <div className="mt-10 space-y-6">
+              {t.problem.items.map((item, index) => (
+                <div key={item.title} className="group relative pl-6">
+                  {/* Ligne verticale indicatrice */}
+                  <div className="absolute left-0 top-1.5 bottom-0 w-0.5 bg-border group-hover:bg-brand/50 transition-colors"></div>
+                  
+                  <p className="text-base font-semibold text-ink-primary">{item.title}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-secondary">{item.body}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-sm text-ink-muted">
+            <p className="mt-10 text-sm font-medium text-ink-muted">
               {t.problem.footer}
             </p>
           </div>
 
-          {/* L'illustration se prolonge dans son propre reflet, atténué — le
-              premier rappel visuel, discret, du nom du produit. */}
-          <div className="rounded-xl border border-hairline border-border bg-surface p-5">
-            <MissingPieceIllustration />
-            <div
-              aria-hidden="true"
-              className="-mt-6 scale-y-[-1] opacity-[0.18]"
-              style={{
-                maskImage: 'linear-gradient(to bottom, black, transparent 70%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent 70%)',
-              }}
-            >
-              <MissingPieceIllustration />
-            </div>
+          <div className="relative flex items-center justify-center p-4 lg:p-8">
+            <TerminalIllustration />
           </div>
         </div>
 
-        <Waterline />
+        <div className="my-20">
+          <Waterline />
+        </div>
 
-        {/* Le bon réflexe : poser aux IA les questions que poseraient vraiment
-            vos prospects, pas leur demander de parler de vous. */}
-        <div className="grid items-center gap-8 lg:grid-cols-2">
-          <div>
-            <h3 className="text-2xl font-medium tracking-tight text-ink-primary">
+        {/* BOTTOM PART : Interface de Chat (Variante B) */}
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          <div className="lg:order-2">
+            <h3 className="text-3xl font-medium tracking-tight text-ink-primary leading-[1.15]">
               {t.problem.question.heading}
             </h3>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-secondary">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-ink-secondary">
               {t.problem.question.description}
             </p>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 rounded-md border border-hairline border-danger/30 bg-danger/5 px-4 py-3">
-              <span className="text-sm text-danger">✕</span>
-              <span className="text-sm text-ink-secondary">{t.problem.question.badExample}</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-md border border-hairline border-success/30 bg-success/5 px-4 py-3">
-              <span className="text-sm text-success">✓</span>
-              <span className="text-sm text-ink-primary">{t.problem.question.goodExample}</span>
-            </div>
+          
+          <div className="lg:order-1 relative">
+            <ChatIllustration 
+              good={t.problem.question.goodExample} 
+              bad={t.problem.question.badExample} 
+            />
           </div>
         </div>
+
       </div>
     </section>
   )

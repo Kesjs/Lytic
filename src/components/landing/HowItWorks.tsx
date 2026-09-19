@@ -1,153 +1,18 @@
 import { cn } from "~/lib/utils"
-import { Settings, Activity, Lightbulb, Globe, Bot, TrendingUp, FileText, CheckCircle2 } from "lucide-react"
+import { Settings, Activity, Lightbulb, ArrowRight } from "lucide-react"
 import type React from "react"
+import { ReactNode } from "react"
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { ScreenshotFrame } from "./ScreenshotFrame"
+import { Card, CardContent, CardHeader } from '~/components/ui/card'
 
 interface HowItWorksProps extends React.HTMLAttributes<HTMLElement> {}
 
-interface StepCardProps {
-  step: number
-  icon: React.ReactNode
-  title: string
-  description: string
-  benefits: string[]
-  visual: React.ReactNode
-  className?: string
-}
-
-const StepCard: React.FC<StepCardProps> = ({
-  step,
-  icon,
-  title,
-  description,
-  benefits,
-  visual,
-  className,
-}) => (
-  <div
-    className={cn(
-      "group relative flex flex-col rounded-2xl border border-hairline border-border bg-surface p-6 text-ink-primary transition-colors duration-300 ease-in-out",
-      "hover:-translate-y-0.5 hover:border-brand/40 hover:bg-elevated transition-transform",
-      className
-    )}
-  >
-    <div className="mb-4 flex items-center gap-2">
-      <span className="rounded-md border border-border bg-elevated px-2 py-0.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-brand-text">
-        Étape {step}
-      </span>
+const CardDecorator = ({ children }: { children: ReactNode }) => (
+    <div aria-hidden className="relative mx-auto size-40 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] group-hover:scale-105 transition-transform duration-700 ease-out">
+        <div className="absolute inset-0 [--border:rgba(255,255,255,0.1)] bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"/>
+        <div className="bg-surface absolute inset-0 m-auto flex size-14 items-center justify-center border-t border-l border-border rounded-lg text-brand-text shadow-lg shadow-black/20">{children}</div>
     </div>
-
-    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-elevated text-brand-text border border-border">
-      {icon}
-    </div>
-
-    <h3 className="mb-2 text-xl font-semibold text-ink-primary">{title}</h3>
-    <p className="mb-6 text-sm text-ink-secondary leading-relaxed">{description}</p>
-
-    {/* Zone visuelle décorative type bento */}
-    <div className="mb-6 flex min-h-[120px] flex-1 items-center justify-center rounded-xl border border-hairline border-border bg-canvas/60 p-4 overflow-hidden">
-      {visual}
-    </div>
-
-    {/* Bénéfices en tags compacts, sans puces */}
-    <div className="flex flex-wrap gap-2">
-      {benefits.map((benefit, index) => (
-        <span
-          key={index}
-          className="rounded-full border border-border bg-elevated px-2.5 py-1 text-[11px] leading-tight text-ink-secondary"
-        >
-          {benefit}
-        </span>
-      ))}
-    </div>
-  </div>
-)
-
-// --- Visuels décoratifs pour chaque étape (style bento) ---
-
-const OnboardingVisual: React.FC = () => (
-  <div className="relative flex h-full w-full items-center justify-center">
-    <div
-      aria-hidden="true"
-      className="absolute h-20 w-20 rounded-full bg-brand/10 blur-xl"
-    />
-    <svg className="absolute inset-0 h-full w-full" viewBox="-60 -60 120 120" aria-hidden="true">
-      {[0, 1, 2].map((i) => {
-        const angle = (i / 3) * Math.PI * 2 - Math.PI / 2
-        const radius = 44
-        const x = Math.cos(angle) * radius
-        const y = Math.sin(angle) * radius
-        return (
-          <line
-            key={i}
-            x1={0}
-            y1={0}
-            x2={x}
-            y2={y}
-            stroke="rgb(var(--color-border-strong))"
-            strokeWidth={1}
-            strokeDasharray="3 3"
-          />
-        )
-      })}
-    </svg>
-    <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-brand/30 bg-elevated text-brand-text shadow-[0_0_20px_-4px_rgb(var(--color-brand)/0.4)]">
-      <Globe className="size-5" />
-    </div>
-    <div aria-hidden="true" className="absolute h-full w-full">
-      {[0, 1, 2].map((i) => {
-        const angle = (i / 3) * Math.PI * 2 - Math.PI / 2
-        const radius = 44
-        const x = Math.cos(angle) * radius
-        const y = Math.sin(angle) * radius
-        return (
-          <span
-            key={i}
-            className="absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-ink-secondary"
-            style={{ left: `calc(50% + ${x}px)`, top: `calc(50% + ${y}px)` }}
-          >
-            <Bot className="size-3.5" />
-          </span>
-        )
-      })}
-    </div>
-  </div>
-)
-
-const MeasureVisual: React.FC = () => (
-  <div className="flex w-full flex-col items-center gap-3">
-    <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-elevated px-3 py-1.5 text-xs font-medium text-brand-text shadow-[0_0_20px_-6px_rgb(var(--color-brand)/0.5)]">
-      <TrendingUp className="size-3.5" />
-      Score de visibilité : 78%
-    </div>
-    <div className="flex w-full items-end justify-center gap-1.5">
-      {[40, 65, 50, 80, 60, 90].map((h, i) => (
-        <div
-          key={i}
-          className="w-3 rounded-t-sm bg-brand/60 transition-colors group-hover:bg-brand-text/80"
-          style={{ height: `${h * 0.4}px` }}
-        />
-      ))}
-    </div>
-  </div>
-)
-
-const ActionVisual: React.FC = () => (
-  <div className="flex w-full flex-col items-center gap-3">
-    <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-ink-secondary w-full max-w-[200px]">
-      <FileText className="size-3.5 text-ink-muted flex-shrink-0" />
-      <span className="truncate">Recommandation priorisée</span>
-    </div>
-    <button
-      type="button"
-      tabIndex={-1}
-      className="pointer-events-none flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-xs font-semibold text-canvas shadow-[0_0_20px_-4px_rgb(var(--color-brand)/0.6)]"
-    >
-      <CheckCircle2 className="size-3.5" />
-      Corriger maintenant
-    </button>
-  </div>
 )
 
 export const HowItWorks: React.FC<HowItWorksProps> = ({
@@ -157,18 +22,15 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
   const { t } = useTranslation()
   const stepsData = [
     {
-      icon: <Settings className="size-5" />,
-      visual: <OnboardingVisual />,
+      icon: <Settings className="size-6" />,
       ...t.howItWorks.steps[0],
     },
     {
-      icon: <Activity className="size-5" />,
-      visual: <MeasureVisual />,
+      icon: <Activity className="size-6" />,
       ...t.howItWorks.steps[1],
     },
     {
-      icon: <Lightbulb className="size-5" />,
-      visual: <ActionVisual />,
+      icon: <Lightbulb className="size-6" />,
       ...t.howItWorks.steps[2],
     },
   ]
@@ -176,67 +38,88 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
   return (
     <section
       id="how-it-works"
-      className={cn("w-full bg-canvas py-24", className)}
+      className={cn("w-full bg-canvas py-24 border-t border-hairline border-border relative", className)}
       {...props}
     >
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <h2 className="text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
+      <div className="container mx-auto max-w-6xl px-6 relative z-10">
+        <div className="mx-auto mb-20 max-w-2xl text-center">
+          <h2 className="text-balance text-4xl font-medium tracking-tight text-ink-primary sm:text-5xl">
             {t.howItWorks.heading}
           </h2>
-          <p className="mt-4 text-lg text-ink-secondary">
+          <p className="mt-6 text-lg text-ink-secondary">
             {t.howItWorks.subheading}
           </p>
         </div>
 
-        {/* Bento grid : carte 1 haute à gauche, cartes 2 et 3 empilées à droite */}
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
-          <StepCard
-            step={1}
-            icon={stepsData[0].icon}
-            title={stepsData[0].title}
-            description={stepsData[0].description}
-            benefits={stepsData[0].benefits}
-            visual={stepsData[0].visual}
-            className="md:row-span-2"
-          />
-          <div className="grid grid-rows-2 gap-6">
-            <StepCard
-              step={2}
-              icon={stepsData[1].icon}
-              title={stepsData[1].title}
-              description={stepsData[1].description}
-              benefits={stepsData[1].benefits}
-              visual={stepsData[1].visual}
-            />
-            <StepCard
-              step={3}
-              icon={stepsData[2].icon}
-              title={stepsData[2].title}
-              description={stepsData[2].description}
-              benefits={stepsData[2].benefits}
-              visual={stepsData[2].visual}
-            />
-          </div>
+        {/* Bento grid horizontal (Impeccable Variant C) */}
+        <div className="mx-auto grid max-w-sm gap-8 *:text-center md:max-w-full md:grid-cols-3">
+          {stepsData.map((step, index) => (
+            <Card key={index} className="group overflow-hidden border-border bg-surface hover:border-brand/30 hover:bg-elevated transition-all duration-500 shadow-sm hover:shadow-2xl hover:shadow-brand/5">
+                <CardHeader className="pb-2 pt-8">
+                    <CardDecorator>
+                        {step.icon}
+                    </CardDecorator>
+
+                    <h3 className="mt-8 font-semibold text-ink-primary text-xl tracking-tight">{step.title}</h3>
+                </CardHeader>
+
+                <CardContent className="pb-8">
+                    <p className="text-sm text-ink-secondary leading-relaxed max-w-xs mx-auto">{step.description}</p>
+                </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Showcase de l'écran Opportunités */}
-        <div className="mx-auto mt-20 max-w-5xl">
-          <div className="mb-8 text-center">
-            <h3 className="text-2xl font-medium tracking-tight text-ink-primary sm:text-3xl">
-              {t.howItWorks.opportunities.heading}
-            </h3>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-secondary">
-              {t.howItWorks.opportunities.description}
-            </p>
+        {/* Showcase de l'écran Opportunités (Texte à gauche, Dashboard à droite) */}
+        <div className="mx-auto mt-32 max-w-6xl">
+          <div className="grid items-center gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-medium uppercase tracking-widest mb-6">
+                Le Résultat
+              </div>
+              <h3 className="text-3xl font-medium tracking-tight text-ink-primary sm:text-4xl leading-[1.15]">
+                {t.howItWorks.opportunities.heading}
+              </h3>
+              <p className="mt-5 text-base leading-relaxed text-ink-secondary">
+                {t.howItWorks.opportunities.description}
+              </p>
+              
+              <ul className="mt-8 space-y-4">
+                {[
+                  "Priorisation par impact business",
+                  "Scripts de prompts prêts à l'emploi",
+                  "Tracking d'évolution dans le temps"
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm text-ink-secondary">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
+                      ✓
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="mt-10">
+                <button className="group inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand-text transition-colors">
+                  Voir la démo du dashboard 
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="lg:col-span-7 relative">
+              {/* Glow sous l'image */}
+              <div className="absolute inset-0 bg-brand/10 blur-[80px] rounded-full scale-75 -z-10"></div>
+              
+              <ScreenshotFrame
+                label={t.howItWorks.opportunities.previewLabel}
+                src="/images/dashboard/opportunities.png"
+                urlPath="app.reflet.io/dashboard/opportunites"
+                glow={false}
+                badge={t.howItWorks.opportunities.previewBadge}
+              />
+            </div>
           </div>
-          <ScreenshotFrame
-            label={t.howItWorks.opportunities.previewLabel}
-            src="/images/dashboard/opportunities.png"
-            urlPath="app.reflet.io/dashboard/opportunites"
-            glow
-            badge={t.howItWorks.opportunities.previewBadge}
-          />
         </div>
       </div>
     </section>

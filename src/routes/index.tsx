@@ -4,7 +4,7 @@ import { Hero } from '~/components/landing/Hero'
 import { Problem } from '~/components/landing/Problem'
 import { HowItWorks } from '~/components/landing/HowItWorks'
 import { Metrics } from '~/components/landing/Metrics'
-import { Evidence } from '~/components/landing/Evidence'
+import { Features } from '~/components/landing/Features'
 import { History } from '~/components/landing/History'
 import { Pricing } from '~/components/landing/Pricing'
 import { FAQ } from '~/components/landing/FAQ'
@@ -23,7 +23,7 @@ function LandingPage() {
       <Problem />
       <HowItWorks />
       <Metrics />
-      <Evidence />
+      <Features />
       <History />
       <Pricing />
       <FAQ />

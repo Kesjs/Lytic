@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
 import { AiCycle } from './AiCycle'
 import { ScreenshotFrame } from './ScreenshotFrame'
-import SideRays from './SideRays'
+import Beams from './Beams'
 
 import type { AiEngine } from './AiCycle'
 
@@ -58,19 +58,7 @@ export function Hero({
           WebkitMaskImage: 'radial-gradient(120% 100% at 100% 0%, black 35%, transparent 75%)',
         }}
       >
-        <SideRays
-          speed={1.4}
-          rayColor1="#c9ab1e"
-          rayColor2="#8a7315"
-          intensity={1.3}
-          spread={2.2}
-          origin="top-right"
-          tilt={0}
-          saturation={1.2}
-          blend={0.4}
-          falloff={1.8}
-          opacity={0.5}
-        />
+        <Beams beamColor="#c9ab1e" />
       </div>
 
       {/* Contenu textuel Hero */}
