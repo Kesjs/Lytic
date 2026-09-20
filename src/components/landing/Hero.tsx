@@ -40,9 +40,7 @@ export function Hero({
         aria-hidden="true"
         className="pointer-events-none absolute -inset-2 -z-10 rounded-3xl bg-gradient-to-b from-brand/20 via-brand/5 to-transparent opacity-60 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
       />
-      <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/20 via-white/5 to-white/10 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_-10px_rgba(201,171,30,0.12)]">
-        <DashboardPreview />
-      </div>
+      <DashboardPreview />
     </div>
   )
 
