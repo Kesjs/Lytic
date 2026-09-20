@@ -1,5 +1,5 @@
 import { useTranslation } from '~/lib/i18n/LanguageContext'
-import { Waterline } from './Waterline'
+import { Check, X, User } from 'lucide-react'
 
 function TerminalIllustration() {
   return (
@@ -60,24 +60,33 @@ function TerminalIllustration() {
 
 function ChatIllustration({ good, bad }: { good: string, bad: string }) {
   return (
-    <div className="flex flex-col gap-6 relative">
-      {/* Ligne de connexion subtile derrière */}
-      <div className="absolute left-6 top-10 bottom-10 w-px bg-gradient-to-b from-danger/20 via-border to-brand/20 -z-10"></div>
+    <div className="flex flex-col gap-8 relative z-10">
+      {/* Ligne de connexion pointillée pour lier les deux concepts */}
+      <div className="absolute left-[38px] top-12 bottom-12 w-px border-l-2 border-dashed border-border/40 -z-10"></div>
 
       {/* Bad Question (Ce qu'ils font) */}
-      <div className="group relative rounded-2xl border border-danger/10 bg-surface/30 p-5 hover:bg-surface/50 transition-colors">
-        <div className="flex gap-4">
-          <div className="w-10 h-10 rounded-full bg-danger/10 border border-danger/20 flex items-center justify-center shrink-0">
-             <span className="text-danger text-sm">✕</span>
+      <div className="group relative rounded-3xl border border-border/60 bg-surface/40 p-6 backdrop-blur-xl transition-all duration-500 hover:bg-surface/80 hover:shadow-2xl hover:shadow-black/40 hover:-translate-y-1">
+        <div className="flex gap-5">
+          <div className="w-14 h-14 rounded-full bg-danger/10 border border-danger/20 flex items-center justify-center shrink-0 ring-8 ring-canvas transition-transform duration-500 group-hover:scale-110 group-hover:bg-danger/20">
+             <X className="size-6 text-danger" strokeWidth={2.5} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-danger uppercase tracking-wider">Prompt Ego-centré</p>
+          <div className="flex-1 pt-1">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-bold text-danger uppercase tracking-[0.2em]">Prompt Ego-centré</p>
             </div>
-            <div className="bg-elevated p-4 rounded-xl rounded-tl-sm border border-border/50 text-sm text-ink-secondary mb-3 shadow-sm">
-              "{bad}"
+            
+            {/* Chat Bubble */}
+            <div className="relative bg-elevated px-5 py-4 rounded-2xl rounded-tl-sm border border-border/50 text-sm text-ink-primary mb-4 shadow-sm transition-colors duration-300 group-hover:border-border">
+              <span className="absolute -left-2 top-0 text-elevated">
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 0H8V12C8 12 8 0 0 0Z" /></svg>
+              </span>
+              <div className="flex items-start gap-2">
+                <User className="size-4 text-ink-muted shrink-0 mt-0.5" />
+                <span>{bad}</span>
+              </div>
             </div>
-            <p className="text-[13px] text-ink-muted">
+            
+            <p className="text-[13px] leading-relaxed text-ink-muted">
               L'IA récitera bêtement le contenu de votre site web sans prouver qu'elle vous recommandera à un vrai prospect.
             </p>
           </div>
@@ -85,19 +94,31 @@ function ChatIllustration({ good, bad }: { good: string, bad: string }) {
       </div>
 
       {/* Good Question (Ce qu'il faut faire) */}
-      <div className="group relative rounded-2xl border border-brand/20 bg-brand/5 p-5 hover:bg-brand/10 transition-colors shadow-[0_0_30px_-15px_rgba(var(--color-brand)/0.3)]">
-        <div className="flex gap-4">
-          <div className="w-10 h-10 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center shrink-0 text-brand shadow-inner shadow-white/10">
-             <span className="text-sm">✓</span>
+      <div className="group relative rounded-3xl border border-brand/30 bg-gradient-to-br from-brand/10 via-surface/40 to-transparent p-6 backdrop-blur-xl transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(201,171,30,0.15)] hover:-translate-y-1">
+        {/* Glow interne au hover */}
+        <div className="absolute inset-0 rounded-3xl bg-brand/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+        
+        <div className="relative flex gap-5">
+          <div className="w-14 h-14 rounded-full bg-brand/20 border border-brand/40 flex items-center justify-center shrink-0 text-brand ring-8 ring-canvas shadow-[0_0_20px_rgba(201,171,30,0.3)] transition-all duration-500 group-hover:scale-110 group-hover:bg-brand group-hover:text-black group-hover:shadow-[0_0_30px_rgba(201,171,30,0.5)]">
+             <Check className="size-6" strokeWidth={2.5} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-brand uppercase tracking-wider">Prompt Diagnostique</p>
+          <div className="flex-1 pt-1">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-bold text-brand uppercase tracking-[0.2em]">Prompt Diagnostique</p>
             </div>
-            <div className="bg-brand text-canvas p-4 rounded-xl rounded-tl-sm text-sm font-medium mb-3 shadow-md shadow-brand/20">
-              "{good}"
+            
+            {/* Chat Bubble (Premium) */}
+            <div className="relative bg-brand px-5 py-4 rounded-2xl rounded-tl-sm text-sm text-black mb-4 shadow-lg shadow-brand/20 font-medium transition-transform duration-300">
+              <span className="absolute -left-2 top-0 text-brand">
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 0H8V12C8 12 8 0 0 0Z" /></svg>
+              </span>
+              <div className="flex items-start gap-2">
+                <User className="size-4 text-black/60 shrink-0 mt-0.5" />
+                <span>{good}</span>
+              </div>
             </div>
-            <p className="text-[13px] text-ink-secondary">
+            
+            <p className="text-[13px] leading-relaxed text-ink-secondary">
               Simule la vraie requête de votre cible. Vous découvrirez si l'IA vous positionne naturellement comme la solution.
             </p>
           </div>
@@ -144,12 +165,8 @@ export function Problem() {
           </div>
         </div>
 
-        <div className="my-20">
-          <Waterline />
-        </div>
-
         {/* BOTTOM PART : Interface de Chat (Variante B) */}
-        <div className="grid items-center gap-16 lg:grid-cols-2">
+        <div className="mt-20 grid items-center gap-16 lg:grid-cols-2">
           <div className="lg:order-2">
             <h3 className="text-3xl font-medium tracking-tight text-ink-primary leading-[1.15]">
               {t.problem.question.heading}

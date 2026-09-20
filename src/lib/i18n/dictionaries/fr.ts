@@ -49,21 +49,21 @@ export const fr = {
   },
   howItWorks: {
     heading: "Comment ça fonctionne",
-    subheading: "Vous choisissez les questions. Notre moteur s'occupe du reste.",
+    subheading: "Finies les heures passées à imaginer des prompts. Reflet génère votre stratégie et mesure les résultats en pilote automatique.",
     steps: [
       {
-        title: "Onboarding intelligent",
-        description: "Renseignez votre domaine. Reflet analyse votre site et génère automatiquement les questions les plus stratégiques.",
+        title: "Génération par l'IA",
+        description: "Saisissez simplement votre adresse web. Reflet analyse votre offre et rédige instantanément les requêtes diagnostiques que vos vrais prospects posent.",
         benefits: ["Génération des intentions par l'IA", "Ciblage sémantique ultra-précis", "Aucun paramétrage complexe requis"]
       },
       {
-        title: "Mesure et Analyse",
-        description: "Notre moteur interroge régulièrement les LLMs et croise leurs réponses avec l'évolution de vos pages web.",
+        title: "Tracking en arrière-plan",
+        description: "Notre moteur interroge les modèles d'IA chaque semaine. Il archive votre score de recommandation et détecte vos concurrents automatiquement.",
         benefits: ["Score clair de visibilité et recommandation", "Détection déterministe des changements (0€)", "Analyse de sentiment automatisée"]
       },
       {
-        title: "Actionnez les opportunités",
-        description: "Obtenez des recommandations claires (avant/après) pour corriger vos lacunes et hacker l'algorithme des LLMs.",
+        title: "Recommandations d'action",
+        description: "Transformez vos angles morts en trafic. Reflet vous livre des directives techniques précises (contenu actuel vs cible) pour imposer votre marque.",
         benefits: ["Preuves techniques détaillées", "Comparaison avec la concurrence", "Maintien de votre avantage compétitif"]
       }
     ],
@@ -188,9 +188,10 @@ export const fr = {
     ]
   },
   ctaFinal: {
-    heading: "Découvrez ce que les IA disent de votre marque.",
-    subheading: "Analysez votre site, sélectionnez vos questions clés et obtenez votre premier score de visibilité IA dès aujourd'hui.",
-    cta: "Analyser mon site"
+    heading: "Prêt à imposer votre marque aux LLMs ?",
+    subheading: "Arrêtez de deviner. Testez votre site gratuitement et découvrez exactement ce que ChatGPT et ses concurrents pensent de vous.",
+    cta: "Faire mon premier diagnostic",
+    models: "Moteurs analysés en continu :"
   },
   footer: {
     columns: {

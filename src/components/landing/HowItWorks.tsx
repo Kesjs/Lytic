@@ -3,15 +3,18 @@ import { Settings, Activity, Lightbulb, ArrowRight } from "lucide-react"
 import type React from "react"
 import { ReactNode } from "react"
 import { useTranslation } from '~/lib/i18n/LanguageContext'
-import { ScreenshotFrame } from "./ScreenshotFrame"
-import { Card, CardContent, CardHeader } from '~/components/ui/card'
+import { OpportunityCardPreview } from "./OpportunityCardPreview"
+import { motion } from "framer-motion"
 
 interface HowItWorksProps extends React.HTMLAttributes<HTMLElement> {}
 
 const CardDecorator = ({ children }: { children: ReactNode }) => (
-    <div aria-hidden className="relative mx-auto size-40 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] group-hover:scale-105 transition-transform duration-700 ease-out">
-        <div className="absolute inset-0 [--border:rgba(255,255,255,0.1)] bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"/>
-        <div className="bg-surface absolute inset-0 m-auto flex size-14 items-center justify-center border-t border-l border-border rounded-lg text-brand-text shadow-lg shadow-black/20">{children}</div>
+    <div aria-hidden className="relative mx-auto size-24 group-hover:scale-110 transition-transform duration-500 ease-out">
+        {/* Cercles de fond avec glow */}
+        <div className="absolute inset-0 rounded-full bg-brand/5 border border-brand/20 group-hover:border-brand/40 group-hover:bg-brand/10 transition-colors duration-500" />
+        <div className="absolute inset-0 m-auto flex size-12 items-center justify-center rounded-full bg-brand/10 text-brand shadow-inner shadow-brand/20 group-hover:shadow-brand/40 group-hover:bg-brand group-hover:text-black transition-all duration-500">
+            {children}
+        </div>
     </div>
 )
 
@@ -51,29 +54,45 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
           </p>
         </div>
 
-        {/* Bento grid horizontal (Impeccable Variant C) */}
-        <div className="mx-auto grid max-w-sm gap-8 *:text-center md:max-w-full md:grid-cols-3">
-          {stepsData.map((step, index) => (
-            <Card key={index} className="group overflow-hidden border-border bg-surface hover:border-brand/30 hover:bg-elevated transition-all duration-500 shadow-sm hover:shadow-2xl hover:shadow-brand/5">
-                <CardHeader className="pb-2 pt-8">
-                    <CardDecorator>
-                        {step.icon}
-                    </CardDecorator>
+        {/* Timeline des 3 étapes */}
+        <div className="relative mx-auto max-w-sm md:max-w-5xl">
+          {/* Ligne pointillée horizontale (visible uniquement sur desktop) */}
+          <div className="hidden md:block absolute top-[48px] left-1/6 right-1/6 h-px border-t-2 border-dashed border-border/60 -z-10" />
+          
+          <div className="grid gap-12 md:gap-8 md:grid-cols-3">
+            {stepsData.map((step, index) => (
+              <motion.div 
+                key={index} 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2, duration: 0.5, ease: "easeOut" }}
+                className="group relative flex flex-col items-center text-center"
+              >
+                  {/* Filigrane du numéro */}
+                  <div className="absolute -top-6 -right-4 text-[120px] font-black leading-none text-ink-primary opacity-[0.03] pointer-events-none select-none transition-opacity duration-500 group-hover:opacity-[0.06]">
+                    0{index + 1}
+                  </div>
 
-                    <h3 className="mt-8 font-semibold text-ink-primary text-xl tracking-tight">{step.title}</h3>
-                </CardHeader>
+                  <CardDecorator>
+                      {step.icon}
+                  </CardDecorator>
 
-                <CardContent className="pb-8">
-                    <p className="text-sm text-ink-secondary leading-relaxed max-w-xs mx-auto">{step.description}</p>
-                </CardContent>
-            </Card>
-          ))}
+                  <h3 className="mt-8 font-semibold text-ink-primary text-xl tracking-tight z-10">
+                    {step.title}
+                  </h3>
+                  <p className="mt-4 text-sm text-ink-secondary leading-relaxed max-w-[280px] z-10">
+                    {step.description}
+                  </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
-        {/* Showcase de l'écran Opportunités (Texte centré, Dashboard en dessous) */}
-        <div className="mx-auto mt-32 max-w-5xl">
-          <div className="flex flex-col items-center text-center gap-12">
-            <div className="max-w-3xl flex flex-col items-center">
+        {/* Showcase de l'écran Opportunités (Texte à gauche, Composant à droite) */}
+        <div className="mx-auto mt-32 max-w-6xl">
+          <div className="grid items-center gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-medium uppercase tracking-widest mb-6">
                 Le Résultat
               </div>
@@ -84,7 +103,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
                 {t.howItWorks.opportunities.description}
               </p>
               
-              <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-4">
+              <ul className="mt-8 space-y-4">
                 {[
                   "Priorisation par impact business",
                   "Scripts de prompts prêts à l'emploi",
@@ -107,18 +126,11 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
               </div>
             </div>
             
-            <div className="w-full relative mt-4">
+            <div className="lg:col-span-7 relative">
               {/* Glow sous l'image */}
-              <div className="absolute inset-0 bg-brand/10 blur-[100px] rounded-full scale-90 -z-10"></div>
+              <div className="absolute inset-0 bg-brand/10 blur-[80px] rounded-full scale-75 -z-10"></div>
               
-              <ScreenshotFrame
-                label={t.howItWorks.opportunities.previewLabel}
-                src="/images/dashboard/opportunities_card.png"
-                urlPath="app.reflet.io/dashboard/opportunites"
-                glow={false}
-                badge={t.howItWorks.opportunities.previewBadge}
-                hideCrosses={true}
-              />
+              <OpportunityCardPreview />
             </div>
           </div>
         </div>

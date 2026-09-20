@@ -17,14 +17,27 @@ export function CTAFinal() {
         </p>
 
         {/* Wrapper pour simuler la bordure avec clip-path */}
-        <div className="group mt-9 relative p-[1px] transition-colors duration-200 bg-border hover:bg-brand/60 [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]">
+        <div className="group mt-10 relative p-[1px] transition-colors duration-300 bg-border hover:bg-brand/60 [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)] shadow-xl shadow-brand/5 hover:shadow-brand/20">
           <Link
             to="/login"
-            className="inline-flex items-center justify-center gap-2.5 bg-canvas px-7 py-3.5 text-sm font-medium text-ink-primary transition-colors hover:text-brand-text [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]"
+            className="inline-flex items-center justify-center gap-2.5 bg-canvas px-8 py-4 text-sm font-medium text-ink-primary transition-colors hover:text-brand-text [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]"
           >
             <span>{t.ctaFinal.cta}</span>
-            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+            <ArrowRight className="size-4.5 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
+        </div>
+
+        {/* Logos des LLMs interrogés en couleur */}
+        <div className="mt-16 flex flex-col items-center">
+          <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-ink-muted mb-6">
+            {t.ctaFinal.models}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 opacity-90">
+            <img src="https://svgl.app/library/chatgpt.svg" alt="ChatGPT" className="h-7 w-auto drop-shadow-sm" />
+            <img src="https://svgl.app/library/gemini.svg" alt="Google Gemini" className="h-7 w-auto drop-shadow-sm" />
+            <img src="https://svgl.app/library/perplexity.svg" alt="Perplexity AI" className="h-7 w-auto drop-shadow-sm" />
+            <img src="https://svgl.app/library/copilot.svg" alt="Microsoft Copilot" className="h-7 w-auto drop-shadow-sm" />
+          </div>
         </div>
       </div>
     </section>

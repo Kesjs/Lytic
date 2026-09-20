@@ -3,10 +3,7 @@ import { ArrowRight, Sparkles, Globe } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
-import { AiCycle } from './AiCycle'
 import { ScreenshotFrame } from './ScreenshotFrame'
-
-import type { AiEngine } from './AiCycle'
 
 export interface HeroProps {
   eyebrow?: string
@@ -14,7 +11,6 @@ export interface HeroProps {
   description?: string
   primaryCta?: { label: string; to: string }
   secondaryCta?: { label: string; href: string }
-  engines?: AiEngine[]
   preview?: ReactNode
 }
 
@@ -24,7 +20,6 @@ export function Hero({
   description,
   primaryCta = { label: 'Analyser mon site', to: '/login' },
   secondaryCta = { label: 'Voir le produit', href: '#produit' },
-  engines,
 }: HeroProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -166,15 +161,6 @@ export function Hero({
         </motion.p>
       </motion.div>
 
-      {/* Animated AI Cycle */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1, delay: 0.3 }}
-        className="relative z-10 mx-auto mt-16 flex w-full max-w-4xl justify-center px-6"
-      >
-        <AiCycle engines={engines} />
-      </motion.div>
 
       {/* Dashboard Preview */}
       <motion.div

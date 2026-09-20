@@ -1,4 +1,4 @@
-import { Cpu, Fingerprint, Pencil, Settings2, Sparkles, Zap } from 'lucide-react'
+import { Zap, Users, Target, Settings2, Search, History } from 'lucide-react'
 
 export function Features() {
     return (
@@ -6,10 +6,10 @@ export function Features() {
             <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
                 <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center md:space-y-12">
                     <h2 className="text-balance text-4xl font-medium lg:text-5xl text-ink-primary">
-                        The foundation for creative teams management
+                        Ce qui distingue Reflet
                     </h2>
                     <p className="text-ink-secondary">
-                        Lyra is evolving to be more than just the models. It supports an entire to the APIs and platforms helping developers and businesses innovate.
+                        Pas un outil SEO de plus à apprendre — une couche de suivi simple, pensée pour les équipes qui n'ont pas le temps de gérer un outil complexe.
                     </p>
                 </div>
 
@@ -17,33 +17,33 @@ export function Features() {
                     {[
                         {
                             icon: Zap,
-                            title: "Faaast",
-                            desc: "It supports an entire helping developers and innovate."
+                            title: "Simplicité",
+                            desc: "URL, questions, résultat — aucune configuration technique à mettre en place."
                         },
                         {
-                            icon: Cpu,
-                            title: "Powerful",
-                            desc: "It supports an entire helping developers and businesses."
+                            icon: Users,
+                            title: "Pensé pour les PME",
+                            desc: "Pas besoin d'une équipe SEO dédiée pour suivre sa visibilité dans les réponses IA."
                         },
                         {
-                            icon: Fingerprint,
-                            title: "Security",
-                            desc: "It supports an helping developers businesses."
-                        },
-                        {
-                            icon: Pencil,
-                            title: "Customization",
-                            desc: "It supports helping developers and businesses innovate."
+                            icon: Target,
+                            title: "Profondeur plutôt que dispersion",
+                            desc: "Une mesure rigoureuse sur le moteur IA le plus utilisé, plutôt qu'une couverture superficielle de plusieurs."
                         },
                         {
                             icon: Settings2,
-                            title: "Control",
-                            desc: "It supports helping developers and businesses innovate."
+                            title: "Automatisation",
+                            desc: "Les questions suivies sont générées et mesurées automatiquement, sans prompts à écrire à la main."
                         },
                         {
-                            icon: Sparkles,
-                            title: "Built for AI",
-                            desc: "It supports helping developers and businesses innovate."
+                            icon: Search,
+                            title: "Concurrents détectés",
+                            desc: "Reflet identifie automatiquement les marques citées à votre place, sans saisie manuelle."
+                        },
+                        {
+                            icon: History,
+                            title: "Historique",
+                            desc: "Une mémoire de votre visibilité qui se construit mesure après mesure, semaine après semaine."
                         }
                     ].map((feature, i) => {
                         const Icon = feature.icon;
