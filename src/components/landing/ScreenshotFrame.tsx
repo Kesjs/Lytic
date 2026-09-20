@@ -109,7 +109,8 @@ export function ScreenshotFrame({
               <img
                 src={src}
                 alt={alt ?? label}
-                className="block h-auto w-full object-cover object-top select-none transition-transform duration-700 ease-out group-hover:scale-[1.004]"
+                draggable={false}
+                className="block h-auto w-full object-cover object-top pointer-events-none select-none transition-transform duration-700 ease-out group-hover:scale-[1.004]"
                 loading="lazy"
               />
               {/* Liseré interne pour un contour ultra précis */}

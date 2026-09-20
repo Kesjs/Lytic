@@ -9,9 +9,9 @@ export const fr = {
     description: "Reflet mesure votre visibilité dans les réponses des IA, compare votre position à la concurrence, et transforme chaque écart en action concrète.",
     primaryCta: "Analyser mon site",
     secondaryCta: "Voir le produit",
-    previewLabel: "Dashboard Reflet — Vue d'ensemble",
+    previewLabel: "Dashboard Reflet · Vue d'ensemble",
     previewAnnotation: "Le tableau de bord Reflet",
-    previewBadge: "Score en direct · 72/100",
+    previewBadge: "Score en direct · 96/100",
     freeToStart: "Gratuit pour commencer. Sans carte bancaire."
   },
   navbar: {
@@ -191,7 +191,7 @@ export const fr = {
     heading: "Prêt à imposer votre marque aux LLMs ?",
     subheading: "Arrêtez de deviner. Testez votre site gratuitement et découvrez exactement ce que ChatGPT et ses concurrents pensent de vous.",
     cta: "Faire mon premier diagnostic",
-    models: "Moteurs analysés en continu :"
+    models: "Moteurs analysés en continu"
   },
   footer: {
     columns: {
