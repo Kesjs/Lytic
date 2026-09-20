@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -31,6 +31,7 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
     onSuccess: async (data) => {
       if (data && data.brandId) {
         setIsMeasuring(true)
+        localStorage.removeItem('reflet_onboarding_domain')
         toast.info('Marque configurée. Lancement de la première mesure...')
         try {
           // runFullMeasurement affiche déjà le toast correspondant au vrai
@@ -61,6 +62,15 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
   // ouvert (open=true), ce qui viole les Rules of Hooks et déclenche
   // React error #310 dès l'ouverture du tiroir.
   const urlValid = useMemo(() => isValidWebsiteUrl(normalizeWebsiteUrl(websiteUrl)), [websiteUrl])
+
+  useEffect(() => {
+    if (open) {
+      const storedDomain = localStorage.getItem('reflet_onboarding_domain')
+      if (storedDomain && !websiteUrl) {
+        setWebsiteUrl(storedDomain)
+      }
+    }
+  }, [open, websiteUrl])
 
   if (!open) return null
 
