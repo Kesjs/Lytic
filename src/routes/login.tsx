@@ -221,12 +221,9 @@ function LoginPage() {
               onMouseEnter={() => setIsBackHovered(true)}
               onMouseLeave={() => setIsBackHovered(false)}
             >
-              <motion.div
-                animate={{ x: isBackHovered ? -3 : 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              >
+              <div>
                 <ArrowLeft className="w-4 h-4" />
-              </motion.div>
+              </div>
 
               <AnimatePresence mode="wait" initial={false}>
                 {!isBackHovered ? (
