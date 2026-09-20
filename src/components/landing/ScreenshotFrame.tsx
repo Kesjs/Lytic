@@ -64,15 +64,7 @@ export function ScreenshotFrame({
           />
         )}
 
-        {/* Réticules de précision aux 4 angles (style Linear) */}
-        {!hideCrosses && (
-          <>
-            <div aria-hidden="true" className="pointer-events-none absolute -top-2.5 -left-2.5 text-xs font-mono text-brand/50 select-none">+</div>
-            <div aria-hidden="true" className="pointer-events-none absolute -top-2.5 -right-2.5 text-xs font-mono text-brand/50 select-none">+</div>
-            <div aria-hidden="true" className="pointer-events-none absolute -bottom-2.5 -left-2.5 text-xs font-mono text-brand/50 select-none">+</div>
-            <div aria-hidden="true" className="pointer-events-none absolute -bottom-2.5 -right-2.5 text-xs font-mono text-brand/50 select-none">+</div>
-          </>
-        )}
+
 
         {/* Double liseré décoré avec gradient subtil */}
         <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/20 via-white/5 to-white/10 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_-10px_rgba(201,171,30,0.12)]">
