@@ -176,24 +176,11 @@ async function computeLatestRunInsights(
     };
   });
 
-  // Inject mocked engines if they are missing for demo/display purposes
-  const requiredEngines = [
-    { name: 'chatgpt', mentioned: 8, recommended: 6, total: 10 },
-    { name: 'perplexity', mentioned: 6, recommended: 3, total: 10 },
-    { name: 'copilot', mentioned: 4, recommended: 2, total: 10 },
-    { name: 'gemini', mentioned: 7, recommended: 5, total: 10 }
-  ];
-
-  for (const req of requiredEngines) {
-    if (!enginePerformance.find(e => e.engine.toLowerCase() === req.name)) {
-      enginePerformance.push({
-        engine: req.name,
-        mentioned: req.mentioned,
-        recommended: req.recommended,
-        total: req.total
-      });
-    }
-  }
+  // Aucune injection de moteurs fictifs ici : si un moteur (chatgpt,
+  // perplexity, copilot, gemini...) n'a pas encore de mesure réelle dans
+  // `observations`, il n'apparaît simplement pas dans enginePerformance.
+  // EngineRadarChart gère déjà l'état vide ("Aucune donnée par moteur pour
+  // la dernière mesure.") — jamais de chiffre inventé (cf. en-tête de fichier).
 
   // 3. Sentiment Distribution
   const sentimentDistribution = {
