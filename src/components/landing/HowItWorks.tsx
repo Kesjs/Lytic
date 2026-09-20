@@ -70,10 +70,10 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
           ))}
         </div>
 
-        {/* Showcase de l'écran Opportunités (Texte à gauche, Dashboard à droite) */}
-        <div className="mx-auto mt-32 max-w-6xl">
-          <div className="grid items-center gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-5">
+        {/* Showcase de l'écran Opportunités (Texte centré, Dashboard en dessous) */}
+        <div className="mx-auto mt-32 max-w-5xl">
+          <div className="flex flex-col items-center text-center gap-12">
+            <div className="max-w-3xl flex flex-col items-center">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-medium uppercase tracking-widest mb-6">
                 Le Résultat
               </div>
@@ -84,7 +84,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
                 {t.howItWorks.opportunities.description}
               </p>
               
-              <ul className="mt-8 space-y-4">
+              <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-4">
                 {[
                   "Priorisation par impact business",
                   "Scripts de prompts prêts à l'emploi",
@@ -107,16 +107,17 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
               </div>
             </div>
             
-            <div className="lg:col-span-7 relative">
+            <div className="w-full relative mt-4">
               {/* Glow sous l'image */}
-              <div className="absolute inset-0 bg-brand/10 blur-[80px] rounded-full scale-75 -z-10"></div>
+              <div className="absolute inset-0 bg-brand/10 blur-[100px] rounded-full scale-90 -z-10"></div>
               
               <ScreenshotFrame
                 label={t.howItWorks.opportunities.previewLabel}
-                src="/images/dashboard/opportunities.png"
+                src="/images/dashboard/opportunities_card.png"
                 urlPath="app.reflet.io/dashboard/opportunites"
                 glow={false}
                 badge={t.howItWorks.opportunities.previewBadge}
+                hideCrosses={true}
               />
             </div>
           </div>
