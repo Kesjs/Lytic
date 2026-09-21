@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
 import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE, FREE_MEASUREMENTS_PER_WEEK, FREE_MEASUREMENT_WINDOW_DAYS } from '~/lib/plan'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
+import { getEngineLabel } from '~/lib/engine-labels'
 
 // Toutes les requêtes ci-dessous lisent les vraies tables Supabase
 // (brands, measurement_runs, opportunities, events, site_pages…).
@@ -174,7 +175,7 @@ export function buildDashboardInsight(
   for (const ep of enginePerformance) {
     if (ep.total === 0) continue
     const pct = Math.round((ep.mentioned / ep.total) * 100)
-    bullets.push(`${ep.engine} vous cite dans ${pct}% des réponses mesurées.`)
+    bullets.push(`${getEngineLabel(ep.engine)} vous cite dans ${pct}% des réponses mesurées.`)
   }
 
   if (topThemes.length > 0) {
