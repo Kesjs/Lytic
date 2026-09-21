@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from '~/lib/supabase/server'
 import type { Database } from '~/lib/supabase/database.types'
 import { generateOpportunities } from '~/lib/analysis'
 import { calculateCost } from '~/lib/openai-pricing'
+import { insertEvent } from '~/lib/events'
 
 // Refonte v2 (Evidence Engine) — une opportunité n'est plus générée sur la base
 // d'un seul run isolé. Deux garde-fous avant tout appel LLM de génération :
@@ -24,6 +25,62 @@ export async function generateOpportunitiesForRun(
   // Récupérer la marque
   const { data: brand } = await supabase.from('brands').select('*').eq('id', brandId).single()
   if (!brand) return
+
+  // ── §8.3 de l'audit détection — fermeture automatique des opportunités
+  // devenues obsolètes ──────────────────────────────────────────────────
+  // Une question qui redevient recommandée avec un accord suffisant doit
+  // libérer l'opportunité ouverte qui lui était associée, plutôt que de
+  // laisser une carte "morte" dans la liste (et fausser le futur check de
+  // déduplication ci-dessous). On ne ferme une opportunité que si TOUTES
+  // ses questions liées sont redevenues recommandées — si une seule est
+  // encore non recommandée, elle reste pertinente pour elle.
+  try {
+    const { data: recommendedNow } = await supabase
+      .from('observations')
+      .select('question_id')
+      .eq('run_id', runId)
+      .eq('brand_recommended', true)
+      .gte('agreement_score', MIN_AGREEMENT)
+
+    const recommendedQuestionIds: string[] = [
+      ...new Set((recommendedNow ?? []).map((o: any) => o.question_id)),
+    ]
+
+    if (recommendedQuestionIds.length > 0) {
+      const { data: links } = await supabase
+        .from('opportunity_questions')
+        .select('question_id, opportunity_id')
+        .in('question_id', recommendedQuestionIds)
+
+      const candidateOppIds: string[] = [
+        ...new Set((links ?? []).map((l: any) => l.opportunity_id)),
+      ]
+
+      if (candidateOppIds.length > 0) {
+        const { data: allLinksForCandidates } = await supabase
+          .from('opportunity_questions')
+          .select('opportunity_id, question_id')
+          .in('opportunity_id', candidateOppIds)
+
+        const recommendedSet = new Set(recommendedQuestionIds)
+        const opportunityIdsToClose = candidateOppIds.filter((oppId: string) =>
+          (allLinksForCandidates ?? [])
+            .filter((l: any) => l.opportunity_id === oppId)
+            .every((l: any) => recommendedSet.has(l.question_id)),
+        )
+
+        if (opportunityIdsToClose.length > 0) {
+          await supabase
+            .from('opportunities')
+            .update({ status: 'no_longer_observed' })
+            .in('id', opportunityIdsToClose)
+            .eq('status', 'open')
+        }
+      }
+    }
+  } catch (closeErr) {
+    console.error('[opportunities_engine] Erreur fermeture opportunités obsolètes :', closeErr)
+  }
 
   // Récupérer les observations agrégées de CE run où la marque n'est pas
   // recommandée, avec un accord suffisant entre les échantillons du run.
@@ -67,7 +124,46 @@ export async function generateOpportunitiesForRun(
 
   if (stableObservations.length === 0) return
 
-  const context = stableObservations.map(obs => `
+  // ── §8.1 — Garde-fou de déduplication ─────────────────────────────────
+  // Ne pas régénérer d'opportunité pour une question qui en a déjà une
+  // ouverte, même si sa non-recommandation reste stable run après run.
+  // C'était le vrai bug : ce déclenchement automatique ne vérifiait jamais
+  // l'existence d'une opportunité déjà ouverte avant d'en créer une
+  // nouvelle, contrairement au teaser Free (fetchOpportunities) qui a
+  // toujours eu cette logique.
+  const stableQuestionIds = stableObservations.map((obs) => obs.question_id)
+  const { data: existingLinks } = await supabase
+    .from('opportunity_questions')
+    .select('question_id, opportunity_id')
+    .in('question_id', stableQuestionIds)
+
+  const candidateOpportunityIds: string[] = [
+    ...new Set((existingLinks ?? []).map((l: any) => l.opportunity_id)),
+  ]
+
+  let coveredQuestionIds = new Set<string>()
+  if (candidateOpportunityIds.length > 0) {
+    const { data: openOpps } = await supabase
+      .from('opportunities')
+      .select('id')
+      .in('id', candidateOpportunityIds)
+      .eq('status', 'open')
+
+    const openOpportunityIds = new Set((openOpps ?? []).map((o: any) => o.id))
+    coveredQuestionIds = new Set(
+      (existingLinks ?? [])
+        .filter((l: any) => openOpportunityIds.has(l.opportunity_id))
+        .map((l: any) => l.question_id),
+    )
+  }
+
+  const newStableObservations = stableObservations.filter(
+    (obs) => !coveredQuestionIds.has(obs.question_id),
+  )
+
+  if (newStableObservations.length === 0) return
+
+  const context = newStableObservations.map(obs => `
 Question posée à l'IA : "${obs.questions?.text}"
 Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirmé sur au moins ${MIN_RUNS_STABLE} runs consécutifs) :
 "${obs.raw_answer}"
@@ -101,7 +197,7 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirm
           priority: opp.priority,
           confidence: opp.confidence / 100,
           status: 'open',
-          observations_count: stableObservations.length,
+          observations_count: newStableObservations.length,
           reason: opp.reason,
           proposed_direction: opp.proposed_direction,
         })
@@ -112,7 +208,7 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirm
       // table déjà présente en base mais non exploitée avant la refonte v2)
       if (insertedOpp) {
         await (supabase as any).from('opportunity_questions').insert(
-          stableObservations.map((obs) => ({
+          newStableObservations.map((obs) => ({
             opportunity_id: insertedOpp.id,
             question_id: obs.question_id,
           })),
@@ -122,7 +218,7 @@ Réponse de l'IA (où notre marque ${brand.name} n'est pas recommandée, confirm
 
     if (parsed.length > 0) {
       // Notifier qu'une opportunité a été générée
-      await (supabase as any).from('events').insert({
+      await insertEvent(supabaseClient, {
         brand_id: brandId,
         type: 'info',
         title: 'Nouvelles opportunités détectées',

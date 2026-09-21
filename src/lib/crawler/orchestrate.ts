@@ -8,6 +8,7 @@ import { computeDiff } from './diff'
 import { checkBotAccess } from './robots'
 import type { IaBotId } from './constants'
 import { isFreePlan, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
+import { insertEvent } from '~/lib/events'
 
 // Délai par défaut entre deux fetches de pages si le robots.txt ne spécifie
 // pas de Crawl-delay. 800 ms offre un compromis correct : on n'inonde pas
@@ -189,7 +190,7 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
       // Notifier si au moins un bot majeur est bloqué
       const blockedMajorBots = MAJOR_BOTS.filter((b) => botResult.bots[b] === 'blocked')
       if (blockedMajorBots.length > 0) {
-        await admin.from('events').insert({
+        await insertEvent(admin, {
           brand_id: brand.id,
           type: 'warning',
           title: 'Bots IA bloqués détectés',
@@ -204,7 +205,7 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
 
       // Notifier si llms.txt est manquant
       if (!botResult.llmsTxtFound) {
-        await admin.from('events').insert({
+        await insertEvent(admin, {
           brand_id: brand.id,
           type: 'info',
           title: 'Fichier llms.txt manquant',
@@ -303,12 +304,13 @@ export const processNextPage = createServerFn({ method: 'POST' })
             })
 
             // Notifier la page supprimée
-            await admin.from('events').insert({
+            await insertEvent(admin, {
               brand_id: run.brand_id,
               type: 'warning',
               title: 'Page supprimée détectée',
               message: `La page ${page.url} n'a pas pu être atteinte après ${consecutiveFailures} tentatives consécutives.`,
               source_type: 'site_change',
+              source_id: page.id,
               show_toast: false,
               show_notification: true,
               show_history: true,
@@ -342,19 +344,42 @@ export const processNextPage = createServerFn({ method: 'POST' })
           last_checked_at: new Date().toISOString(),
         }).eq('id', page.id)
 
-        // Enregistrer le changement
+        // Enregistrer le changement — importance pondérée par champ (§3.A) :
+        // 'watch' seulement si un champ pertinent (title/pricing/meta) a
+        // changé, ou si le delta d'un champ conditionnel (body/headings)
+        // dépasse le seuil de similarité. Le bruit pur (links/cta/structure)
+        // reste en 'low', visible en historique mais sans déclencher quoi
+        // que ce soit derrière (remesure Pro, notification).
+        const importance = isBaseline ? 'low' : diff.importance
         if (diff.hasChanged) {
           await admin.from('site_changes').insert({
             brand_id: run.brand_id,
             page_id: page.id,
             crawl_run_id: run.id,
             change_type: isBaseline ? 'structure' : 'content',
-            importance: isBaseline ? 'low' : 'watch',
+            importance,
             detection_method: 'semantic_diff',
             changed_fields: diff.changedFields,
             old_content: isBaseline ? null : oldContent,
             new_content: newContent as any,
           })
+
+          // Notifier uniquement les changements significatifs (§3.C) — pas
+          // la baseline du premier crawl, pas le bruit sous le seuil.
+          if (importance === 'watch') {
+            await insertEvent(admin, {
+              brand_id: run.brand_id,
+              type: 'info',
+              title: 'Changement détecté sur votre site',
+              message: `Un changement significatif a été détecté sur ${page.url} (champs concernés : ${diff.changedFields.join(', ')}).`,
+              source_type: 'site_change',
+              source_id: page.id,
+              show_toast: false,
+              show_notification: true,
+              show_history: true,
+              read: false,
+            })
+          }
         }
       }
     } catch (err) {

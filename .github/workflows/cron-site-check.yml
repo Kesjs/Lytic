@@ -2,9 +2,14 @@ name: Cron site-check
 
 on:
   schedule:
-    # 05:00 UTC chaque jour (~6h/7h heure française selon saison).
-    # Ajuste l'heure si besoin — syntaxe cron standard.
-    - cron: '0 5 * * *'
+    # Toutes les heures, à l'heure pile (audit détection §3.B, option retenue :
+    # passage de quotidien à horaire). Un changement détecté attend au plus
+    # ~1h avant traitement, contre ~24h auparavant.
+    # Limite connue : ce workflow reste un run "tout traiter d'un coup" — si
+    # le nombre de marques actives grossit au point qu'un run dépasse 1h,
+    # passer à l'option plus robuste du plan (worker par lots de 15-30 min,
+    # cron natif Render) plutôt que de simplement resserrer davantage ce cron.
+    - cron: '0 * * * *'
   workflow_dispatch: {} # permet de le déclencher manuellement depuis l'onglet Actions
 
 jobs:

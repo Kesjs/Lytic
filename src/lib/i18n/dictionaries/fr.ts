@@ -128,7 +128,7 @@ export const fr = {
       features: [
         { label: '1 site suivi' },
         { label: "Jusqu'à 50 questions" },
-        { label: 'Vérification automatique', detail: 'Contrôle quotidien de votre site, remesure automatique dès qu\'un changement est détecté.' },
+        { label: 'Vérification automatique', detail: 'Contrôle de votre site toutes les heures, remesure automatique dès qu\'un changement significatif est détecté.' },
         { label: 'Remesures illimitées, toutes IA confondues' },
         { label: 'Analyse de positionnement continue' },
         { label: 'Détection automatique de toutes vos opportunités' }
@@ -160,7 +160,7 @@ export const fr = {
       },
       {
         q: "Est-ce que Reflet utilise les IA directement ?",
-        a: "Oui, Reflet interroge les principales IA génératives (ChatGPT, Gemini, Claude, etc.) avec les questions que vos prospects pourraient réellement poser, puis analyse les réponses obtenues."
+        a: "Oui, Reflet interroge les IA génératives via leurs modèles — ChatGPT et Perplexity dans le plan actuel — avec les questions que vos prospects pourraient réellement poser, puis analyse les réponses obtenues."
       },
       {
         q: "Pourquoi les réponses peuvent-elles varier ?",

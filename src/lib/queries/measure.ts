@@ -12,6 +12,7 @@ import { computeRunScore } from '~/lib/score'
 import { aggregateSamples } from '~/lib/aggregate'
 import { isFreePlan, getEngineMix, MEASUREMENT_DELAY_DAYS, FREE_MEASUREMENTS_PER_WEEK, FREE_MEASUREMENT_WINDOW_DAYS, type MeasurementEngine } from '~/lib/plan'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
+import { insertEvent } from '~/lib/events'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
 // Architecturé en deux server functions distinctes pour rester dans les
@@ -222,7 +223,7 @@ export const cancelMeasurementRun = createServerFn({ method: 'POST' })
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', run.id)
         
-      await adminSupabase.from('events').insert({
+      await insertEvent(adminSupabase, {
         brand_id: run.brand_id,
         type: 'warning',
         title: 'Mesure annulée',
@@ -395,7 +396,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         .eq('id', run.id)
 
       // Insère un event de notification
-      await adminSupabase.from('events').insert({
+      await insertEvent(adminSupabase, {
         brand_id: brand.id,
         type: (finalStatus === 'failed' ? 'error' : finalStatus === 'partial' ? 'warning' : 'success') as Database['public']['Tables']['events']['Row']['type'],
         title:
@@ -416,8 +417,14 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         read: false,
       })
 
-      // Déclenche l'Opportunity Engine (non-bloquant)
-      if (finalStatus === 'success' || finalStatus === 'partial') {
+      // Déclenche l'Opportunity Engine (non-bloquant) — Pro uniquement.
+      // §8 de l'audit détection : le teaser Free (1 opportunité gratuite,
+      // sans doublon) est déjà géré par `fetchOpportunities` à la visite du
+      // dashboard ; le déclenchement automatique ici court-circuitait ce
+      // teaser en générant une opportunité supplémentaire à chaque run
+      // stable suivant. On le limite donc au Pro, où il reste protégé par
+      // le garde-fou de déduplication ajouté dans generateOpportunitiesForRun.
+      if ((finalStatus === 'success' || finalStatus === 'partial') && !isFreePlan(brand.plan)) {
         import('~/lib/opportunities_engine').then(({ generateOpportunitiesForRun }) => {
           generateOpportunitiesForRun(run.id, brand.id, adminSupabase).catch((err) =>
             console.error('Erreur generateOpportunitiesForRun:', err)
@@ -694,7 +701,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     const anyFailed = engineResults.some((r) => !r.ok)
 
     if (anyFailed) {
-      await adminSupabase.from('events').insert({
+      await insertEvent(adminSupabase, {
         brand_id: brand.id,
         type: 'warning' as Database['public']['Tables']['events']['Row']['type'],
         title: 'Échec sur une question',
