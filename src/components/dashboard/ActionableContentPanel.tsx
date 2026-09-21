@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Copy, Check, Code, FileText, Settings, Loader2, Sparkles } from 'lucide-react'
-import { generateActionableContent, type ActionableContent, type SiteContent } from '~/lib/actionable-content'
+import { getActionableContentForOpportunity } from '~/lib/queries/actionable-content'
+import type { SiteContent } from '~/lib/actionable-content'
 import { isFreePlan } from '~/lib/plan'
 
 interface Props {
+  opportunityId: string
   opportunity: {
     title: string
     reason: string
@@ -15,14 +17,18 @@ interface Props {
   brandPlan: string
 }
 
-export function ActionableContentPanel({ opportunity, siteContent, brandPlan }: Props) {
+export function ActionableContentPanel({ opportunityId, opportunity, siteContent, brandPlan }: Props) {
   const [copied, setCopied] = useState(false)
   const plan = isFreePlan(brandPlan) ? 'free' : 'pro'
 
+  // Le contenu est généré et mis en cache côté serveur (server function) :
+  // un seul appel IA par opportunité tant que le site n'a pas changé, jamais
+  // depuis le navigateur (voir ~/lib/queries/actionable-content.ts).
   const { data: actionable, isLoading } = useQuery({
-    queryKey: ['actionable-content', opportunity.title, opportunity.reason, opportunity.proposed_direction],
-    queryFn: () => generateActionableContent(opportunity, siteContent, plan),
-    enabled: !!opportunity,
+    queryKey: ['actionable-content', opportunityId],
+    queryFn: () => getActionableContentForOpportunity({ data: { opportunityId, opportunity, siteContent } }),
+    enabled: !!opportunityId,
+    staleTime: 5 * 60 * 1000,
   })
 
   if (!actionable && !isLoading) return null

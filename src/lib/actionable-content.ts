@@ -7,9 +7,13 @@
  *
  * Analyse le site réel de l'utilisateur pour générer des instructions
  * personnalisées au lieu de contenus génériques.
+ *
+ * ⚠️ Module SERVEUR UNIQUEMENT (comme ~/lib/openai) : importe la clé API
+ * OpenAI. Ne jamais importer directement depuis un composant client — passer
+ * par la server function generateActionableContentForOpportunity exportée
+ * depuis ~/lib/queries/actionable-content.ts.
  */
 
-import OpenAI from 'openai'
 import { getClient } from '~/lib/openai'
 
 const MODEL = 'gpt-5.6-luna'
@@ -37,9 +41,39 @@ export interface SiteContent {
   canonicalUrl?: string
 }
 
+/** Tokens consommés par les appels IA d'une génération, pour logging api_usage_log. */
+export interface AIUsage {
+  inputTokens: number
+  outputTokens: number
+  /** true si au moins un appel IA a réellement été fait (false si tout vient du fallback standard / plan free → coût nul). */
+  calledModel: boolean
+}
+
+function newUsage(): AIUsage {
+  return { inputTokens: 0, outputTokens: 0, calledModel: false }
+}
+
+/** Appelle le modèle et accumule l'usage dans le tracker fourni. */
+async function callAI(client: ReturnType<typeof getClient>, prompt: string, usage: AIUsage): Promise<string> {
+  const response = await client.responses.create({
+    model: MODEL,
+    input: prompt,
+    text: { format: { type: 'text' } },
+  })
+
+  usage.inputTokens += response.usage?.input_tokens ?? 0
+  usage.outputTokens += response.usage?.output_tokens ?? 0
+  usage.calledModel = true
+
+  return response.output?.[0]?.content?.[0]?.text ?? ''
+}
+
 /**
  * Génère le contenu prêt à appliquer pour une opportunité donnée
- * avec analyse IA personnalisée basée sur le contenu réel du site
+ * avec analyse IA personnalisée basée sur le contenu réel du site.
+ *
+ * Retourne aussi le détail des tokens consommés (usage.calledModel === false
+ * si le fallback standard a été utilisé, donc coût nul).
  */
 export async function generateActionableContent(
   opportunity: {
@@ -50,79 +84,98 @@ export async function generateActionableContent(
   },
   siteContent: SiteContent | null = null,
   plan: 'free' | 'pro' = 'pro'
-): Promise<ActionableContent | null> {
+): Promise<{ content: ActionableContent | null; usage: AIUsage }> {
   const { title, reason, proposed_direction, website_url } = opportunity
+  const usage = newUsage()
 
   // robots.txt manquant ou corrigé
   if (title.toLowerCase().includes('robots.txt') || reason.toLowerCase().includes('robots.txt') ||
       (title.toLowerCase().includes('bot') && (reason.toLowerCase().includes('bloqué') || reason.toLowerCase().includes('disallow')))) {
-    const content = await generateRobotsTxtWithAI(website_url, siteContent, plan)
+    const content = await generateRobotsTxtWithAI(website_url, siteContent, plan, usage)
     return {
-      type: 'robots_txt',
-      label: 'robots.txt complet',
-      filename: 'robots.txt',
-      content,
-      instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/robots.txt)'
+      content: {
+        type: 'robots_txt',
+        label: 'robots.txt complet',
+        filename: 'robots.txt',
+        content,
+        instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/robots.txt)'
+      },
+      usage,
     }
   }
 
   // llms.txt manquant
   if (title.toLowerCase().includes('llms.txt') || reason.toLowerCase().includes('llms.txt')) {
-    const content = await generateLlmsTxtWithAI(website_url, siteContent, plan)
+    const content = await generateLlmsTxtWithAI(website_url, siteContent, plan, usage)
     return {
-      type: 'llms_txt',
-      label: 'llms.txt complet',
-      filename: 'llms.txt',
-      content,
-      instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/llms.txt)'
+      content: {
+        type: 'llms_txt',
+        label: 'llms.txt complet',
+        filename: 'llms.txt',
+        content,
+        instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/llms.txt)'
+      },
+      usage,
     }
   }
 
   // Meta description manquante
   if (title.toLowerCase().includes('meta') || title.toLowerCase().includes('description')) {
-    const content = await generateMetaDescriptionWithAI(siteContent, title, reason, plan)
+    const content = await generateMetaDescriptionWithAI(siteContent, title, reason, plan, usage)
     return {
-      type: 'meta_description',
-      label: 'Meta description',
-      content: `<meta name="description" content="${content}" />`,
-      instructions: 'Ajoutez cette balise dans la section <head> de votre page HTML'
+      content: {
+        type: 'meta_description',
+        label: 'Meta description',
+        content: `<meta name="description" content="${content}" />`,
+        instructions: 'Ajoutez cette balise dans la section <head> de votre page HTML'
+      },
+      usage,
     }
   }
 
   // JSON-LD / Schema.org manquant
   if (title.toLowerCase().includes('schema') || title.toLowerCase().includes('json-ld') || title.toLowerCase().includes('structured data')) {
-    const content = await generateJsonLdWithAI(website_url, siteContent, plan)
+    const content = await generateJsonLdWithAI(website_url, siteContent, plan, usage)
     return {
-      type: 'json_ld',
-      label: 'Snippet JSON-LD',
-      content,
-      instructions: 'Ajoutez ce script dans la section <head> de votre page HTML'
+      content: {
+        type: 'json_ld',
+        label: 'Snippet JSON-LD',
+        content,
+        instructions: 'Ajoutez ce script dans la section <head> de votre page HTML'
+      },
+      usage,
     }
   }
 
   // Page supprimée (redirect)
   if (title.toLowerCase().includes('page') && (title.toLowerCase().includes('supprimée') || title.toLowerCase().includes('removed'))) {
-    const content = await generateRedirectWithAI(website_url, title, reason, plan)
+    const content = await generateRedirectWithAI(website_url, title, reason, plan, usage)
     return {
-      type: 'redirect_rule',
-      label: 'Règle de redirection',
-      content,
-      instructions: 'Choisissez la méthode adaptée à votre hébergement et remplacez les URLs par les vôtres'
+      content: {
+        type: 'redirect_rule',
+        label: 'Règle de redirection',
+        content,
+        instructions: 'Choisissez la méthode adaptée à votre hébergement et remplacez les URLs par les vôtres'
+      },
+      usage,
     }
   }
 
   // Contenu générique (proposed_direction) - amélioré avec IA
   if (proposed_direction) {
-    const enhancedContent = await enhanceProposedDirectionWithAI(siteContent, title, reason, proposed_direction, plan)
+    const enhancedContent = await enhanceProposedDirectionWithAI(siteContent, title, reason, proposed_direction, plan, usage)
     return {
-      type: 'custom',
-      label: 'Suggestion d\'amélioration',
-      content: enhancedContent,
-      instructions: reason
+      content: {
+        type: 'custom',
+        label: 'Suggestion d\'amélioration',
+        content: enhancedContent,
+        instructions: reason
+      },
+      usage,
     }
   }
 
-  return null
+  return { content: null, usage }
 }
 
 /**
@@ -131,12 +184,12 @@ export async function generateActionableContent(
 async function generateRobotsTxtWithAI(
   websiteUrl: string | null | undefined,
   siteContent: SiteContent | null,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
   const domain = websiteUrl || 'votre-site.com'
   const sitemap = `https://${domain}/sitemap.xml`
 
-  // Si pas de contenu ou plan Free, retourne version standard
   if (!siteContent || plan === 'free') {
     return generateStandardRobotsTxt(domain, sitemap)
   }
@@ -161,14 +214,8 @@ Génère un robots.txt qui:
 
 Retourne UNIQUEMENT le contenu du fichier robots.txt, sans explication supplémentaire.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || generateStandardRobotsTxt(domain, sitemap)
-    return text.trim()
+    const text = await callAI(client, prompt, usage)
+    return (text || generateStandardRobotsTxt(domain, sitemap)).trim()
   } catch (err) {
     console.error('[actionable-content] Erreur génération robots.txt IA:', err)
     return generateStandardRobotsTxt(domain, sitemap)
@@ -181,11 +228,11 @@ Retourne UNIQUEMENT le contenu du fichier robots.txt, sans explication suppléme
 async function generateLlmsTxtWithAI(
   websiteUrl: string | null | undefined,
   siteContent: SiteContent | null,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
   const domain = websiteUrl || 'votre-site.com'
 
-  // Si pas de contenu ou plan Free, retourne version standard
   if (!siteContent || plan === 'free') {
     return generateStandardLlmsTxt(domain)
   }
@@ -210,14 +257,8 @@ Génère un llms.txt qui:
 
 Retourne UNIQUEMENT le contenu du fichier llms.txt, sans explication supplémentaire.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || generateStandardLlmsTxt(domain)
-    return text.trim()
+    const text = await callAI(client, prompt, usage)
+    return (text || generateStandardLlmsTxt(domain)).trim()
   } catch (err) {
     console.error('[actionable-content] Erreur génération llms.txt IA:', err)
     return generateStandardLlmsTxt(domain)
@@ -231,9 +272,9 @@ async function generateMetaDescriptionWithAI(
   siteContent: SiteContent | null,
   title: string,
   reason: string,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
-  // Si pas de contenu ou plan Free, utilise proposed_direction ou générique
   if (!siteContent || plan === 'free') {
     return 'Une description concise et attrayante de votre page (150-160 caractères)'
   }
@@ -262,14 +303,8 @@ Génère une meta description qui:
 
 Retourne UNIQUEMENT la meta description (texte entre guillemets si nécessaire), sans autre explication.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || 'Une description concise et attrayante de votre page (150-160 caractères)'
-    return text.trim().replace(/^["']|["']$/g, '')
+    const text = await callAI(client, prompt, usage)
+    return (text || 'Une description concise et attrayante de votre page (150-160 caractères)').trim().replace(/^["']|["']$/g, '')
   } catch (err) {
     console.error('[actionable-content] Erreur génération meta description IA:', err)
     return 'Une description concise et attrayante de votre page (150-160 caractères)'
@@ -282,11 +317,11 @@ Retourne UNIQUEMENT la meta description (texte entre guillemets si nécessaire),
 async function generateJsonLdWithAI(
   websiteUrl: string | null | undefined,
   siteContent: SiteContent | null,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
   const domain = websiteUrl || 'votre-site.com'
 
-  // Si pas de contenu ou plan Free, retourne version standard
   if (!siteContent || plan === 'free') {
     return generateStandardJsonLd(domain)
   }
@@ -313,14 +348,8 @@ Génère un JSON-LD qui:
 
 Retourne UNIQUEMENT le snippet JSON-LD complet, sans explication supplémentaire.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || generateStandardJsonLd(domain)
-    return text.trim()
+    const text = await callAI(client, prompt, usage)
+    return (text || generateStandardJsonLd(domain)).trim()
   } catch (err) {
     console.error('[actionable-content] Erreur génération JSON-LD IA:', err)
     return generateStandardJsonLd(domain)
@@ -334,7 +363,8 @@ async function generateRedirectWithAI(
   websiteUrl: string | null | undefined,
   title: string,
   reason: string,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
   const domain = websiteUrl || 'votre-site.com'
 
@@ -366,14 +396,8 @@ Les exemples doivent:
 
 Retourne UNIQUEMENT les exemples de code, sans explication supplémentaire.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || generateStandardRedirect(domain)
-    return text.trim()
+    const text = await callAI(client, prompt, usage)
+    return (text || generateStandardRedirect(domain)).trim()
   } catch (err) {
     console.error('[actionable-content] Erreur génération redirection IA:', err)
     return generateStandardRedirect(domain)
@@ -388,7 +412,8 @@ async function enhanceProposedDirectionWithAI(
   title: string,
   reason: string,
   proposedDirection: string,
-  plan: 'free' | 'pro'
+  plan: 'free' | 'pro',
+  usage: AIUsage
 ): Promise<string> {
   if (!siteContent || plan === 'free') {
     return proposedDirection
@@ -419,14 +444,8 @@ Améliore les instructions pour:
 
 Retourne UNIQUEMENT les instructions améliorées, sans explication supplémentaire.`
 
-    const response = await client.responses.create({
-      model: MODEL,
-      input: prompt,
-      text: { format: { type: 'text' } }
-    })
-
-    const text = response.output?.[0]?.content?.[0]?.text || proposedDirection
-    return text.trim()
+    const text = await callAI(client, prompt, usage)
+    return (text || proposedDirection).trim()
   } catch (err) {
     console.error('[actionable-content] Erreur amélioration proposed_direction IA:', err)
     return proposedDirection

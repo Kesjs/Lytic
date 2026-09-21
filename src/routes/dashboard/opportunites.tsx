@@ -531,6 +531,7 @@ function OpportunityCard({
 
               {/* Actionable Content Panel - Palier 0 */}
               <ActionableContentPanel
+                opportunityId={opportunity.id}
                 opportunity={{
                   title: opportunity.title,
                   reason: opportunity.reason,

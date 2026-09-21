@@ -117,7 +117,7 @@ function AccueilPage() {
     )
   }
 
-  const { brand, latestRun, displayRun, events, pages, kpis, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes, opportunities } =
+  const { brand, latestRun, displayRun, events, pages, kpis, kpiTrends, aiInsight, questionsPerf, topCompetitors, shareOfVoice, enginePerformance, sentimentDistribution, topThemes, opportunities } =
     data
 
   return (
@@ -214,7 +214,11 @@ function AccueilPage() {
             <KpiCard
               label="Mentions"
               value={kpis.mentionsPct !== null ? `${kpis.mentionsPct}%` : null}
-              trend={{ value: 2, suffix: 'vs sem. dernière' }}
+              trend={
+                kpiTrends?.mentionsTrend != null
+                  ? { value: kpiTrends.mentionsTrend, suffix: 'vs mesure précédente' }
+                  : undefined
+              }
               tooltip="Pourcentage de fois où votre marque est citée dans les réponses générées."
               icon={MessageSquare}
               tone="info"
@@ -222,7 +226,11 @@ function AccueilPage() {
             <KpiCard
               label="Recommandations"
               value={kpis.recommendationsPct !== null ? `${kpis.recommendationsPct}%` : null}
-              trend={{ value: 5, suffix: 'vs sem. dernière' }}
+              trend={
+                kpiTrends?.recommendationsTrend != null
+                  ? { value: kpiTrends.recommendationsTrend, suffix: 'vs mesure précédente' }
+                  : undefined
+              }
               tooltip="Pourcentage de fois où votre marque est explicitement recommandée."
               icon={ThumbsUp}
               tone="success"
@@ -230,7 +238,11 @@ function AccueilPage() {
             <KpiCard
               label="Pos. moyenne"
               value={kpis.avgPosition !== null ? `#${kpis.avgPosition}` : null}
-              trend={{ value: -0.2, suffix: 'vs sem. dernière' }}
+              trend={
+                kpiTrends?.avgPositionTrend != null
+                  ? { value: kpiTrends.avgPositionTrend, suffix: 'vs mesure précédente' }
+                  : undefined
+              }
               tooltip="Votre position d'apparition (1er, 2ème) dans les listes générées par l'IA."
               icon={TrendingUp}
               tone="warning"
@@ -240,6 +252,11 @@ function AccueilPage() {
               value={
                 kpis.competitivePresencePct !== null ? `${kpis.competitivePresencePct}%` : null
               }
+              trend={
+                kpiTrends?.competitivePresenceTrend != null
+                  ? { value: kpiTrends.competitivePresenceTrend, suffix: 'vs mesure précédente' }
+                  : undefined
+              }
               hint="sur les 30 derniers jours"
               tooltip="Votre part de mentions par rapport à vos principaux concurrents."
               icon={Radar}
@@ -247,26 +264,24 @@ function AccueilPage() {
             />
           </div>
           
-          {displayRun && displayRun.score !== null && (
+          {displayRun && displayRun.score !== null && aiInsight && (
             <div className="mt-auto flex flex-col sm:flex-row sm:items-start gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent p-5 lg:p-6 shadow-sm">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
                 <Sparkles className="size-4 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-ink-primary">Insight IA</h3>
-                <p className="text-sm text-ink-secondary leading-snug mt-1">
-                  Bonne progression cette semaine : votre taux de recommandation a augmenté de <span className="font-semibold text-ink-primary">+5%</span> par rapport à vos concurrents principaux.
-                </p>
-                <ul className="mt-3.5 space-y-2 text-xs text-ink-muted">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1.5 size-1 shrink-0 rounded-full bg-violet-500/50" />
-                    <span><strong className="font-medium text-ink-primary">ChatGPT</strong> vous cite plus souvent sur les requêtes commerciales.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1.5 size-1 shrink-0 rounded-full bg-violet-500/50" />
-                    <span><strong className="font-medium text-ink-primary">Perplexity</strong> commence à utiliser vos articles de blog récents comme sources.</span>
-                  </li>
-                </ul>
+                <p className="text-sm text-ink-secondary leading-snug mt-1">{aiInsight.headline}</p>
+                {aiInsight.bullets.length > 0 && (
+                  <ul className="mt-3.5 space-y-2 text-xs text-ink-muted">
+                    {aiInsight.bullets.map((bullet: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <div className="mt-1.5 size-1 shrink-0 rounded-full bg-violet-500/50" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           )}
@@ -319,7 +334,11 @@ function AccueilPage() {
                 Tout →
               </Link>
             </div>
-            <OpportunitiesPreview opportunities={opportunities ?? []} hasAnyRun={!!latestRun} />
+            <OpportunitiesPreview
+              opportunities={opportunities ?? []}
+              hasAnyRun={!!latestRun}
+              hasPreviousRun={!!data.previousRun}
+            />
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
@@ -382,10 +401,28 @@ function AccueilPage() {
                   Aucune page suivie — configurez votre site dans Paramètres.
                 </p>
               ) : (
-                <p className="mt-3 text-sm text-ink-secondary">
-                  {pages.length} page{pages.length > 1 ? 's' : ''} suivie
-                  {pages.length > 1 ? 's' : ''}.
-                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {pages.slice(0, 5).map((p: any) => (
+                    <li key={p.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-xs text-ink-secondary" title={p.url}>
+                        {(() => {
+                          try {
+                            const u = new URL(p.url)
+                            return u.pathname === '/' ? u.hostname : `${u.hostname}${u.pathname}`
+                          } catch {
+                            return p.url
+                          }
+                        })()}
+                      </span>
+                      <span className={cn('shrink-0 text-[11px] font-medium', PAGE_STATUS_TEXT[p.status as PageStatus] ?? 'text-ink-muted')}>
+                        {PAGE_STATUS_LABEL[p.status as PageStatus] ?? p.status}
+                      </span>
+                    </li>
+                  ))}
+                  {pages.length > 5 && (
+                    <li className="text-[11px] text-ink-muted">+ {pages.length - 5} autre{pages.length - 5 > 1 ? 's' : ''}</li>
+                  )}
+                </ul>
               )}
             </div>
 
@@ -493,9 +530,11 @@ function AccueilPage() {
 function OpportunitiesPreview({
   opportunities,
   hasAnyRun,
+  hasPreviousRun,
 }: {
   opportunities: any[]
   hasAnyRun: boolean
+  hasPreviousRun: boolean
 }) {
   if (!hasAnyRun) {
     return (
@@ -505,6 +544,19 @@ function OpportunitiesPreview({
     )
   }
   if (opportunities.length === 0) {
+    // Une opportunité n'est validée qu'après ≥2 runs stables sur la même
+    // question (garde-fou "evidence first") — distinguer ce cas d'un vrai
+    // "rien à signaler" pour ne pas laisser croire à un dashboard vide/cassé.
+    if (!hasPreviousRun) {
+      return (
+        <div className="mt-3 rounded-md bg-elevated/50 p-3">
+          <p className="text-sm text-ink-primary">🔍 Détection en cours</p>
+          <p className="mt-1 text-xs text-ink-muted">
+            Encore 1 mesure à faire avant de pouvoir confirmer une opportunité de façon fiable.
+          </p>
+        </div>
+      )
+    }
     return (
       <div className="mt-3 rounded-md bg-elevated/50 p-3">
         <p className="text-sm text-ink-primary">👑 Rien à signaler</p>
@@ -539,6 +591,20 @@ function OpportunitiesPreview({
       ))}
     </ul>
   )
+}
+
+type PageStatus = 'ok' | 'stale' | 'unavailable' | 'removed'
+const PAGE_STATUS_LABEL: Record<PageStatus, string> = {
+  ok: 'OK',
+  stale: 'Périmée',
+  unavailable: 'Inaccessible',
+  removed: 'Supprimée',
+}
+const PAGE_STATUS_TEXT: Record<PageStatus, string> = {
+  ok: 'text-success',
+  stale: 'text-warning',
+  unavailable: 'text-danger',
+  removed: 'text-ink-muted',
 }
 
 const PRIORITY_DOT = { low: 'bg-ink-muted', medium: 'bg-warning', high: 'bg-danger' } as const

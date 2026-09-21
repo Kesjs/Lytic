@@ -250,7 +250,8 @@ export async function checkBotAccess(baseUrl: string): Promise<BotAccessResult> 
       if (wildcardRules.disallowed.includes('/')) {
         bots[bot.id] = 'blocked'
       } else if (wildcardRules.disallowed.length === 0) {
-        bots[bot.id] = 'unknown'
+        // Bloc wildcard sans aucune règle de blocage → site ouvert, bot autorisé
+        bots[bot.id] = 'allowed'
       } else {
         // Wildcard avec quelques disallow partiels → allowed (root accessible)
         bots[bot.id] = isAllowed(baseUrl, wildcardRules) ? 'allowed' : 'blocked'

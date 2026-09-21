@@ -50,6 +50,152 @@ export interface CompetitorMini {
   mentions: number
 }
 
+export interface KpiTrends {
+  mentionsTrend: number | null
+  recommendationsTrend: number | null
+  avgPositionTrend: number | null
+  competitivePresenceTrend: number | null
+}
+
+export interface DashboardInsight {
+  headline: string
+  bullets: string[]
+}
+
+// Fonction pure : calcule les 4 KPI à partir d'observations déjà chargées
+// (pas de requête ici) — réutilisée pour le run affiché ET pour le run
+// précédent, afin de garder une seule définition de chaque KPI.
+function computeKpisFromData(
+  observations: { brand_mentioned: boolean; brand_recommended: boolean; brand_position: number | null }[],
+  observationsWithCompetitor: Set<string>,
+): HomeKpis {
+  const total = observations.length
+  if (total === 0) {
+    return {
+      mentionsPct: null,
+      recommendationsPct: null,
+      avgPosition: null,
+      competitivePresencePct: null,
+      observationsCount: 0,
+    }
+  }
+  const mentionedCount = observations.filter((o) => o.brand_mentioned).length
+  const recommendedCount = observations.filter((o) => o.brand_recommended).length
+  const positions = observations.map((o) => o.brand_position).filter((p): p is number => p !== null)
+
+  return {
+    mentionsPct: Math.round((mentionedCount / total) * 100),
+    recommendationsPct: Math.round((recommendedCount / total) * 100),
+    avgPosition:
+      positions.length > 0
+        ? Math.round((positions.reduce((a, b) => a + b, 0) / positions.length) * 10) / 10
+        : null,
+    competitivePresencePct: Math.round((observationsWithCompetitor.size / total) * 100),
+    observationsCount: total,
+  }
+}
+
+// Recharge juste ce qu'il faut pour calculer les KPI d'un run donné (utilisé
+// pour le run précédent, afin de calculer un delta réel — jamais un delta
+// inventé). Requête légère : pas de select('*'), pas de thèmes/concurrents.
+async function computeKpisForRun(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  runId: string,
+): Promise<HomeKpis> {
+  const { data: observations } = await supabase
+    .from('observations')
+    .select('id, brand_mentioned, brand_recommended, brand_position')
+    .eq('run_id', runId)
+
+  if (!observations || observations.length === 0) {
+    return {
+      mentionsPct: null,
+      recommendationsPct: null,
+      avgPosition: null,
+      competitivePresencePct: null,
+      observationsCount: 0,
+    }
+  }
+
+  const observationIds = observations.map((o) => o.id)
+  const { data: obsCompetitors } = await supabase
+    .from('observation_competitors')
+    .select('observation_id')
+    .in('observation_id', observationIds)
+    .eq('mentioned', true)
+
+  const observationsWithCompetitor = new Set((obsCompetitors ?? []).map((oc) => oc.observation_id))
+  return computeKpisFromData(observations, observationsWithCompetitor)
+}
+
+// Delta réel entre deux mesures de KPI — null (pas de badge) si l'une des
+// deux valeurs manque, jamais 0 inventé.
+export function computeKpiTrends(current: HomeKpis, previous: HomeKpis | null): KpiTrends | null {
+  if (!previous || previous.observationsCount === 0) return null
+
+  const delta = (a: number | null, b: number | null) => (a !== null && b !== null ? a - b : null)
+
+  return {
+    mentionsTrend: delta(current.mentionsPct, previous.mentionsPct),
+    recommendationsTrend: delta(current.recommendationsPct, previous.recommendationsPct),
+    avgPositionTrend:
+      current.avgPosition !== null && previous.avgPosition !== null
+        ? Math.round((current.avgPosition - previous.avgPosition) * 10) / 10
+        : null,
+    competitivePresenceTrend: delta(current.competitivePresencePct, previous.competitivePresencePct),
+  }
+}
+
+// Génère l'"Insight IA" de façon déterministe (aucun appel IA, coût nul) à
+// partir des données déjà calculées dans le loader. Ne mentionne jamais un
+// moteur non mesuré, ni un chiffre sans donnée source correspondante.
+export function buildDashboardInsight(
+  displayRun: { score_delta: number | null } | null,
+  brandName: string,
+  enginePerformance: { engine: string; mentioned: number; recommended: number; total: number }[],
+  topThemes: { text: string; count: number }[],
+  topCompetitors: CompetitorMini[],
+  shareOfVoice: { name: string; mentions: number }[],
+): DashboardInsight | null {
+  if (!displayRun) return null
+
+  let headline: string
+  if (displayRun.score_delta === null) {
+    headline = 'Première mesure enregistrée — revenez après la prochaine pour voir votre évolution.'
+  } else if (displayRun.score_delta >= 0) {
+    headline = `Bonne progression : votre score a gagné ${displayRun.score_delta} pt${displayRun.score_delta > 1 ? 's' : ''} depuis la dernière mesure.`
+  } else {
+    headline = `Votre score a reculé de ${Math.abs(displayRun.score_delta)} pt${Math.abs(displayRun.score_delta) > 1 ? 's' : ''} depuis la dernière mesure.`
+  }
+
+  const bullets: string[] = []
+
+  // Uniquement les moteurs réellement mesurés pour ce plan.
+  for (const ep of enginePerformance) {
+    if (ep.total === 0) continue
+    const pct = Math.round((ep.mentioned / ep.total) * 100)
+    bullets.push(`${ep.engine} vous cite dans ${pct}% des réponses mesurées.`)
+  }
+
+  if (topThemes.length > 0) {
+    bullets.push(`Meilleure performance sur le thème « ${topThemes[0].text} ».`)
+  }
+
+  const topCompetitor = topCompetitors[0]
+  if (topCompetitor) {
+    const brandEntry = shareOfVoice.find((s) => s.name === brandName)
+    if (brandEntry) {
+      if (brandEntry.mentions > topCompetitor.mentions) {
+        bullets.push(`Vous êtes mentionné plus souvent que ${topCompetitor.name}, votre concurrent le plus cité.`)
+      } else if (brandEntry.mentions < topCompetitor.mentions) {
+        bullets.push(`${topCompetitor.name} est actuellement mentionné plus souvent que vous.`)
+      }
+    }
+  }
+
+  return { headline, bullets: bullets.slice(0, 3) }
+}
+
 async function computeLatestRunInsights(
   supabase: ReturnType<typeof getSupabaseServerClient>,
   brandId: string,
@@ -95,9 +241,6 @@ async function computeLatestRunInsights(
   const total = observations.length
   const mentionedCount = observations.filter((o) => o.brand_mentioned).length
   const recommendedCount = observations.filter((o) => o.brand_recommended).length
-  const positions = observations
-    .map((o) => o.brand_position)
-    .filter((p): p is number => p !== null)
 
   const observationIds = observations.map((o) => o.id)
   const { data: obsCompetitors } = await supabase
@@ -140,16 +283,7 @@ async function computeLatestRunInsights(
     })
     .filter((q): q is QuestionPerf => q !== null)
 
-  const kpis: HomeKpis = {
-    mentionsPct: Math.round((mentionedCount / total) * 100),
-    recommendationsPct: Math.round((recommendedCount / total) * 100),
-    avgPosition:
-      positions.length > 0
-        ? Math.round((positions.reduce((a, b) => a + b, 0) / positions.length) * 10) / 10
-        : null,
-    competitivePresencePct: Math.round((observationsWithCompetitor.size / total) * 100),
-    observationsCount: total,
-  }
+  const kpis: HomeKpis = computeKpisFromData(observations, observationsWithCompetitor)
 
   // Retroactive fix for runs that were marked as success despite having null raw_answers
   const successCount = observations.filter(o => o.raw_answer !== null).length
@@ -317,6 +451,22 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     }
   }
 
+  // Tendance réelle des 4 KPI vs le run success/partial précédent — jamais
+  // de delta inventé : null (pas de badge) tant qu'il n'y a qu'un seul run.
+  const previousKpis = previousRun ? await computeKpisForRun(supabase, previousRun.id) : null
+  const kpiTrends = computeKpiTrends(kpis, previousKpis)
+
+  // Insight IA déterministe (coût nul), à partir des données déjà calculées
+  // ci-dessus — jamais de texte ou de chiffre inventé.
+  const aiInsight = buildDashboardInsight(
+    dataRun,
+    brand.name,
+    enginePerformance,
+    topThemes,
+    topCompetitors,
+    shareOfVoice,
+  )
+
   return {
     brand,
     latestRun,
@@ -329,6 +479,8 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     events: events ?? [],
     pages: pages ?? [],
     kpis,
+    kpiTrends,
+    aiInsight,
     questionsPerf,
     topCompetitors,
     totalCompetitorsCount,

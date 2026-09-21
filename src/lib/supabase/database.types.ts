@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -528,6 +526,56 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_actionable_content: {
+        Row: {
+          content: string
+          created_at: string
+          filename: string | null
+          id: string
+          instructions: string | null
+          label: string
+          opportunity_id: string
+          plan: string
+          source_content_hash: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          filename?: string | null
+          id?: string
+          instructions?: string | null
+          label: string
+          opportunity_id: string
+          plan?: string
+          source_content_hash?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          filename?: string | null
+          id?: string
+          instructions?: string | null
+          label?: string
+          opportunity_id?: string
+          plan?: string
+          source_content_hash?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_actionable_content_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "opportunities"
             referencedColumns: ["id"]
           },
         ]
