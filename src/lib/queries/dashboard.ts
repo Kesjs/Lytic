@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
 import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE, FREE_MEASUREMENTS_PER_WEEK, FREE_MEASUREMENT_WINDOW_DAYS } from '~/lib/plan'
@@ -154,7 +153,7 @@ async function computeLatestRunInsights(
 
   // Retroactive fix for runs that were marked as success despite having null raw_answers
   const successCount = observations.filter(o => o.raw_answer !== null).length
-  const actualStatus = latestRun.status === 'success' && successCount < questions.length ? 'partial' : latestRun.status
+  const actualStatus = latestRun.status === 'success' && successCount < (questions ?? []).length ? 'partial' : latestRun.status
 
   // --- New Rich Charts Data ---
 

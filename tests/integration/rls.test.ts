@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
 
 // ─── Client admin pour les tests (bypasse RLS pour setup/teardown) ────────────
@@ -46,7 +46,7 @@ describe('RLS — Isolation des données entre utilisateurs', () => {
     let questionA_id: string
 
     beforeAll(async () => {
-      if (!adminClient) return
+      if (!adminClient || !anonKey) return
 
       const ts = Date.now()
       const emailA = `test_rls_a_${ts}@example.com`
@@ -134,7 +134,7 @@ describe('RLS — Isolation des données entre utilisateurs', () => {
           engine: 'openai',
           brand_mentioned: true,
           brand_recommended: true,
-          position: 1,
+          brand_position: 1,
         })
         .select()
         .single()

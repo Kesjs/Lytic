@@ -16,7 +16,7 @@ export const fetchAdminOverview = createServerFn({ method: 'GET' })
     ] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('brands').select('id', { count: 'exact', head: true }),
-      supabase.from('runs').select('id', { count: 'exact', head: true }),
+      supabase.from('measurement_runs').select('id', { count: 'exact', head: true }),
       supabase.from('api_usage_log').select('estimated_cost_usd'),
       supabase.from('signup_attempts').select('id', { count: 'exact' }).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
     ])

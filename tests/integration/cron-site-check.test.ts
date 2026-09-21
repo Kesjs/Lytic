@@ -10,18 +10,21 @@ vi.mock('~/lib/supabase/server', () => ({
   getSupabaseAdminClient: vi.fn(),
 }))
 
+// Bug corrigé (21/09/2026) : le fichier mockait 4 fonctions qui n'ont
+// jamais existé (triggerSiteCrawlForBrandId, runCrawlToCompletion,
+// triggerMeasurementRunForBrandId, runMeasurementToCompletion) — la vraie
+// route src/routes/api/cron/site-check.ts boucle en interne sur
+// triggerSiteCrawl/processNextPage et triggerMeasurementRun/processNextQuestion,
+// sans passer par des helpers "ForBrandId" séparés. checkMeasurementDelay est
+// définie localement dans la route (non exportée) : la mocker depuis
+// ~/lib/queries/measure n'avait aucun effet réel, elle est retirée ici.
 vi.mock('~/lib/crawler/orchestrate', () => ({
   triggerSiteCrawl: vi.fn(),
-  triggerSiteCrawlForBrandId: vi.fn(),
-  runCrawlToCompletion: vi.fn(),
   processNextPage: vi.fn(),
 }))
 
 vi.mock('~/lib/queries/measure', () => ({
   triggerMeasurementRun: vi.fn(),
-  triggerMeasurementRunForBrandId: vi.fn(),
-  runMeasurementToCompletion: vi.fn(),
-  checkMeasurementDelay: vi.fn(),
   processNextQuestion: vi.fn(),
 }))
 
@@ -30,19 +33,8 @@ vi.mock('~/lib/reliability', () => ({
 }))
 
 import { getSupabaseAdminClient } from '~/lib/supabase/server'
-import {
-  triggerSiteCrawl,
-  triggerSiteCrawlForBrandId,
-  runCrawlToCompletion,
-  processNextPage,
-} from '~/lib/crawler/orchestrate'
-import {
-  triggerMeasurementRun,
-  triggerMeasurementRunForBrandId,
-  runMeasurementToCompletion,
-  checkMeasurementDelay,
-  processNextQuestion,
-} from '~/lib/queries/measure'
+import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
+import { triggerMeasurementRun, processNextQuestion } from '~/lib/queries/measure'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
 import { Route } from '~/routes/api/cron/site-check'
 
@@ -115,7 +107,6 @@ describe('tests/integration/cron-site-check.test.ts', () => {
     })
     ;(triggerSiteCrawl as any).mockResolvedValue({ runId: 'crawl-1' })
     ;(processNextPage as any).mockResolvedValue({ done: true })
-    ;(runCrawlToCompletion as any).mockResolvedValue(undefined)
 
     const res = await postHandler({ request: makeRequest('test-secret') })
     const body = await res.json()
@@ -132,10 +123,10 @@ describe('tests/integration/cron-site-check.test.ts', () => {
     expect(freeResult.remeasure).toBe('skipped')
     expect(noUrlResult.crawl).toBe('skipped')
     expect(noUrlResult.remeasure).toBe('skipped')
-    expect(triggerMeasurementRunForBrandId).not.toHaveBeenCalled()
+    expect(triggerMeasurementRun).not.toHaveBeenCalled()
   })
 
-  it.skip('déclenche la remesure automatique pour une marque Pro éligible', async () => {
+  it('déclenche la remesure automatique pour une marque Pro éligible', async () => {
     const brands = [
       { id: 'b-pro', name: 'Pro Brand', website_url: 'https://pro.com', plan: 'active' },
     ]
@@ -143,18 +134,17 @@ describe('tests/integration/cron-site-check.test.ts', () => {
     ;(getSupabaseAdminClient as any).mockReturnValue({
       from: (table: string) => {
         if (table === 'brands') return createChainableBuilder({ data: brands, error: null })
+        // measurement_runs : aucun run précédent → checkMeasurementDelay
+        // interne à la route renvoie allowed = true (jamais mesuré encore).
         if (table === 'measurement_runs') return createChainableBuilder({ data: null, error: null })
         return createChainableBuilder()
       },
     })
     ;(triggerSiteCrawl as any).mockResolvedValue({ runId: 'crawl-1' })
     ;(processNextPage as any).mockResolvedValue({ done: true })
-    ;(runCrawlToCompletion as any).mockResolvedValue(undefined)
-    ;(checkMeasurementDelay as any).mockResolvedValue({ allowed: true, daysRemaining: 0 })
-    ;(getFreeRemeasureUnlock as any).mockResolvedValue({ available: true, changeId: 'change-1' })
+    ;(getFreeRemeasureUnlock as any).mockResolvedValue({ available: true, changeId: null })
     ;(triggerMeasurementRun as any).mockResolvedValue({ runId: 'run-1' })
     ;(processNextQuestion as any).mockResolvedValue({ done: true, run: { status: 'success', score: 100 } })
-    ;(runMeasurementToCompletion as any).mockResolvedValue({ done: true, run: { id: 'run-1' } })
 
     const res = await postHandler({ request: makeRequest('test-secret') })
     const body = await res.json()
@@ -162,10 +152,10 @@ describe('tests/integration/cron-site-check.test.ts', () => {
     expect(res.status).toBe(200)
     expect(body.results[0].remeasure).toBe('triggered')
     expect(triggerMeasurementRun).toHaveBeenCalledWith({ data: { brandId: 'b-pro', cronSecret: 'test-secret' } })
-    expect(runMeasurementToCompletion).toHaveBeenCalledWith('run-1')
+    expect(processNextQuestion).toHaveBeenCalledWith({ data: { runId: 'run-1', cronSecret: 'test-secret' } })
   })
 
-  it('ne déclenche pas de remesure Pro si le délai n\'est pas écoulé ou sans changement non lié', async () => {
+  it('ne déclenche pas de remesure Pro sans changement de site non lié (getFreeRemeasureUnlock indisponible)', async () => {
     const brands = [
       { id: 'b-pro', name: 'Pro Brand', website_url: 'https://pro.com', plan: 'trial' },
     ]
@@ -178,14 +168,12 @@ describe('tests/integration/cron-site-check.test.ts', () => {
     })
     ;(triggerSiteCrawl as any).mockResolvedValue({ runId: 'crawl-1' })
     ;(processNextPage as any).mockResolvedValue({ done: true })
-    ;(runCrawlToCompletion as any).mockResolvedValue(undefined)
-    ;(checkMeasurementDelay as any).mockResolvedValue({ allowed: false, daysRemaining: 1 })
     ;(getFreeRemeasureUnlock as any).mockResolvedValue({ available: false, changeId: null })
 
     const res = await postHandler({ request: makeRequest('test-secret') })
     const body = await res.json()
 
     expect(body.results[0].remeasure).toBe('skipped')
-    expect(triggerMeasurementRunForBrandId).not.toHaveBeenCalled()
+    expect(triggerMeasurementRun).not.toHaveBeenCalled()
   })
 })

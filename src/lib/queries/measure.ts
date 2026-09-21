@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase/server'
 import type { Database } from '~/lib/supabase/database.types'
@@ -62,7 +61,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     if (typeof data !== 'object' || data === null || typeof (data as Record<string, unknown>).brandId !== 'string') {
       throw new Error('brandId manquant')
     }
-    return data as { brandId: string }
+    return data as { brandId: string; cronSecret?: string }
   })
   .handler(async ({ data }): Promise<any> => {
     const supabase = getSupabaseServerClient()
@@ -129,7 +128,16 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       // Si quota non atteint : aucune restriction supplémentaire, mesure autorisée.
     } else {
       // Vérifie le délai entre deux mesures (plans payants uniquement)
-      const { allowed, daysRemaining } = await checkMeasurementDelay((data.cronSecret && data.cronSecret === process.env.CRON_SECRET) ? adminSupabase : supabase, brand.id)
+      // Bug réel révélé en levant @ts-nocheck (#17) : `adminSupabase` n'était
+      // jamais déclaré dans ce fichier — le chemin cron (cronSecret) aurait
+      // levé une ReferenceError au premier appel programmé. On utilise le
+      // getter déjà importé en haut du fichier.
+      const { allowed, daysRemaining } = await checkMeasurementDelay(
+        data.cronSecret && data.cronSecret === process.env.CRON_SECRET
+          ? getSupabaseAdminClient()
+          : supabase,
+        brand.id,
+      )
       if (!allowed) {
         throw new Error(
           `Prochaine mesure manuelle disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
@@ -458,6 +466,14 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     // pas : voir PRO_ENGINE_MIX / FREE_ENGINE_MIX dans plan.ts.
     const brandDomain = brand.website_url ? extractBrandDomain(brand.website_url) : ''
 
+    // Alias figés pour que le typage narrowé (non-null) des checks ci-dessus
+    // survive dans processEngine — une closure imbriquée ne conserve pas le
+    // narrowing de contrôle de flux sur la variable d'origine (limitation TS),
+    // mais le conserve sur un alias `const` jamais réassigné comme ceux-ci.
+    const question = nextQuestion
+    const currentBrand = brand
+    const currentRun = run
+
     // Ne (re)traite que les moteurs manquants pour cette question — au 1er
     // passage c'est tous les moteurs, en reprise après échec partiel c'est
     // seulement celui qui a échoué (l'autre garde son observation existante).
@@ -484,8 +500,8 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         const rawResults = await Promise.all(
           Array.from({ length: sampleCount }, () =>
             engine === 'perplexity'
-              ? runPerplexityQuery(nextQuestion.text)
-              : runOpenAIQuery(nextQuestion.text, brand.plan as 'free' | 'pro'),
+              ? runPerplexityQuery(question.text)
+              : runOpenAIQuery(question.text, currentBrand.plan as 'free' | 'pro'),
           ),
         )
 
@@ -493,7 +509,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         // modèle d'analyse OpenAI — cf. analysis.ts — quel que soit le moteur
         // qui a produit le texte brut : coût d'analyse minime, cohérence du parsing)
         const analyses = await Promise.all(
-          rawResults.map((r) => analyzeAnswer(r.text, brand.name, brandDomain, knownCompetitorNames, brand.plan as 'free' | 'pro')),
+          rawResults.map((r) => analyzeAnswer(r.text, currentBrand.name, brandDomain, knownCompetitorNames, currentBrand.plan as 'free' | 'pro')),
         )
 
         // Logging des coûts IA — tarification propre à chaque moteur
@@ -518,8 +534,8 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
                 ? calculatePerplexityCost(actualModel, totalInput, totalOutput, sampleCount)
                 : calculateCost(actualModel, totalInput, totalOutput)
             rows.push({
-              brand_id: brand.id,
-              user_id: brand.owner_id,
+              brand_id: currentBrand.id,
+              user_id: currentBrand.owner_id,
               call_type: 'measurement',
               model: actualModel,
               tokens_input: totalInput,
@@ -529,8 +545,8 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           }
           if (analysisInput > 0 || analysisOutput > 0) {
             rows.push({
-              brand_id: brand.id,
-              user_id: brand.owner_id,
+              brand_id: currentBrand.id,
+              user_id: currentBrand.owner_id,
               call_type: 'analysis',
               model: 'gpt-5.6-luna',
               tokens_input: analysisInput,
@@ -564,13 +580,13 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           const { data: existing } = await adminSupabase
             .from('competitors')
             .select('id')
-            .eq('brand_id', brand.id)
+            .eq('brand_id', currentBrand.id)
             .ilike('name', competitor.name)
             .maybeSingle()
 
           if (!existing) {
             await adminSupabase.from('competitors').insert({
-              brand_id: brand.id,
+              brand_id: currentBrand.id,
               name: competitor.name,
               hidden: false,
               first_seen_at: new Date().toISOString(),
@@ -593,8 +609,8 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         const { data: obs, error: obsError } = await adminSupabase
           .from('observations')
           .insert({
-            run_id: run.id,
-            question_id: nextQuestion.id,
+            run_id: currentRun.id,
+            question_id: question.id,
             engine,
             brand_mentioned: aggregated.brand_mentioned,
             brand_recommended: aggregated.brand_recommended,
@@ -615,9 +631,9 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
             observation_id: obs.id,
             sample_index: i + 1,
             engine,
-            brand_mentioned: analyses[i].brand_mentioned,
-            brand_recommended: analyses[i].brand_recommended,
-            brand_position: analyses[i].brand_position,
+            brand_mentioned: analyses[i].parsed.brand_mentioned,
+            brand_recommended: analyses[i].parsed.brand_recommended,
+            brand_position: analyses[i].parsed.brand_position,
             raw_answer: r.text,
           })),
         )
@@ -630,7 +646,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
           const { data: competitorRows } = await adminSupabase
             .from('competitors')
             .select('id, name')
-            .eq('brand_id', brand.id)
+            .eq('brand_id', currentBrand.id)
             .in(
               'name',
               allMentionedCompetitors.map((c) => c.name),
@@ -679,11 +695,11 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         // Échec sur ce moteur pour cette question : logue mais continue —
         // l'autre moteur (s'il y en a un) n'est pas affecté, et une observation
         // vide est insérée pour ne pas reboucler indéfiniment dessus.
-        console.error(`[measure] Échec question ${nextQuestion.id} (moteur ${engine}) :`, err)
+        console.error(`[measure] Échec question ${question.id} (moteur ${engine}) :`, err)
 
         await adminSupabase.from('observations').insert({
-          run_id: run.id,
-          question_id: nextQuestion.id,
+          run_id: currentRun.id,
+          question_id: question.id,
           engine,
           brand_mentioned: false,
           brand_recommended: false,
