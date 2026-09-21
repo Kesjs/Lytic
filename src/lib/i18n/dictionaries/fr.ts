@@ -198,19 +198,37 @@ export const fr = {
     columns: {
       product: {
         title: "Produit",
-        links: ["Vue d’ensemble", "Visibilité IA", "Questions et mesures", "Preuves et opportunités", "Historique du site"]
+        links: [
+          { label: "Vue d'ensemble", href: "/" },
+          { label: "Visibilité IA", href: "/dashboard/performance" },
+          { label: "Questions et mesures", href: "/dashboard" },
+          { label: "Preuves et opportunités", href: "/dashboard/opportunites" },
+          { label: "Historique du site", href: "/dashboard/historique" }
+        ]
       },
       resources: {
         title: "Ressources",
-        links: ["Blog", "Guides", "Études", "Glossaire"]
+        links: [
+          { label: "Blog", href: "#" },
+          { label: "Guides", href: "#" },
+          { label: "Études", href: "#" },
+          { label: "Glossaire", href: "#" }
+        ]
       },
       company: {
         title: "Entreprise",
-        links: ["À propos", "Contact"]
+        links: [
+          { label: "À propos", href: "#" },
+          { label: "Contact", href: "mailto:contact@reflet.app" }
+        ]
       },
       legal: {
         title: "Légal",
-        links: ["Confidentialité", "Conditions"]
+        links: [
+          { label: "Mentions légales", href: "/mentions-legales" },
+          { label: "Conditions", href: "/cgv" },
+          { label: "Confidentialité", href: "/confidentialite" }
+        ]
       }
     },
     copyright: "© 2026 Reflet — Mesurer. Comprendre. Améliorer."

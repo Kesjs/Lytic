@@ -197,19 +197,37 @@ export const en = {
     columns: {
       product: {
         title: "Product",
-        links: ["Overview", "AI Visibility", "Questions & Tracking", "Evidence & Gaps", "Site History"]
+        links: [
+          { label: "Overview", href: "/" },
+          { label: "AI Visibility", href: "/dashboard/performance" },
+          { label: "Questions & Tracking", href: "/dashboard" },
+          { label: "Evidence & Gaps", href: "/dashboard/opportunites" },
+          { label: "Site History", href: "/dashboard/historique" }
+        ]
       },
       resources: {
         title: "Resources",
-        links: ["Blog", "Guides", "Studies", "Glossary"]
+        links: [
+          { label: "Blog", href: "#" },
+          { label: "Guides", href: "#" },
+          { label: "Studies", href: "#" },
+          { label: "Glossary", href: "#" }
+        ]
       },
       company: {
         title: "Company",
-        links: ["About", "Contact"]
+        links: [
+          { label: "About", href: "#" },
+          { label: "Contact", href: "mailto:contact@reflet.app" }
+        ]
       },
       legal: {
         title: "Legal",
-        links: ["Privacy", "Terms"]
+        links: [
+          { label: "Legal Notice", href: "/mentions-legales" },
+          { label: "Terms", href: "/cgv" },
+          { label: "Privacy", href: "/confidentialite" }
+        ]
       }
     },
     copyright: "© 2026 Reflet — Measure. Understand. Improve."

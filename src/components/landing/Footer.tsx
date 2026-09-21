@@ -20,9 +20,12 @@ export function Footer() {
               <p className="text-sm font-medium text-ink-primary">{col.title}</p>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
-                      {link}
+                  <li key={typeof link === 'string' ? link : link.label}>
+                    <a 
+                      href={typeof link === 'string' ? '#' : link.href} 
+                      className="text-sm text-ink-secondary transition-colors hover:text-ink-primary"
+                    >
+                      {typeof link === 'string' ? link : link.label}
                     </a>
                   </li>
                 ))}
