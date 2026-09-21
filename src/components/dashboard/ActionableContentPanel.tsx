@@ -12,6 +12,8 @@ interface Props {
     reason: string
     proposed_direction?: string | null
     website_url?: string | null
+    /** Optionnel pour compat ascendante — anciennes opportunités sans ce champ. */
+    type?: 'robots_txt' | 'llms_txt' | 'meta_description' | 'json_ld' | 'redirect_rule' | 'custom' | null
   }
   siteContent: SiteContent | null
   brandPlan: string

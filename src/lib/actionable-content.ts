@@ -81,16 +81,25 @@ export async function generateActionableContent(
     reason: string
     proposed_direction?: string | null
     website_url?: string | null
+    /** Optionnel pour compat ascendante : anciennes opportunités générées
+     *  avant l'ajout de ce champ n'en ont pas, on retombe alors sur le
+     *  keyword-matching ci-dessous. */
+    type?: 'robots_txt' | 'llms_txt' | 'meta_description' | 'json_ld' | 'redirect_rule' | 'custom' | null
   },
   siteContent: SiteContent | null = null,
   plan: 'free' | 'pro' = 'pro'
 ): Promise<{ content: ActionableContent | null; usage: AIUsage }> {
-  const { title, reason, proposed_direction, website_url } = opportunity
+  const { title, reason, proposed_direction, website_url, type } = opportunity
   const usage = newUsage()
 
+  // Type structuré fourni par generateOpportunities (analysis.ts) — fiable,
+  // pas de dépendance à la formulation exacte du titre/reason par l'IA.
+  const isType = (t: ActionableContent['type']) =>
+    type ? type === t : false
+
   // robots.txt manquant ou corrigé
-  if (title.toLowerCase().includes('robots.txt') || reason.toLowerCase().includes('robots.txt') ||
-      (title.toLowerCase().includes('bot') && (reason.toLowerCase().includes('bloqué') || reason.toLowerCase().includes('disallow')))) {
+  if (isType('robots_txt') || (!type && (title.toLowerCase().includes('robots.txt') || reason.toLowerCase().includes('robots.txt') ||
+      (title.toLowerCase().includes('bot') && (reason.toLowerCase().includes('bloqué') || reason.toLowerCase().includes('disallow')))))) {
     const content = await generateRobotsTxtWithAI(website_url, siteContent, plan, usage)
     return {
       content: {
@@ -105,7 +114,7 @@ export async function generateActionableContent(
   }
 
   // llms.txt manquant
-  if (title.toLowerCase().includes('llms.txt') || reason.toLowerCase().includes('llms.txt')) {
+  if (isType('llms_txt') || (!type && (title.toLowerCase().includes('llms.txt') || reason.toLowerCase().includes('llms.txt')))) {
     const content = await generateLlmsTxtWithAI(website_url, siteContent, plan, usage)
     return {
       content: {
@@ -113,14 +122,14 @@ export async function generateActionableContent(
         label: 'llms.txt complet',
         filename: 'llms.txt',
         content,
-        instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/llms.txt)'
+        instructions: 'Placez ce fichier à la racine de votre site (ex: https://votre-site.com/llms.txt). Convention encore peu adoptée par les fournisseurs IA — sans garantie d\'effet direct sur vos citations.'
       },
       usage,
     }
   }
 
   // Meta description manquante
-  if (title.toLowerCase().includes('meta') || title.toLowerCase().includes('description')) {
+  if (isType('meta_description') || (!type && (title.toLowerCase().includes('meta') || title.toLowerCase().includes('description')))) {
     const content = await generateMetaDescriptionWithAI(siteContent, title, reason, plan, usage)
     return {
       content: {
@@ -134,7 +143,7 @@ export async function generateActionableContent(
   }
 
   // JSON-LD / Schema.org manquant
-  if (title.toLowerCase().includes('schema') || title.toLowerCase().includes('json-ld') || title.toLowerCase().includes('structured data')) {
+  if (isType('json_ld') || (!type && (title.toLowerCase().includes('schema') || title.toLowerCase().includes('json-ld') || title.toLowerCase().includes('structured data')))) {
     const content = await generateJsonLdWithAI(website_url, siteContent, plan, usage)
     return {
       content: {
@@ -148,7 +157,7 @@ export async function generateActionableContent(
   }
 
   // Page supprimée (redirect)
-  if (title.toLowerCase().includes('page') && (title.toLowerCase().includes('supprimée') || title.toLowerCase().includes('removed'))) {
+  if (isType('redirect_rule') || (!type && (title.toLowerCase().includes('page') && (title.toLowerCase().includes('supprimée') || title.toLowerCase().includes('removed'))))) {
     const content = await generateRedirectWithAI(website_url, title, reason, plan, usage)
     return {
       content: {

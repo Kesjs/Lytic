@@ -50,6 +50,28 @@ const PRIORITY_CLASS: Record<OpportunityPriority, string> = {
   low: 'bg-ink-muted/10 text-ink-muted border-border',
 }
 
+// Wording volontairement prudent : "score en hausse depuis", jamais "a résolu"
+// ou "a corrigé" — on mesure une corrélation dans le temps sur les questions
+// liées, pas une preuve que cette opportunité précise est la cause du delta
+// (voir isQuestionConfounded dans outcome.ts pour les limites de la méthode).
+const OUTCOME_LABEL: Record<'pending' | 'improved' | 'no_change', string> = {
+  pending: 'En attente de remesure',
+  improved: 'Score en hausse depuis',
+  no_change: 'Pas de hausse mesurée',
+}
+
+const OUTCOME_CLASS: Record<'pending' | 'improved' | 'no_change', string> = {
+  pending: 'bg-ink-muted/10 text-ink-muted border-border',
+  improved: 'bg-success/10 text-success border-success/30',
+  no_change: 'bg-ink-muted/10 text-ink-muted border-border',
+}
+
+const OUTCOME_TOOLTIP: Record<'pending' | 'improved' | 'no_change', string> = {
+  pending: "Pas encore de mesure après la résolution — le verdict s'affichera à la prochaine mesure.",
+  improved: "Le score a progressé sur les questions concernées entre la mesure d'avant et celle d'après — une corrélation observée, pas une preuve de causalité directe.",
+  no_change: "Aucune progression mesurée sur les questions concernées depuis la résolution.",
+}
+
 const EVIDENCE_STEP_LABEL: Record<EvidenceStepType, string> = {
   question: 'Question',
   response: 'Réponse observée',
@@ -431,6 +453,21 @@ function OpportunityCard({
               <span className="rounded-sm border border-border bg-elevated px-1.5 py-0.5 text-[11px] text-ink-muted">
                 {STATUS_LABEL[opportunity.status]}
               </span>
+              {opportunity.status === 'resolved' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={`rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${OUTCOME_CLASS[opportunity.outcomeStatus ?? 'pending']}`}
+                    >
+                      {OUTCOME_LABEL[opportunity.outcomeStatus ?? 'pending']}
+                      {opportunity.outcomeStatus && opportunity.outcomeStatus !== 'pending' && opportunity.outcomeQuestionsTotal
+                        ? ` (${opportunity.outcomeQuestionsImproved}/${opportunity.outcomeQuestionsTotal})`
+                        : ''}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{OUTCOME_TOOLTIP[opportunity.outcomeStatus ?? 'pending']}</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
         </button>
@@ -537,6 +574,7 @@ function OpportunityCard({
                   reason: opportunity.reason,
                   proposed_direction: opportunity.proposedDirection,
                   website_url: data.brand?.website_url,
+                  type: opportunity.type,
                 }}
                 siteContent={extractSiteContentFromPages(data.pages)}
                 brandPlan={data.brand.plan}
