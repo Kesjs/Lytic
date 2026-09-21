@@ -13,6 +13,7 @@ import { ThemesCloud } from '~/components/dashboard/charts/ThemesCloud'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { TechnicalAuditCard, computeAuditMetrics } from '~/components/dashboard/TechnicalAuditCard'
 import { QuestionsTable } from '~/components/dashboard/QuestionsTable'
 import { isFreePlan } from '~/lib/plan'
@@ -338,6 +339,8 @@ function AccueilPage() {
               opportunities={opportunities ?? []}
               hasAnyRun={!!latestRun}
               hasPreviousRun={!!data.previousRun}
+              isFree={isFreePlan(data.brand.plan)}
+              freeSignalStatus={data.freeSignalStatus ?? 'unmeasured'}
             />
           </div>
 
@@ -404,16 +407,23 @@ function AccueilPage() {
                 <ul className="mt-3 space-y-1.5">
                   {pages.slice(0, 5).map((p: any) => (
                     <li key={p.id} className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-xs text-ink-secondary" title={p.url}>
-                        {(() => {
-                          try {
-                            const u = new URL(p.url)
-                            return u.pathname === '/' ? u.hostname : `${u.hostname}${u.pathname}`
-                          } catch {
-                            return p.url
-                          }
-                        })()}
-                      </span>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <span className="min-w-0 truncate text-xs text-ink-secondary cursor-default">
+                            {(() => {
+                              try {
+                                const u = new URL(p.url)
+                                return u.pathname === '/' ? u.hostname : `${u.hostname}${u.pathname}`
+                              } catch {
+                                return p.url
+                              }
+                            })()}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[280px] break-all text-left">
+                          {p.url}
+                        </TooltipContent>
+                      </Tooltip>
                       <span className={cn('shrink-0 text-[11px] font-medium', PAGE_STATUS_TEXT[p.status as PageStatus] ?? 'text-ink-muted')}>
                         {PAGE_STATUS_LABEL[p.status as PageStatus] ?? p.status}
                       </span>
@@ -531,10 +541,14 @@ function OpportunitiesPreview({
   opportunities,
   hasAnyRun,
   hasPreviousRun,
+  isFree = false,
+  freeSignalStatus = 'unmeasured',
 }: {
   opportunities: any[]
   hasAnyRun: boolean
   hasPreviousRun: boolean
+  isFree?: boolean
+  freeSignalStatus?: 'unmeasured' | 'well_recommended' | 'negative'
 }) {
   if (!hasAnyRun) {
     return (
@@ -544,9 +558,40 @@ function OpportunitiesPreview({
     )
   }
   if (opportunities.length === 0) {
-    // Une opportunité n'est validée qu'après ≥2 runs stables sur la même
+    // Plan Free : le teaser d'opportunité (page /dashboard/opportunites) se
+    // décide sur un seul run, pas sur 2 runs stables, et se génère dès la
+    // visite de cette page — pas besoin d'un run supplémentaire. On reflète
+    // donc directement ce verdict ici plutôt que de parler d'une mesure à
+    // venir qui n'est pas nécessaire (voir #23).
+    if (isFree && freeSignalStatus === 'well_recommended') {
+      return (
+        <div className="mt-3 rounded-md bg-elevated/50 p-3">
+          <p className="text-sm text-ink-primary">✅ Bon signal</p>
+          <p className="mt-1 text-xs text-ink-muted">
+            Vous êtes recommandé sur votre question suivie — rien à signaler pour l'instant.
+          </p>
+        </div>
+      )
+    }
+    if (isFree && freeSignalStatus === 'negative') {
+      return (
+        <div className="mt-3 rounded-md bg-elevated/50 p-3">
+          <p className="text-sm text-ink-primary">💡 Signal détecté</p>
+          <p className="mt-1 text-xs text-ink-muted">
+            Votre question suivie n'est pas encore bien recommandée —{' '}
+            <Link to="/dashboard/opportunites" className="underline hover:text-ink-secondary">
+              voir le détail
+            </Link>
+            .
+          </p>
+        </div>
+      )
+    }
+    // Sinon (jamais mesuré, ou plan Pro sans encore 2 runs stables), une
+    // opportunité n'est validée qu'après ≥2 runs stables sur la même
     // question (garde-fou "evidence first") — distinguer ce cas d'un vrai
-    // "rien à signaler" pour ne pas laisser croire à un dashboard vide/cassé.
+    // "rien à signaler" pour ne pas laisser croire à un dashboard
+    // vide/cassé.
     if (!hasPreviousRun) {
       return (
         <div className="mt-3 rounded-md bg-elevated/50 p-3">
@@ -575,9 +620,16 @@ function OpportunitiesPreview({
               disponible au lieu de la partager avec un pill. */}
           <span className={cn('mt-1 size-2 shrink-0 rounded-full', PRIORITY_DOT[o.priority as 'low' | 'medium' | 'high'])} />
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink-primary" title={o.title}>
-              {o.title}
-            </p>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink-primary cursor-default">
+                  {o.title}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[280px] text-left">
+                {o.title}
+              </TooltipContent>
+            </Tooltip>
             <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               <span className={cn('text-[10px] font-semibold uppercase tracking-wide', PRIORITY_TEXT[o.priority as 'low' | 'medium' | 'high'])}>
                 {PRIORITY_LABEL[o.priority as 'low' | 'medium' | 'high']}
@@ -652,32 +704,51 @@ function CompetitorsMiniList({
   )
 }
 
-// Skeleton calqué sur la structure réelle de l'Accueil (header + 4 KPI +
-// 2 sections + tableau) pour éviter le layout shift au chargement des
+// Skeleton calqué sur la structure réelle de l'Accueil : même conteneur
+// (space-y-4), même header (score card 320px + colonne KPI unifiée +
+// insight IA), mêmes 2 sections en grille + le bloc "Surveillance du
+// site"/"Opportunités" — pour éviter tout layout shift au chargement des
 // vraies données, plutôt qu'un message texte plaqué au centre de l'écran.
 function AccueilSkeleton() {
   return (
-    <div className="space-y-6">
-      <header className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="mt-4 h-9 w-20" />
-          <Skeleton className="mt-3 h-3 w-32" />
+    <div className="space-y-4">
+      <header className="flex flex-col lg:flex-row lg:items-stretch gap-5 lg:gap-6">
+        {/* Score Card */}
+        <div className="flex w-full lg:w-[320px] shrink-0 flex-col justify-center rounded-xl border border-border bg-surface p-5 lg:p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-11 w-24" />
+          <Skeleton className="mt-3 h-5 w-28 rounded" />
+          <Skeleton className="mt-5 h-[90px] w-full" />
         </div>
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <Skeleton className="h-full min-h-[180px] w-full" />
+
+        {/* Colonne droite : 4 KPI (carte unique avec séparateurs) + insight IA */}
+        <div className="flex-1 flex flex-col gap-5 lg:gap-6 min-w-0">
+          <div className="w-full grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border rounded-xl border-0 ring-1 ring-border/50 bg-surface overflow-hidden shadow-md">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col justify-between p-4 lg:p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="size-7 rounded-md" />
+                </div>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  <Skeleton className="h-7 w-14" />
+                  <Skeleton className="h-3.5 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-auto flex items-start gap-4 rounded-xl border border-border/50 bg-surface p-5 lg:p-6">
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="h-3.5 w-1/2" />
+            </div>
+          </div>
         </div>
       </header>
-
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-border bg-surface p-4">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="mt-2 h-7 w-12" />
-            <Skeleton className="mt-2 h-3 w-24" />
-          </div>
-        ))}
-      </section>
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
@@ -692,12 +763,22 @@ function AccueilSkeleton() {
         ))}
       </section>
 
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <Skeleton className="h-4 w-48" />
-        <div className="mt-4 space-y-2.5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-5 w-full" />
-          ))}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <Skeleton className="h-4 w-32" />
+          <div className="mt-3 space-y-1.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-5 w-full" />
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <Skeleton className="h-4 w-36" />
+          <div className="mt-3 space-y-2.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
+            ))}
+          </div>
         </div>
       </section>
     </div>

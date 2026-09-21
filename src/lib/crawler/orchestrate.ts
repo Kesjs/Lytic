@@ -383,8 +383,39 @@ export const processNextPage = createServerFn({ method: 'POST' })
         }
       }
     } catch (err) {
-      // Erreur de fetch (timeout, etc)
-      await admin.from('site_pages').update({ status: 'unavailable', last_checked_at: new Date().toISOString() }).eq('id', page.id)
+      // Erreur réseau (timeout, DNS, TLS, blocage SSRF...) — avant ce fix,
+      // l'erreur était capturée puis jetée sans jamais être loggée ni
+      // stockée : impossible de diagnostiquer pourquoi une page échouait.
+      // On applique aussi le même garde-fou "3 échecs consécutifs" que la
+      // branche HTTP 4xx/5xx ci-dessus, pour ne pas paniquer sur un simple
+      // aléa réseau ponctuel (cf. #24).
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error(`[crawler] Échec réseau pour ${page.url}:`, errorMessage)
+
+      const consecutiveFailures = (page.consecutive_failures || 0) + 1
+
+      await admin.from('site_pages').update({
+        status: 'unavailable',
+        consecutive_failures: consecutiveFailures,
+        last_checked_at: new Date().toISOString(),
+      }).eq('id', page.id)
+
+      // Un seul événement par série d'échecs (pas un à chaque run tant que
+      // le site reste injoignable) — pour ne pas spammer l'historique.
+      if (consecutiveFailures === 1) {
+        await insertEvent(admin, {
+          brand_id: run.brand_id,
+          type: 'warning',
+          title: 'Page injoignable lors du crawl',
+          message: `${page.url} n'a pas pu être chargée (${errorMessage}). Reflet réessaiera au prochain crawl.`,
+          source_type: 'site_change',
+          source_id: page.id,
+          show_toast: false,
+          show_notification: true,
+          show_history: true,
+          read: false,
+        })
+      }
     }
 
     // Heartbeat: maj updated_at et pages_checked

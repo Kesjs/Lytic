@@ -11,11 +11,12 @@ import { ThemeToggle } from '~/components/ui/theme-toggle'
 import { fetchCurrentBrand } from '~/lib/queries/dashboard'
 import { getSupabaseBrowserClient } from '~/lib/supabase/client'
 import { cn } from '~/lib/utils'
-import { LayoutDashboard, LineChart, Users, Lightbulb, History } from 'lucide-react'
+import { LayoutDashboard, LineChart, Users, Lightbulb, History, ShieldCheck } from 'lucide-react'
 
 const navItems = [
   { label: 'Accueil', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Performance', to: '/dashboard/performance', icon: LineChart },
+  { label: 'Audit', to: '/dashboard/audit-technique', icon: ShieldCheck },
   { label: 'Concurrents', to: '/dashboard/concurrents', icon: Users },
   { label: 'Opportunités', to: '/dashboard/opportunites', icon: Lightbulb },
   { label: 'Historique', to: '/dashboard/historique', icon: History },
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/dashboard')({
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Accueil',
   '/dashboard/performance': 'Performance',
+  '/dashboard/audit-technique': 'Audit',
   '/dashboard/concurrents': 'Concurrents',
   '/dashboard/opportunites': 'Opportunités',
   '/dashboard/historique': 'Historique',

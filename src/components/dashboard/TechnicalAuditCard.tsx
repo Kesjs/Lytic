@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { CheckCircle2, XCircle, HelpCircle, Loader2, Gauge, ChevronDown, Lightbulb } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
 import type { BotAccessData } from '~/lib/queries/bot-access'
 import { IA_BOTS } from '~/lib/crawler/constants'
-import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
+import { useTechnicalAuditCheck } from '~/lib/hooks/useTechnicalAuditCheck'
 
 interface Props {
   botAccess: BotAccessData | null
@@ -85,81 +83,81 @@ export function computeAuditMetrics(botAccess: BotAccessData | null, pages: any[
 
 // Points de chaque item (doit rester synchro avec computeAuditMetrics), pour
 // hiérarchiser la synthèse "quels correctifs rapportent le plus de points".
-const ITEM_POINTS = { bots: 30, llms: 20, jsonld: 15, altImages: 10, h1: 10, titleMeta: 10, canonical: 5 } as const
+export const ITEM_POINTS = { bots: 30, llms: 20, jsonld: 15, altImages: 10, h1: 10, titleMeta: 10, canonical: 5 } as const
 
-export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
-  const queryClient = useQueryClient()
-  const [isChecking, setIsChecking] = useState(false)
-  const [botsExpanded, setBotsExpanded] = useState(false)
+export type AuditRowKey = keyof typeof ITEM_POINTS
+export type AuditRow = { key: AuditRowKey; passed: boolean; label: string; why: string }
 
-  const checkMutation = useMutation({
-    mutationFn: () => triggerSiteCrawl({ data: { brandId } }),
-    onSuccess: async (result) => {
-      setIsChecking(true)
-      let done = false
-      let runId = result.runId
+// Le correctif concret pour chaque point manqué — utilisé par la page
+// /dashboard/audit-technique. Statique (n'a pas besoin des metrics) car le
+// correctif générique ne dépend pas du résultat, seul le label ci-dessus en
+// dépend.
+export const AUDIT_FIXES: Record<AuditRowKey, { steps: string[]; snippet?: string; snippetLabel?: string }> = {
+  llms: {
+    steps: [
+      "Créez un fichier texte nommé llms.txt à la racine de votre site (accessible sur votresite.com/llms.txt).",
+      "Décrivez-y en Markdown simple qui vous êtes, ce que vous proposez, et pointez vers vos pages clés.",
+      "Redéployez, puis relancez l'audit pour vérifier qu'il est bien détecté.",
+    ],
+    snippetLabel: 'Exemple de contenu pour llms.txt',
+    snippet: `# Nom de votre marque\n\n> Une phrase claire décrivant votre activité.\n\n## Pages clés\n- [Accueil](https://votresite.com/)\n- [Produits/Services](https://votresite.com/produits)\n- [Contact](https://votresite.com/contact)`,
+  },
+  jsonld: {
+    steps: [
+      "Ajoutez un bloc JSON-LD dans le <head> de votre page d'accueil.",
+      "Utilisez le type Organization (ou Product si vous vendez un produit précis) avec au minimum name, url et description.",
+      "Validez avec le Rich Results Test de Google avant de redéployer.",
+    ],
+    snippetLabel: 'Exemple de balisage Organization',
+    snippet: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Votre marque",\n  "url": "https://votresite.com",\n  "description": "Ce que vous proposez en une phrase."\n}\n</script>`,
+  },
+  h1: {
+    steps: [
+      "Assurez-vous qu'il n'y a qu'un seul <h1> par page.",
+      "Le H1 doit résumer clairement le sujet principal de la page (pas le nom de la marque seul).",
+      "Les autres titres de section utilisent <h2>, <h3>, etc.",
+    ],
+  },
+  titleMeta: {
+    steps: [
+      "Titre de page (<title>) : entre 30 et 65 caractères, spécifique à la page.",
+      "Méta-description : entre 120 et 160 caractères, résume la page et donne envie de cliquer.",
+      "Évitez de dupliquer le même titre/description sur plusieurs pages.",
+    ],
+  },
+  canonical: {
+    steps: [
+      "Ajoutez une balise canonique dans le <head> de chaque page, pointant vers son URL de référence.",
+      "Sur la page elle-même, elle pointe généralement vers sa propre URL (auto-référencée).",
+    ],
+    snippetLabel: 'Balise à ajouter',
+    snippet: `<link rel="canonical" href="https://votresite.com/votre-page" />`,
+  },
+  altImages: {
+    steps: [
+      "Ajoutez un attribut alt descriptif à chaque balise <img> qui porte du sens (pas les images purement décoratives).",
+      "Décrivez ce que montre l'image en quelques mots, sans commencer par \"image de\".",
+    ],
+    snippetLabel: 'Exemple',
+    snippet: `<img src="/produit.jpg" alt="Vue de face du produit en coloris bleu" />`,
+  },
+  bots: {
+    steps: [
+      "Ouvrez votre fichier robots.txt (votresite.com/robots.txt).",
+      "Retirez toute règle Disallow qui bloque les robots IA, ou ajoutez des règles explicites d'autorisation pour chacun.",
+      "Redéployez puis relancez l'audit.",
+    ],
+    snippetLabel: 'Règles à ajouter dans robots.txt',
+    snippet: `User-agent: GPTBot\nAllow: /\n\nUser-agent: ChatGPT-User\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\nUser-agent: Google-Extended\nAllow: /`,
+  },
+}
 
-      while (!done) {
-        try {
-          const res = await processNextPage({ data: { runId } })
-          done = res.done
-        } catch (err) {
-          console.error(err)
-          break
-        }
-      }
-
-      setIsChecking(false)
-      queryClient.invalidateQueries({ queryKey: ['bot-access'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard-home'] })
-      toast.success('Audit technique terminé')
-    },
-    onError: (err: Error) => {
-      setIsChecking(false)
-      toast.error(err.message || 'Erreur lors de la vérification')
-    },
-  })
-
-  // ── Calcul du score et des métriques ───────────────────────────────────────
-  const metrics = useMemo(() => computeAuditMetrics(botAccess, pages), [botAccess, pages])
-
-  if (!botAccess || !metrics) {
-    return (
-      <div className="rounded-lg border border-border bg-surface p-5">
-        <h2 className="text-sm font-semibold text-ink-primary">Audit Technique IA</h2>
-        <p className="mt-3 text-sm text-ink-muted">
-          Reflet peut vérifier si votre site est techniquement optimisé pour les IA
-          (accès bots, llms.txt, balisage Schema.org, structure H1...).
-        </p>
-        <button
-          type="button"
-          onClick={() => checkMutation.mutate()}
-          disabled={checkMutation.isPending || isChecking}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
-        >
-          {(checkMutation.isPending || isChecking) && <Loader2 className="size-3.5 animate-spin" />}
-          {checkMutation.isPending || isChecking ? 'Audit en cours…' : "Lancer l'audit"}
-        </button>
-      </div>
-    )
-  }
-
-  const { checkedAt, llmsTxtFound, bots } = botAccess
-  const { score, hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasDesc, hasGoodDesc, hasCanonical, imagesWithoutAlt, totalImages, schemaTypes } = metrics
-
-  const scoreColor = score >= 80 ? 'text-success' : score >= 50 ? 'text-warning' : 'text-danger'
-  const ScoreIcon = score >= 80 ? CheckCircle2 : score >= 50 ? HelpCircle : XCircle
-
-  const allowedBotsCount = IA_BOTS.filter((bot) => bots[bot.id] === 'allowed').length
-  const blockedBotsCount = IA_BOTS.filter((bot) => bots[bot.id] === 'blocked').length
-  const botsRowStatus: 'allowed' | 'blocked' | 'unknown' =
-    blockedBotsCount > 0 ? 'blocked' : allowedBotsCount === IA_BOTS.length ? 'allowed' : 'unknown'
-
-  // Lignes reformulées en phrases d'action ("ce que ça veut dire" plutôt que
-  // le nom technique du champ), avec points et une phrase expliquant
-  // pourquoi ça compte pour les IA.
-  type Row = { key: keyof typeof ITEM_POINTS; passed: boolean; label: string; why: string }
-  const rows: Row[] = [
+// Construit les lignes de l'audit (label + statut + explication) à partir des
+// metrics — extrait pour être partagé entre la carte compacte de l'Accueil et
+// la page /dashboard/audit-technique, plutôt que dupliqué.
+export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAuditMetrics>>, llmsTxtFound: boolean): AuditRow[] {
+  const { hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt } = metrics
+  return [
     {
       key: 'llms',
       passed: llmsTxtFound,
@@ -212,6 +210,87 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
       why: 'Le texte alternatif est la seule façon pour une IA de "voir" le contenu de vos images.',
     },
   ]
+}
+
+export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
+  const { runAudit, isRunning } = useTechnicalAuditCheck(brandId)
+  const [botsExpanded, setBotsExpanded] = useState(false)
+
+  // ── Calcul du score et des métriques ───────────────────────────────────────
+  const metrics = useMemo(() => computeAuditMetrics(botAccess, pages), [botAccess, pages])
+
+  if (!botAccess || !metrics) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <h2 className="text-sm font-semibold text-ink-primary">Audit Technique IA</h2>
+        <p className="mt-3 text-sm text-ink-muted">
+          Reflet peut vérifier si votre site est techniquement optimisé pour les IA
+          (accès bots, llms.txt, balisage Schema.org, structure H1...).
+        </p>
+        <button
+          type="button"
+          onClick={runAudit}
+          disabled={isRunning}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
+        >
+          {isRunning && <Loader2 className="size-3.5 animate-spin" />}
+          {isRunning ? 'Audit en cours…' : "Lancer l'audit"}
+        </button>
+      </div>
+    )
+  }
+
+  // ── Crawl jamais réussi : le score serait calculé sur des données vides,
+  // pas sur une vraie absence de H1/JSON-LD/etc. On l'affiche honnêtement
+  // comme "non vérifiable" plutôt que comme un score chiffré (cf. #24) —
+  // cohérent avec la carte "Surveillance du site" qui montre déjà ces
+  // pages en Inaccessible.
+  const hasSuccessfulPage = pages.some((p: any) => p.status === 'ok')
+  const hasAttemptedPages = pages.length > 0
+
+  if (hasAttemptedPages && !hasSuccessfulPage) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink-primary">Audit Technique IA</h2>
+          <Link to="/dashboard/audit-technique" className="text-[11px] font-medium text-brand hover:underline">
+            Voir tout →
+          </Link>
+        </div>
+        <div className="mt-3 flex items-start gap-2 rounded-md bg-danger/5 border border-danger/20 px-3 py-2">
+          <XCircle className="size-3.5 shrink-0 mt-0.5 text-danger" />
+          <p className="text-xs text-ink-secondary">
+            <span className="font-medium text-ink-primary">Non vérifiable — </span>
+            Reflet n'a pas réussi à charger votre site lors du dernier crawl (voir "Surveillance du
+            site" ci-contre). Le score technique reprendra dès qu'une page sera de nouveau
+            accessible.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={runAudit}
+          disabled={isRunning}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
+        >
+          {isRunning && <Loader2 className="size-3.5 animate-spin" />}
+          {isRunning ? 'Nouvelle tentative…' : 'Retester le crawl'}
+        </button>
+      </div>
+    )
+  }
+
+  const { checkedAt, llmsTxtFound, bots } = botAccess
+  const { score, schemaTypes } = metrics
+
+  const scoreColor = score >= 80 ? 'text-success' : score >= 50 ? 'text-warning' : 'text-danger'
+  const ScoreIcon = score >= 80 ? CheckCircle2 : score >= 50 ? HelpCircle : XCircle
+
+  const allowedBotsCount = IA_BOTS.filter((bot) => bots[bot.id] === 'allowed').length
+  const blockedBotsCount = IA_BOTS.filter((bot) => bots[bot.id] === 'blocked').length
+  const botsRowStatus: 'allowed' | 'blocked' | 'unknown' =
+    blockedBotsCount > 0 ? 'blocked' : allowedBotsCount === IA_BOTS.length ? 'allowed' : 'unknown'
+
+  const rows = buildAuditRows(metrics, llmsTxtFound)
 
   // Synthèse hiérarchisée : les correctifs qui rapportent le plus de points,
   // triés par valeur décroissante — pour dire d'abord ce qui compte le plus.
@@ -223,7 +302,12 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
     <div className="rounded-lg border border-border bg-surface p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-primary">Audit Technique IA</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-ink-primary">Audit Technique IA</h2>
+            <Link to="/dashboard/audit-technique" className="text-[11px] font-medium text-brand hover:underline">
+              Voir tout →
+            </Link>
+          </div>
           <div className="flex items-center gap-1.5">
             <ScoreIcon className={`size-4 ${scoreColor}`} />
             <span className={`text-sm font-bold ${scoreColor}`}>{score}/100</span>
@@ -243,19 +327,28 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
         <div className="mt-5 space-y-4">
           {/* Bots Access — regroupés en une ligne de synthèse, détail dépliable */}
           <div>
-            <button
-              type="button"
-              onClick={() => setBotsExpanded((v) => !v)}
-              className="flex w-full items-center justify-between gap-1.5"
-            >
-              <span className="flex items-center gap-1.5">
+            <div className="flex w-full items-center justify-between gap-1.5">
+              <button
+                type="button"
+                onClick={() => setBotsExpanded((v) => !v)}
+                className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+              >
                 <StatusIcon status={botsRowStatus} />
                 <span className="text-xs text-ink-primary">
                   Robots IA : {allowedBotsCount}/{IA_BOTS.length} autorisés
                 </span>
-              </span>
-              <ChevronDown className={cn('size-3.5 text-ink-muted transition-transform', botsExpanded && 'rotate-180')} />
-            </button>
+                <ChevronDown className={cn('size-3.5 shrink-0 text-ink-muted transition-transform', botsExpanded && 'rotate-180')} />
+              </button>
+              {blockedBotsCount > 0 && (
+                <Link
+                  to="/dashboard/audit-technique"
+                  hash="bots"
+                  className="shrink-0 text-[10.5px] font-medium text-brand hover:underline"
+                >
+                  Voir le correctif →
+                </Link>
+              )}
+            </div>
             {botsExpanded && (
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 pl-5">
                 {IA_BOTS.map((bot) => {
@@ -290,7 +383,8 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
                 </Tooltip>
                 {!r.passed && (
                   <Link
-                    to="/dashboard/opportunites"
+                    to="/dashboard/audit-technique"
+                    hash={r.key}
                     className="ml-auto shrink-0 text-[10.5px] font-medium text-brand hover:underline"
                   >
                     Voir le correctif →
@@ -313,11 +407,11 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
         </p>
         <button
           type="button"
-          onClick={() => checkMutation.mutate()}
-          disabled={checkMutation.isPending || isChecking}
+          onClick={runAudit}
+          disabled={isRunning}
           className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-2 py-1 text-[11px] font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50 border border-border"
         >
-          {(checkMutation.isPending || isChecking) ? (
+          {isRunning ? (
             <Loader2 className="size-3 animate-spin" />
           ) : (
             <Gauge className="size-3" />

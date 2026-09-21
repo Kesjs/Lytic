@@ -430,6 +430,17 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
   //                            supplémentaire au-delà du quota (élément #12).
   let freeMeasurementsThisWeek = 0
   let freeRemeasureBonus = false
+  // Même verdict que fetchOpportunities (plan Free, étape 2), en lecture
+  // seule (aucun appel IA ni écriture ici — cet appel reste réservé à la
+  // visite de /dashboard/opportunites, volontairement, pour ne pas payer un
+  // appel LLM sur chaque run Free qui se termine, y compris quand personne
+  // ne regarde le résultat). Sert uniquement à choisir le bon message
+  // d'état sur l'Accueil, cohérent avec la page Opportunités :
+  //   'unmeasured'       → pas encore de run exploitable
+  //   'well_recommended' → dernier run OK, marque recommandée
+  //   'negative'         → dernier run KO, un teaser existe déjà à la visite
+  //                        de la page Opportunités (pas besoin d'un run de plus)
+  let freeSignalStatus: 'unmeasured' | 'well_recommended' | 'negative' = 'unmeasured'
 
   if (isFreePlan(brand.plan)) {
     const windowStart = new Date(
@@ -449,6 +460,16 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     if (dataRun) {
       const unlock = await getFreeRemeasureUnlock(supabase, brand.id, dataRun.completed_at)
       freeRemeasureBonus = unlock.available
+
+      const { data: notRecommended } = await supabase
+        .from('observations')
+        .select('id')
+        .eq('run_id', dataRun.id)
+        .eq('brand_recommended', false)
+        .limit(1)
+        .maybeSingle()
+
+      freeSignalStatus = notRecommended ? 'negative' : 'well_recommended'
     }
   }
 
@@ -474,6 +495,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     freeMeasurementsThisWeek,
     freeMeasurementsPerWeek: FREE_MEASUREMENTS_PER_WEEK,
     freeRemeasureBonus,
+    freeSignalStatus,
     displayRun: dataRun,
     previousRun,
     opportunities: opportunities ?? [],
