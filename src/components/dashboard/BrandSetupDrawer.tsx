@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -17,6 +18,7 @@ import { runFullMeasurement } from '~/lib/measurement-client'
 // Free (1 question, pas de génération IA — reflet-plan-free-spec.md §5).
 export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [questions, setQuestions] = useState<string[]>([''])
@@ -51,6 +53,15 @@ export function BrandSetupDrawer({ open, onClose }: { open: boolean; onClose: ()
           setWebsiteUrl('')
           setQuestions(['', '', ''])
           onClose()
+
+          // Intention "Pro" mémorisée depuis la page tarifs (Pricing.tsx) :
+          // au lieu de laisser l'utilisateur silencieusement en Free, on
+          // l'emmène directement vers la carte Abonnement de Paramètres.
+          if (localStorage.getItem('reflet_intended_plan') === 'pro') {
+            localStorage.removeItem('reflet_intended_plan')
+            sessionStorage.setItem('reflet_scroll_to_abonnement', '1')
+            navigate({ to: '/dashboard/parametres' })
+          }
         }
       }
     },

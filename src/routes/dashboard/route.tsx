@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useRouterState, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { useQuery, useQueryClient, useIsFetching } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { Menu, PanelLeft, RefreshCw, Home, ChevronRight } from 'lucide-react'
 import { Sidebar } from '~/components/dashboard/Sidebar'
@@ -40,7 +40,6 @@ function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const queryClient = useQueryClient()
-  const isFetching = useIsFetching() > 0
   const [isManualRefreshing, setIsManualRefreshing] = useState(false)
 
   async function handleRefresh() {
@@ -173,7 +172,7 @@ function DashboardLayout() {
                   aria-label="Actualiser le tableau de bord"
                   className="flex size-8 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:text-ink-primary hover:bg-elevated transition-colors disabled:opacity-60"
                 >
-                  <RefreshCw className={cn('size-4', (isManualRefreshing || isFetching) && 'animate-spin')} />
+                  <RefreshCw className={cn('size-4', isManualRefreshing && 'animate-spin')} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>Actualiser</TooltipContent>

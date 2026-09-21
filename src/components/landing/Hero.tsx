@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, Globe } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from '~/lib/i18n/LanguageContext'
-import { ScreenshotFrame } from './ScreenshotFrame'
+import { DashboardPreview } from './DashboardPreview'
 
 export interface HeroProps {
   eyebrow?: string
@@ -34,15 +34,14 @@ export function Hero({
   }
 
   const defaultPreview = (
-    <ScreenshotFrame
-      label={t.hero.previewLabel}
-      src="/images/dashboard/overview.png"
-      urlPath="tryreflet.pro/dashboard"
-      glow
-      fadeBottom
-      annotation={t.hero.previewAnnotation}
-      badge={t.hero.previewBadge}
-    />
+    <div className="group relative">
+      {/* Glow diffus d'ambiance, repris de l'ancien ScreenshotFrame */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-3xl bg-gradient-to-b from-brand/20 via-brand/5 to-transparent opacity-60 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
+      />
+      <DashboardPreview />
+    </div>
   )
 
   return (

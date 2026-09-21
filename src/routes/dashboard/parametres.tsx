@@ -54,6 +54,24 @@ function ParametresPage() {
     queryFn: () => fetchSettings(),
   })
 
+  // Si on arrive ici juste après l'onboarding avec l'intention "Pro"
+  // mémorisée depuis la page tarifs (cf. Pricing.tsx + BrandSetupDrawer.tsx),
+  // on scrolle directement vers la carte Abonnement et on la met en
+  // évidence brièvement, plutôt que de laisser l'utilisateur la chercher.
+  useEffect(() => {
+    if (data?.brand && sessionStorage.getItem('reflet_scroll_to_abonnement')) {
+      sessionStorage.removeItem('reflet_scroll_to_abonnement')
+      const el = document.getElementById('abonnement')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        el.classList.add('ring-2', 'ring-brand', 'ring-offset-2', 'ring-offset-canvas')
+        setTimeout(() => {
+          el.classList.remove('ring-2', 'ring-brand', 'ring-offset-2', 'ring-offset-canvas')
+        }, 2500)
+      }
+    }
+  }, [data?.brand])
+
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['settings'] })
   }
@@ -672,7 +690,7 @@ function NotificationsSection({
 function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
   if (!brand) {
     return (
-      <SectionCard title="Abonnement">
+      <SectionCard id="abonnement" title="Abonnement">
         <p className="text-xs text-ink-muted">Configurez votre marque pour voir votre abonnement.</p>
       </SectionCard>
     )
@@ -681,7 +699,7 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
   const free = isFreePlan(brand.plan)
 
   return (
-    <SectionCard title="Abonnement">
+    <SectionCard id="abonnement" title="Abonnement">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-ink-primary">Plan actuel</p>
@@ -844,4 +862,3 @@ function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
     </SectionCard>
   )
 }
-

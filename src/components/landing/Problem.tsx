@@ -18,7 +18,7 @@ function TerminalIllustration() {
       <div className="p-6 space-y-4 text-ink-secondary leading-relaxed">
         <div className="flex items-start gap-3">
           <span className="text-brand mt-0.5">➜</span>
-          <span className="text-ink-primary font-medium">query: "alternatives pour la gestion de projet B2B"</span>
+          <span className="text-ink-primary font-medium">query: "meilleur outil de support client pour une startup B2B"</span>
         </div>
         
         <div className="space-y-1 pl-6">
@@ -32,16 +32,16 @@ function TerminalIllustration() {
         
         <div className="pl-12 border-l border-white/5 space-y-3 mt-2">
           <div className="flex items-center justify-between group">
-            <span className="text-ink-primary group-hover:text-white transition-colors">1. Competitor_A</span>
-            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.98</span>
+            <span className="text-ink-primary group-hover:text-white transition-colors">1. Zendesk</span>
+            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.94</span>
           </div>
           <div className="flex items-center justify-between group">
-            <span className="text-ink-primary group-hover:text-white transition-colors">2. Competitor_B</span>
-            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.85</span>
+            <span className="text-ink-primary group-hover:text-white transition-colors">2. Intercom</span>
+            <span className="text-ink-muted font-mono text-[10px]">confidence: 0.87</span>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-danger/10">
             <span className="text-danger flex items-center gap-2">
-              3. [Votre_Marque]
+              3. [Nooma]
             </span>
             <span className="text-[10px] px-1.5 py-0.5 bg-danger/10 text-danger border border-danger/20 rounded font-mono">
               ERR: Entity not found

@@ -129,6 +129,7 @@ export function Pricing() {
 
             <Link
               to="/signup"
+              onClick={() => localStorage.removeItem('reflet_intended_plan')}
               className="mt-auto flex w-full items-center justify-center rounded-xl border border-border bg-transparent py-3 text-sm font-medium text-ink-primary transition-all hover:border-border-strong hover:bg-elevated"
             >
               {t.pricing.free.cta}
@@ -167,7 +168,8 @@ export function Pricing() {
             </ul>
 
             <Link
-              to="/signup"
+              to="/login"
+              onClick={() => localStorage.setItem('reflet_intended_plan', 'pro')}
               className="mt-auto flex w-full items-center justify-center rounded-xl bg-brand py-3 text-sm font-semibold text-black transition-all hover:bg-brand-hover hover:shadow-lg hover:shadow-brand/20"
             >
               {t.pricing.pro.cta}
