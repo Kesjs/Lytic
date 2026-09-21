@@ -16,6 +16,7 @@ import {
   type FreeInsight,
 } from '~/lib/queries/opportunities'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
+import { ActionableContentPanel } from '~/components/dashboard/ActionableContentPanel'
 import { isFreePlan } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/opportunites')({
@@ -506,6 +507,16 @@ function OpportunityCard({
                   </div>
                 </div>
               </div>
+
+              {/* Actionable Content Panel - Palier 0 */}
+              <ActionableContentPanel
+                opportunity={{
+                  title: opportunity.title,
+                  reason: opportunity.reason,
+                  proposed_direction: opportunity.proposedDirection,
+                  website_url: data.brand?.website_url,
+                }}
+              />
 
               <div className="pt-2">
                 <p className="mb-3 text-[11px] font-medium text-ink-muted uppercase tracking-wider">
