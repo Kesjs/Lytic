@@ -60,6 +60,27 @@ const EVIDENCE_STEP_LABEL: Record<EvidenceStepType, string> = {
   recommendation: 'Recommandation',
 }
 
+/**
+ * Extrait le contenu du site depuis les pages crawlées pour l'analyse IA
+ */
+function extractSiteContentFromPages(pages: any[]): any {
+  const homepage = pages.find((p) => p.status === 'ok')
+  if (!homepage) return null
+
+  const extracted = homepage.extracted_content
+  if (!extracted) return null
+
+  return {
+    title: extracted.title,
+    metaDescription: extracted.metaDescription,
+    h1: extracted.h1,
+    bodyText: extracted.body,
+    jsonLd: extracted.jsonLd,
+    hasCanonical: extracted.hasCanonical,
+    canonicalUrl: extracted.canonicalUrl,
+  }
+}
+
 function OpportunitesPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<OpportunityStatus | 'all'>('open')
@@ -516,6 +537,8 @@ function OpportunityCard({
                   proposed_direction: opportunity.proposedDirection,
                   website_url: data.brand?.website_url,
                 }}
+                siteContent={extractSiteContentFromPages(data.pages)}
+                brandPlan={data.brand.plan}
               />
 
               <div className="pt-2">

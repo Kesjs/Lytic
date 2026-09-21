@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Copy, Check, Code, FileText, Settings } from 'lucide-react'
-import { generateActionableContent, type ActionableContent } from '~/lib/actionable-content'
+import { useQuery } from '@tanstack/react-query'
+import { Copy, Check, Code, FileText, Settings, Loader2, Sparkles } from 'lucide-react'
+import { generateActionableContent, type ActionableContent, type SiteContent } from '~/lib/actionable-content'
+import { isFreePlan } from '~/lib/plan'
 
 interface Props {
   opportunity: {
@@ -9,22 +11,32 @@ interface Props {
     proposed_direction?: string | null
     website_url?: string | null
   }
+  siteContent: SiteContent | null
+  brandPlan: string
 }
 
-export function ActionableContentPanel({ opportunity }: Props) {
+export function ActionableContentPanel({ opportunity, siteContent, brandPlan }: Props) {
   const [copied, setCopied] = useState(false)
-  const actionable = generateActionableContent(opportunity)
+  const plan = isFreePlan(brandPlan) ? 'free' : 'pro'
 
-  if (!actionable) return null
+  const { data: actionable, isLoading } = useQuery({
+    queryKey: ['actionable-content', opportunity.title, opportunity.reason, opportunity.proposed_direction],
+    queryFn: () => generateActionableContent(opportunity, siteContent, plan),
+    enabled: !!opportunity,
+  })
+
+  if (!actionable && !isLoading) return null
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(actionable.content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (actionable) {
+      await navigator.clipboard.writeText(actionable.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   const getIcon = () => {
-    switch (actionable.type) {
+    switch (actionable?.type) {
       case 'robots_txt':
       case 'llms_txt':
         return <FileText className="w-4 h-4" />
@@ -37,12 +49,31 @@ export function ActionableContentPanel({ opportunity }: Props) {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="mt-4 p-4 bg-surface rounded-lg border border-border">
+        <div className="flex items-center gap-2 text-xs text-ink-muted">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Génération du contenu personnalisé...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!actionable) return null
+
   return (
     <div className="mt-4 p-4 bg-surface rounded-lg border border-border">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {getIcon()}
           <span className="text-sm font-medium text-ink-primary">{actionable.label}</span>
+          {plan === 'pro' && (
+            <div className="flex items-center gap-1 text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-full">
+              <Sparkles className="w-3 h-3" />
+              <span>IA personnalisé</span>
+            </div>
+          )}
         </div>
         <button
           onClick={handleCopy}
