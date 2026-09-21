@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createServerFn } from '@tanstack/react-start'
 import { getSupabaseServerClient } from '~/lib/supabase/server'
-import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE } from '~/lib/plan'
+import { isFreePlan, FREE_MAX_COMPETITORS_VISIBLE, FREE_MEASUREMENTS_PER_WEEK, FREE_MEASUREMENT_WINDOW_DAYS } from '~/lib/plan'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Toutes les requêtes ci-dessous lisent les vraies tables Supabase
@@ -302,19 +302,41 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     dataRun = { ...dataRun, status: actualStatus }
   }
 
-  // Plan Free uniquement : indique si une remesure est débloquée par un
-  // changement de site détecté depuis la dernière mesure (§4) — sert au
-  // bouton "Mesurer" du header (HeaderMeasureButton).
-  let freeRemeasureAvailable = true
-  if (isFreePlan(brand.plan) && dataRun) {
-    const unlock = await getFreeRemeasureUnlock(supabase, brand.id, dataRun.completed_at)
-    freeRemeasureAvailable = unlock.available
+  // Plan Free uniquement : expose le compteur hebdo et le slot bonus pour
+  // le bouton "Mesurer" (HeaderMeasureButton) et la bannière Free du dashboard.
+  // freeMeasurementsThisWeek : runs validés dans la fenêtre glissante de 7 jours.
+  // freeRemeasureBonus       : un changement de site non consommé débloque un slot
+  //                            supplémentaire au-delà du quota (élément #12).
+  let freeMeasurementsThisWeek = 0
+  let freeRemeasureBonus = false
+
+  if (isFreePlan(brand.plan)) {
+    const windowStart = new Date(
+      Date.now() - FREE_MEASUREMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString()
+
+    const { count: weekCount } = await supabase
+      .from('measurement_runs')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brand.id)
+      .or('status.eq.success,status.eq.partial')
+      .gte('completed_at', windowStart)
+
+    freeMeasurementsThisWeek = weekCount ?? 0
+
+    // Vérifier le slot bonus (changement de site) indépendamment du quota
+    if (dataRun) {
+      const unlock = await getFreeRemeasureUnlock(supabase, brand.id, dataRun.completed_at)
+      freeRemeasureBonus = unlock.available
+    }
   }
 
   return {
     brand,
     latestRun,
-    freeRemeasureAvailable,
+    freeMeasurementsThisWeek,
+    freeMeasurementsPerWeek: FREE_MEASUREMENTS_PER_WEEK,
+    freeRemeasureBonus,
     displayRun: dataRun,
     previousRun,
     opportunities: opportunities ?? [],
@@ -330,3 +352,4 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     topThemes,
   } as const
 })
+

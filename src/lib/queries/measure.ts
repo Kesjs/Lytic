@@ -10,7 +10,7 @@ import { analyzeAnswer } from '~/lib/analysis'
 import { isBrandCited, extractBrandDomain } from '~/lib/cited'
 import { computeRunScore } from '~/lib/score'
 import { aggregateSamples } from '~/lib/aggregate'
-import { isFreePlan, getEngineMix, MEASUREMENT_DELAY_DAYS, type MeasurementEngine } from '~/lib/plan'
+import { isFreePlan, getEngineMix, MEASUREMENT_DELAY_DAYS, FREE_MEASUREMENTS_PER_WEEK, FREE_MEASUREMENT_WINDOW_DAYS, type MeasurementEngine } from '~/lib/plan'
 import { getFreeRemeasureUnlock } from '~/lib/reliability'
 
 // Pipeline de mesure (Bloc 0 — §7.3 du doc de conception).
@@ -81,28 +81,51 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     let freeUnlockChangeId: string | null = null
 
     if (isFreePlan(brand.plan)) {
-      // Plan Free (refonte §4) : plus de blocage à vie. La première mesure
-      // est toujours autorisée ; une remesure suivante ne l'est que si un
-      // changement de site significatif (importance != 'low') a été détecté
-      // depuis, et n'a pas déjà servi à débloquer une remesure précédente.
-      const { data: lastFreeRun } = await supabase
+      // Plan Free — décision #7/#12 : quota glissant de FREE_MEASUREMENTS_PER_WEEK
+      // par fenêtre de FREE_MEASUREMENT_WINDOW_DAYS jours, à vie récurrent.
+      // Un changement de site significatif débloque un slot BONUS additif
+      // (getFreeRemeasureUnlock) au-delà du quota — jamais en remplacement.
+      const windowStart = new Date(
+        Date.now() - FREE_MEASUREMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+      ).toISOString()
+
+      const { count: runsThisWeek } = await supabase
         .from('measurement_runs')
-        .select('id, completed_at')
+        .select('id', { count: 'exact', head: true })
         .eq('brand_id', brand.id)
         .or('status.eq.success,status.eq.partial')
-        .order('completed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+        .gte('completed_at', windowStart)
 
-      if (lastFreeRun) {
-        const unlock = await getFreeRemeasureUnlock(supabase, brand.id, lastFreeRun.completed_at)
+      const weeklyQuotaReached = (runsThisWeek ?? 0) >= FREE_MEASUREMENTS_PER_WEEK
+
+      if (weeklyQuotaReached) {
+        // Quota hebdo épuisé — seul un slot bonus (changement de site non consommé)
+        // peut débloquer une remesure supplémentaire.
+        const { data: lastFreeRun } = await supabase
+          .from('measurement_runs')
+          .select('id, completed_at')
+          .eq('brand_id', brand.id)
+          .or('status.eq.success,status.eq.partial')
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const unlock = await getFreeRemeasureUnlock(
+          supabase,
+          brand.id,
+          lastFreeRun?.completed_at ?? null,
+        )
+
         if (!unlock.available) {
           throw new Error(
-            'Mesure gratuite déjà utilisée — passez au plan Pro pour remesurer, ou attendez qu\'un changement de votre site soit détecté.',
+            `Quota atteint (${FREE_MEASUREMENTS_PER_WEEK} mesures sur ${FREE_MEASUREMENT_WINDOW_DAYS} jours). ` +
+            `Revenez la semaine prochaine, ou passez Pro pour mesurer quotidiennement.`,
           )
         }
+        // Slot bonus actif — on consomme le changement de site
         freeUnlockChangeId = unlock.changeId
       }
+      // Si quota non atteint : aucune restriction supplémentaire, mesure autorisée.
     } else {
       // Vérifie le délai entre deux mesures (plans payants uniquement)
       const { allowed, daysRemaining } = await checkMeasurementDelay((data.cronSecret && data.cronSecret === process.env.CRON_SECRET) ? adminSupabase : supabase, brand.id)

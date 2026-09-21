@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Gauge, Clock, Loader2, X, Sparkles } from 'lucide-react'
+import { Gauge, Clock, Loader2, X, Sparkles, Zap } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { runFullMeasurement } from '~/lib/measurement-client'
 import { isFreePlan, MEASUREMENT_DELAY_DAYS } from '~/lib/plan'
@@ -36,12 +36,20 @@ export function HeaderMeasureButton() {
   const free = isFreePlan(data.brand.plan)
   const hasCompletedRun = data.latestRun?.status === 'success' || data.latestRun?.status === 'partial'
 
-  // Plan payant : cooldown classique de MEASUREMENT_DELAY_DAYS entre deux
-  // mesures manuelles. Plan Free : pas de cooldown en jours — bloqué tant
-  // qu'aucun changement de site significatif n'a débloqué de remesure.
+  // Plan Free — décision #7/#12 :
+  //   - freeMeasurementsThisWeek / freeMeasurementsPerWeek : compteur glissant 7j
+  //   - freeRemeasureBonus : slot bonus si changement de site non consommé
+  const weekUsed = data.freeMeasurementsThisWeek ?? 0
+  const weekMax = data.freeMeasurementsPerWeek ?? 3
+  const bonusAvailable = data.freeRemeasureBonus ?? false
+  const weeklyQuotaReached = weekUsed >= weekMax
+
+  // Plan payant : cooldown classique entre deux mesures manuelles.
   const remaining =
     !free && data.latestRun?.status === 'success' ? daysRemaining(data.latestRun.completed_at) : 0
-  const freeLocked = free && hasCompletedRun && !data.freeRemeasureAvailable
+
+  // Free est bloqué si : quota atteint ET pas de slot bonus disponible
+  const freeLocked = free && weeklyQuotaReached && !bonusAvailable
   const isAvailable = free ? !freeLocked : remaining === 0
 
   const isMeasuring = pending || data.latestRun?.status === 'measuring' || data.latestRun?.status === 'pending'
@@ -52,12 +60,12 @@ export function HeaderMeasureButton() {
       abortControllerRef.current?.abort()
       return
     }
-    
+
     navigate({ to: '/dashboard' as any })
 
     setPending(true)
     setProgress(null)
-    
+
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
@@ -98,6 +106,7 @@ export function HeaderMeasureButton() {
     )
   }
 
+  // Quota hebdo atteint ET pas de slot bonus → CTA Pro
   if (freeLocked) {
     return (
       <Tooltip>
@@ -111,7 +120,7 @@ export function HeaderMeasureButton() {
           </a>
         </TooltipTrigger>
         <TooltipContent>
-          Vous avez modifié votre site ? Passez Pro pour vérifier l'impact réel sur votre visibilité IA.
+          {weekUsed}/{weekMax} mesures utilisées cette semaine. Passez Pro pour mesurer quotidiennement.
         </TooltipContent>
       </Tooltip>
     )
@@ -135,14 +144,46 @@ export function HeaderMeasureButton() {
     )
   }
 
+  // Slot bonus disponible (changement de site) — visuel distinct du bouton normal
+  if (free && weeklyQuotaReached && bonusAvailable) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleClick}
+            className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md border border-brand/60 bg-brand/10 sm:px-3 text-[11px] font-semibold text-brand transition-colors hover:bg-brand hover:text-black"
+          >
+            <Zap className="size-3.5" />
+            <span className="hidden sm:inline">Mesure bonus</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Votre site a changé — une mesure bonus est disponible ({weekUsed}/{weekMax} quota utilisé).
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  // Quota non atteint — bouton normal avec compteur pour les Free ayant déjà mesuré
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md bg-brand sm:px-3 text-[11px] font-semibold text-black transition-colors hover:bg-brand-hover"
-    >
-      <Gauge className="size-3.5" />
-      <span className="hidden sm:inline">Mesurer</span>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={handleClick}
+          className="flex size-8 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-md bg-brand sm:px-3 text-[11px] font-semibold text-black transition-colors hover:bg-brand-hover"
+        >
+          <Gauge className="size-3.5" />
+          {free && hasCompletedRun
+            ? <span className="hidden sm:inline">{weekUsed}/{weekMax}</span>
+            : <span className="hidden sm:inline">Mesurer</span>
+          }
+        </button>
+      </TooltipTrigger>
+      {free && hasCompletedRun ? (
+        <TooltipContent>{weekUsed}/{weekMax} mesures utilisées cette semaine</TooltipContent>
+      ) : null}
+    </Tooltip>
   )
 }

@@ -110,8 +110,9 @@ export const fr = {
       features: [
         { label: '1 site suivi' },
         { label: '1 question suivie' },
-        { label: '1 mesure (aperçu unique)' },
-        { label: 'Score + 1 concurrent visible' },
+        { label: '3 mesures par semaine' },
+        { label: 'Score + 2 concurrents visibles' },
+        { label: 'Scan de site tous les 7 jours' },
         { label: 'Accès Bots IA', detail: 'Autorisation de crawl pour GPTBot, ClaudeBot et PerplexityBot sur votre contenu indexable.' }
       ]
     },
@@ -179,7 +180,7 @@ export const fr = {
       },
       {
         q: "Puis-je essayer Reflet gratuitement ?",
-        a: "Oui, le plan Free permet de mesurer une question et de voir un aperçu réel de votre visibilité, sans carte bancaire."
+        a: "Oui, le plan Free est gratuit (0€) et permet de mesurer une question avec 3 mesures par semaine, sans carte bancaire."
       },
       {
         q: "Reflet garantit-il une position dans les IA ?",

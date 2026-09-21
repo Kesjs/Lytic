@@ -98,9 +98,12 @@ function OpportunitesPage() {
       return <FreeInsightCard insight={data.freeInsight} />
     }
     if (isFreePlan(data.brand.plan)) {
-      return <FreeOpportunitiesLockedCard />
+      // Deux cas distincts (#4) :
+      //   freeWellRecommended = true  → a mesuré, bien recommandée : message de félicitations honnête
+      //   freeWellRecommended = false → jamais mesuré ou pas encore de signal : message de blocage
+      return <FreeOpportunitiesLockedCard wellRecommended={data.freeWellRecommended ?? false} />
     }
-    return <DashboardStateView state="no_opportunity" />
+    return <DashboardStateView state="no_opportunity" isFree={false} />
   }
 
   const filtered =
@@ -296,11 +299,37 @@ function FreeInsightCard({ insight }: { insight: FreeInsight }) {
   )
 }
 
-// Plan Free, aucune opportunité ET aucun freeInsight : pas de "Aucune
-// opportunité détectée" trompeur (ça sous-entend une vraie analyse) — les
-// opportunités exigent plusieurs mesures dans le temps, indisponibles avec
-// l'aperçu unique Free. Aucun chiffre inventé, juste une explication honnête.
-function FreeOpportunitiesLockedCard() {
+// Plan Free, aucune opportunité ET aucun freeInsight.
+// Deux sous-cas distincts :
+//   wellRecommended=true  → a mesuré, bien recommandée : félicitations + invite à tester une autre question (#4)
+//   wellRecommended=false → jamais mesuré OU pas encore de signal : message de blocage standard
+function FreeOpportunitiesLockedCard({ wellRecommended }: { wellRecommended: boolean }) {
+  if (wellRecommended) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-success/10 border border-success/20 text-success">
+            <Lightbulb className="size-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-ink-primary">Bon signal sur cette question</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+              L'IA vous recommande sur votre question suivie — c'est un bon départ.{' '}
+              Testez une autre question pour avoir une vue plus complète de votre visibilité.
+            </p>
+          </div>
+        </div>
+        <a
+          href="/dashboard/parametres"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
+        >
+          Passer Pro pour suivre d'autres questions
+          <ArrowRight className="size-3.5" />
+        </a>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
       <div className="flex items-start gap-3">
@@ -311,7 +340,7 @@ function FreeOpportunitiesLockedCard() {
           <p className="text-sm font-semibold text-ink-primary">Opportunités indisponibles en Free</p>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
             Les opportunités se détectent en croisant plusieurs mesures dans le temps —
-            indisponibles avec l'aperçu unique Free.
+            fonctionnalité réservée au plan Pro.
           </p>
         </div>
       </div>

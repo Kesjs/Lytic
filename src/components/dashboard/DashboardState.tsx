@@ -139,6 +139,8 @@ export interface DashboardStateViewProps {
    */
   card?: boolean
   className?: string
+  /** Pour différencier le message no_opportunity entre Free et Pro (récap #4) */
+  isFree?: boolean
 }
 
 export function DashboardStateView({
@@ -148,9 +150,19 @@ export function DashboardStateView({
   compact = false,
   card = true,
   className,
+  isFree = false,
 }: DashboardStateViewProps) {
   const config = STATE_CONFIG[state]
   const Icon = config.icon
+
+  // Différencier le message no_opportunity pour Free vs Pro (récap #4)
+  let overrideTitle: string | undefined
+  let overrideDescription: string | undefined
+
+  if (state === 'no_opportunity' && isFree) {
+    overrideTitle = 'Bon signal sur cette question'
+    overrideDescription = 'Testez une nouvelle question pour une vue plus complète de votre visibilité.'
+  }
 
   if (compact) {
     return (
@@ -159,8 +171,8 @@ export function DashboardStateView({
           className={cn('mt-0.5 size-4 shrink-0', TONE_CLASSES[config.tone], config.spin && 'animate-spin')}
         />
         <div>
-          <p className="text-sm font-medium text-ink-primary">{title ?? config.defaultTitle}</p>
-          <p className="mt-0.5 text-xs text-ink-muted">{description ?? config.defaultDescription}</p>
+          <p className="text-sm font-medium text-ink-primary">{title ?? overrideTitle ?? config.defaultTitle}</p>
+          <p className="mt-0.5 text-xs text-ink-muted">{description ?? overrideDescription ?? config.defaultDescription}</p>
         </div>
       </div>
     )
@@ -187,8 +199,8 @@ export function DashboardStateView({
   return (
     <div className={wrapperClass}>
       <Icon className={cn('size-6', TONE_CLASSES[config.tone], config.spin && 'animate-spin')} />
-      <p className="font-display text-lg font-semibold text-ink-primary">{title ?? config.defaultTitle}</p>
-      <p className="max-w-sm text-sm text-ink-muted">{description ?? config.defaultDescription}</p>
+      <p className="font-display text-lg font-semibold text-ink-primary">{title ?? overrideTitle ?? config.defaultTitle}</p>
+      <p className="max-w-sm text-sm text-ink-muted">{description ?? overrideDescription ?? config.defaultDescription}</p>
       {state === 'unavailable' && (
         <button
           type="button"

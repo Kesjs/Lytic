@@ -25,7 +25,7 @@ import {
   type SettingsData,
 } from '~/lib/queries/settings'
 import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
-import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
+import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE, FREE_SITE_SCAN_COOLDOWN_DAYS, FREE_MEASUREMENTS_PER_WEEK } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/parametres')({
   component: ParametresPage,
@@ -704,8 +704,9 @@ function SubscriptionSection({ brand }: { brand: SettingsData['brand'] }) {
           <p className="text-xs font-medium text-ink-primary">Limites du plan Free</p>
           <ul className="mt-2 space-y-1 text-xs text-ink-muted">
             <li>• {FREE_MAX_QUESTIONS} question suivie</li>
-            <li>• 1 mesure (aperçu) + 1 remesure si changement du site détecté</li>
-            <li>• {FREE_MAX_COMPETITORS_VISIBLE} concurrent visible</li>
+            <li>• {FREE_MEASUREMENTS_PER_WEEK} mesures par semaine</li>
+            <li>• {FREE_MAX_COMPETITORS_VISIBLE} concurrents visibles</li>
+            <li>• Scan de site tous les {FREE_SITE_SCAN_COOLDOWN_DAYS} jours</li>
           </ul>
           <UpgradeButton brandId={brand.id} className="mt-3" />
         </div>

@@ -110,8 +110,9 @@ export const en = {
       features: [
         { label: '1 tracked site' },
         { label: '1 tracked question' },
-        { label: '1 measurement (one-time snapshot)' },
-        { label: 'Score + 1 competitor visible' },
+        { label: '3 measurements per week' },
+        { label: 'Score + 2 competitors visible' },
+        { label: 'Site scan every 7 days' },
         { label: 'AI Bots Access', detail: 'Crawl authorization for GPTBot, ClaudeBot, and PerplexityBot on your indexable content.' }
       ]
     },
@@ -179,7 +180,7 @@ export const en = {
       },
       {
         q: "Can I try Reflet for free?",
-        a: "Yes, the Free plan lets you track one question and get a real glimpse of your visibility, without a credit card."
+        a: "Yes, the Free plan is free (€0) and lets you track one question with 3 measurements per week, without a credit card."
       },
       {
         q: "Does Reflet guarantee a position in AI?",

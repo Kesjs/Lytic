@@ -16,10 +16,10 @@ const tableData: FeatureGroup[] = [
   {
     name: "Analyse & Tracking",
     features: [
-      { name: "Domaines analysés", free: "1", pro: "Jusqu'à 3", enterprise: "Illimité" },
-      { name: "Questions suivies", free: "10 requêtes", pro: "100 requêtes", enterprise: "Sur mesure" },
-      { name: "Fréquence d'interrogation", free: "Mensuelle", pro: "Hebdomadaire", enterprise: "Quotidienne" },
-      { name: "Historique des données", free: "30 jours", pro: "1 an", enterprise: "Illimité" },
+      { name: "Domaines analysés", free: "1", pro: "1", enterprise: "Illimité" },
+      { name: "Questions suivies", free: "1", pro: "Jusqu'à 50", enterprise: "Illimité" },
+      { name: "Fréquence d'interrogation", free: "3/semaine", pro: "Illimité (auto)", enterprise: "Illimité (auto)" },
+      { name: "Historique des données", free: "Illimité", pro: "Illimité", enterprise: "Illimité" },
     ]
   },
   {

@@ -97,7 +97,7 @@ export function ScreenshotFrame({
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 text-[10px] text-ink-muted">
-                    <span className="size-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+                    <span className="size-1.5 rounded-full bg-success/80 animate-pulse" />
                     <span className="hidden sm:inline">Reflet</span>
                   </div>
                 )}

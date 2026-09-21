@@ -90,6 +90,55 @@ export function parseRobotsTxt(content: string, targetUa: string): RobotsRules {
 }
 
 /**
+ * Fetch et parse un sitemap.xml pour extraire les URLs
+ * (#15) Comparaison sitemap vs pages découvertes
+ */
+export async function fetchSitemapUrls(sitemapUrl: string): Promise<string[]> {
+  try {
+    const response = await fetchSafe(sitemapUrl)
+    if (!response.ok) return []
+
+    const xml = await response.text()
+    const urls: string[] = []
+
+    // Parser basique XML pour extraire les URLs <loc>
+    const urlRegex = /<loc>(.*?)<\/loc>/gi
+    let match
+    while ((match = urlRegex.exec(xml)) !== null) {
+      urls.push(match[1])
+    }
+
+    return urls
+  } catch (error) {
+    console.error('[robots] Erreur fetch sitemap:', error)
+    return []
+  }
+}
+
+/**
+ * Compare les URLs du sitemap avec les pages découvertes par le crawler
+ * Retourne les URLs présentes dans le sitemap mais pas découvertes (potentiellement orphelines)
+ */
+export function compareSitemapVsDiscovered(sitemapUrls: string[], discoveredPages: string[]): {
+  inSitemapOnly: string[]
+  inDiscoveredOnly: string[]
+  common: string[]
+} {
+  const sitemapSet = new Set(sitemapUrls)
+  const discoveredSet = new Set(discoveredPages)
+
+  const inSitemapOnly = sitemapUrls.filter(url => !discoveredSet.has(url))
+  const inDiscoveredOnly = discoveredPages.filter(url => !sitemapSet.has(url))
+  const common = sitemapUrls.filter(url => discoveredSet.has(url))
+
+  return {
+    inSitemapOnly,
+    inDiscoveredOnly,
+    common,
+  }
+}
+
+/**
  * Détermine si une URL est autorisée selon les règles robots.txt.
  * Retourne true (autorisé) par défaut si aucune règle ne matche.
  */

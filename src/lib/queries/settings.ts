@@ -576,7 +576,8 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
       if (err?.message?.includes('déjà généré')) {
         throw err
       }
-      // Si la table n'existe pas encore (PGRST205 / 42P01), tolérer sans crasher
+      // Erreur inattendue sur la vérification du quota — on laisse passer pour ne pas
+      // bloquer l'inscription sur une erreur réseau transitoire.
     }
 
     // Garde-fou 3 : Filet de sécurité IP basé sur getClientIp() et signup_attempts
@@ -613,7 +614,9 @@ export const generateQuestionsWithAI = createServerFn({ method: 'POST' })
       if (ipErr?.message?.includes('Trop de demandes')) {
         throw ipErr
       }
-      // Tolérer si signup_attempts n'existe pas encore
+      // Erreur inattendue sur la vérification IP — on laisse passer pour ne pas
+      // bloquer l'inscription sur une erreur réseau transitoire, mais signup_attempts
+      // existe bien en prod (créée dans la migration anti-abus #19).
     }
 
     // Dynamic import to avoid running gemini code on client side bundle if not split

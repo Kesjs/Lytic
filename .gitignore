@@ -43,5 +43,8 @@ next-env.d.ts
 /scratch/
 supabase/.temp/
 
+# Legacy Next.js reference — retiré du tracking git (git rm --cached), conservé en local uniquement
+/_legacy_next_reference/
+
 # Playwright auth state
 .auth/

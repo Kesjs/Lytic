@@ -9,6 +9,17 @@ export interface ExtractedContent {
   cta: string[]
   links: string[]
   structure: string[]
+  jsonLd: boolean
+  h1Count: number
+  titleLength: number
+  hasMetaDescription: boolean
+  // Nouveaux checks techniques (#15)
+  schemaTypes: string[]
+  hasUniqueH1: boolean
+  metaDescriptionLength: number
+  hasCanonical: boolean
+  imagesWithoutAlt: number
+  duplicateMetaDescriptions: boolean
 }
 
 export function extractContent($: CheerioAPI): ExtractedContent {
@@ -68,6 +79,38 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     if ('tagName' in el) structure.push((el as any).tagName)
   })
 
+  // SEO & Technical Audit IA metrics (#15/#16)
+  const jsonLd = $('script[type="application/ld+json"]').length > 0
+  const h1Count = $('h1').length
+  const titleLength = title?.length || 0
+  const hasMetaDescription = !!$('meta[name="description"]').attr('content')
+
+  // Nouveaux checks techniques (#15)
+  const schemaTypes: string[] = []
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const content = $(el).text()
+      const parsed = JSON.parse(content)
+      if (parsed['@type']) {
+        const types = Array.isArray(parsed['@type']) ? parsed['@type'] : [parsed['@type']]
+        schemaTypes.push(...types)
+      }
+    } catch (e) {
+      // JSON invalide, ignorer
+    }
+  })
+  const uniqueSchemaTypes = [...new Set(schemaTypes)]
+
+  const hasUniqueH1 = h1Count === 1
+  const metaDescriptionLength = desc.length
+  const hasCanonical = $('link[rel="canonical"]').length > 0
+
+  const imagesWithoutAlt = $('img:not([alt]), img[alt=""]').length
+
+  // Vérifier les meta descriptions dupliquées (basique - même texte sur plusieurs pages)
+  // Note: Cette vérification nécessite une comparaison avec d'autres pages, donc on retourne juste la donnée brute
+  const duplicateMetaDescriptions = false // À implémenter avec comparaison cross-pages
+
   return {
     title,
     meta,
@@ -77,5 +120,15 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     cta: uniqueCta,
     links: uniqueLinks,
     structure,
+    jsonLd,
+    h1Count,
+    titleLength,
+    hasMetaDescription,
+    schemaTypes: uniqueSchemaTypes,
+    hasUniqueH1,
+    metaDescriptionLength,
+    hasCanonical,
+    imagesWithoutAlt,
+    duplicateMetaDescriptions,
   }
 }

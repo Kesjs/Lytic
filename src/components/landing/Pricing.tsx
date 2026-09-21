@@ -9,8 +9,9 @@ type Feature = { label: string; detail?: string }
 const featuresFree: Feature[] = [
   { label: '1 site suivi' },
   { label: '1 question suivie' },
-  { label: '1 mesure (aperçu unique)' },
-  { label: 'Score + 1 concurrent visible' },
+  { label: '3 mesures par semaine' },
+  { label: 'Score + 2 concurrents visibles' },
+  { label: 'Scan de site tous les 7 jours' },
   {
     label: 'Accès Bots IA',
     detail: 'Autorisation de crawl pour GPTBot, ClaudeBot et PerplexityBot sur votre contenu indexable.',
@@ -21,12 +22,12 @@ const featuresPro: Feature[] = [
   { label: '1 site suivi' },
   { label: "Jusqu'à 50 questions" },
   {
-    label: 'Mesure continue automatique',
-    detail: 'Vérification automatique de votre visibilité une fois par semaine, sans action de votre part.',
+    label: 'Vérification automatique',
+    detail: 'Contrôle quotidien de votre site, remesure automatique dès qu\'un changement est détecté.',
   },
-  { label: 'Interrogation de ChatGPT' },
-  { label: 'Analyse de positionnement' },
-  { label: 'Détection des opportunités' },
+  { label: 'Remesures illimitées, toutes IA confondues' },
+  { label: 'Analyse de positionnement continue' },
+  { label: 'Détection automatique de toutes vos opportunités' },
 ]
 
 const featuresEnterprise: Feature[] = [
@@ -166,7 +167,7 @@ export function Pricing() {
             </ul>
 
             <Link
-              to="/login"
+              to="/signup"
               className="mt-auto flex w-full items-center justify-center rounded-xl bg-brand py-3 text-sm font-semibold text-black transition-all hover:bg-brand-hover hover:shadow-lg hover:shadow-brand/20"
             >
               {t.pricing.pro.cta}

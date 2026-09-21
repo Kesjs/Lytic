@@ -13,7 +13,7 @@ import { ThemesCloud } from '~/components/dashboard/charts/ThemesCloud'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { DashboardStateView, deriveRunFreshness } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
-import { BotAccessCard } from '~/components/dashboard/BotAccessCard'
+import { TechnicalAuditCard, computeAuditMetrics } from '~/components/dashboard/TechnicalAuditCard'
 import { QuestionsTable } from '~/components/dashboard/QuestionsTable'
 import { isFreePlan } from '~/lib/plan'
 import { cn } from '~/lib/utils'
@@ -281,8 +281,12 @@ function AccueilPage() {
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3"
         >
           <p className="text-sm text-ink-secondary">
-            <span className="font-medium text-ink-primary">Plan Free — 1 mesure utilisée.</span>{' '}
-            Passez au plan Pro pour remesurer et débloquer toutes les fonctionnalités.
+            <span className="font-medium text-ink-primary">
+              Plan Free — {data.freeMeasurementsThisWeek ?? 0}/3 mesures utilisées cette semaine.
+            </span>{' '}
+            {data.freeRemeasureBonus 
+              ? "⚡ Un bonus de remesure est disponible suite à une modification de votre site." 
+              : "Passez au plan Pro pour des mesures quotidiennes illimitées."}
           </p>
           <Link
             to="/dashboard/parametres"
@@ -352,7 +356,7 @@ function AccueilPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
       >
-        <BotAccessCard data={botAccess ?? null} brandId={brand.id} />
+        <TechnicalAuditCard botAccess={botAccess ?? null} pages={data.pages ?? []} brandId={brand.id} />
       </motion.section>
 
       {displayRun && (
@@ -370,19 +374,47 @@ function AccueilPage() {
             <CompetitorsMiniList competitors={topCompetitors} hasAnyRun={!!latestRun} />
           </div>
 
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
-            {pages.length === 0 ? (
-              <p className="mt-3 text-sm text-ink-muted">
-                Aucune page suivie — configurez votre site dans Paramètres.
-              </p>
-            ) : (
-              <p className="mt-3 text-sm text-ink-secondary">
-                {pages.length} page{pages.length > 1 ? 's' : ''} suivie
-                {pages.length > 1 ? 's' : ''}, dont{' '}
-                {pages.filter((p: any) => p.status === 'ok').length} vérifiée
-                {pages.filter((p: any) => p.status === 'ok').length > 1 ? 's' : ''} récemment
-              </p>
+          <div className="rounded-lg border border-border bg-surface p-5 flex flex-col justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-ink-primary">Surveillance du site</h2>
+              {pages.length === 0 ? (
+                <p className="mt-3 text-sm text-ink-muted">
+                  Aucune page suivie — configurez votre site dans Paramètres.
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-ink-secondary">
+                  {pages.length} page{pages.length > 1 ? 's' : ''} suivie
+                  {pages.length > 1 ? 's' : ''}.
+                </p>
+              )}
+            </div>
+
+            {pages.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-ink-muted">Dernière vérification</span>
+                  <span className="text-xs font-medium text-ink-primary">
+                    {(() => {
+                      const latest = Math.max(...pages.map((p: any) => new Date(p.last_checked_at || 0).getTime()));
+                      if (!latest) return 'Jamais';
+                      const diffH = Math.floor((Date.now() - latest) / (1000 * 60 * 60));
+                      if (diffH === 0) return 'Il y a moins d\'une heure';
+                      return `Il y a ${diffH}h`;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-ink-muted">Audit Technique IA</span>
+                  <span className="text-xs font-medium text-ink-primary">
+                    {(() => {
+                      const m = computeAuditMetrics(botAccess ?? null, pages);
+                      if (!m) return 'Non vérifié';
+                      const scoreColor = m.score >= 80 ? 'text-success' : m.score >= 50 ? 'text-warning' : 'text-danger';
+                      return <span className={scoreColor}>{m.score}/100</span>;
+                    })()}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </section>
@@ -415,15 +447,38 @@ function AccueilPage() {
           {events.length === 0 ? (
             <p className="mt-3 text-sm text-ink-muted">Aucun événement récent.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {events.map((event: any) => (
-                <li key={event.id} className="text-sm text-ink-secondary">
-                  <p className="text-ink-primary">{event.title}</p>
-                  <p className="text-xs text-ink-muted">
-                    {new Date(event.created_at).toLocaleDateString('fr-FR')}
-                  </p>
-                </li>
-              ))}
+            <ul className="mt-3 space-y-3">
+              {events.map((event: any) => {
+                const isBonus = event.title === 'Nouveau crawl débloqué' || event.title.includes('débloqué')
+                return (
+                  <li key={event.id} className="flex gap-2.5">
+                    <div className="mt-0.5 flex shrink-0 items-center justify-center">
+                      {isBonus ? (
+                        <div className="flex size-6 items-center justify-center rounded-full bg-warning/20">
+                          <Zap className="size-3.5 text-warning" />
+                        </div>
+                      ) : (
+                        <div className="flex size-6 items-center justify-center rounded-full bg-border/50">
+                          <div className="size-1.5 rounded-full bg-ink-muted" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className={cn("text-sm font-medium", isBonus ? "text-warning" : "text-ink-primary")}>
+                        {event.title}
+                      </p>
+                      <p className="text-xs text-ink-muted">
+                        {new Date(event.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>

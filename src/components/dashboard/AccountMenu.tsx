@@ -120,9 +120,9 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
             setIsDropdownOpen(false)
             setIsLogoutModalOpen(true)
           }}
-          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-danger hover:text-danger/80 hover:bg-danger/10 transition-colors"
         >
-          <LogOut className="size-4 text-red-400" />
+          <LogOut className="size-4 text-danger" />
           Déconnexion
         </button>
       </div>
@@ -230,7 +230,7 @@ export function AccountMenu({ variant, isCollapsed = false, onNavigate }: Accoun
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-md bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
+                  className="rounded-md bg-danger/10 px-4 py-2 text-sm font-medium text-danger hover:bg-danger/20 transition-colors"
                 >
                   Me déconnecter
                 </button>

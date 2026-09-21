@@ -117,7 +117,8 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
       .maybeSingle()
 
     if (!latestRun) {
-      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null } as const
+      // Jamais mesuré — pas d'insight possible.
+      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null, freeWellRecommended: false } as const
     }
 
     const { data: notRecommended } = await supabase
@@ -129,8 +130,10 @@ export const fetchOpportunities = createServerFn({ method: 'GET' }).handler(asyn
       .maybeSingle()
 
     if (!notRecommended) {
-      // Marque bien recommandée sur son unique question → état vide inchangé.
-      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null } as const
+      // Marque bien recommandée sur son unique question — bon signal !
+      // freeWellRecommended: true permet à l'UI d'afficher un message
+      // honnête de félicitations plutôt que "Opportunités indisponibles" (#4).
+      return { brand, opportunities: [] as OpportunityRow[], freeInsight: null, freeWellRecommended: true } as const
     }
 
     const { data: question } = await supabase

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { fetchQuestionDetail } from '~/lib/queries/performance'
+import { getEngineLabel } from '~/lib/engine-labels'
 
 export function QuestionDrawer({
   questionId,
@@ -96,7 +97,7 @@ export function QuestionDrawer({
                           {h.completedAt
                             ? new Date(h.completedAt).toLocaleDateString('fr-FR')
                             : 'Date inconnue'}{' '}
-                          via {h.engine}
+                          via {getEngineLabel(h.engine)}
                         </span>
                         <span className="flex items-center gap-2 text-xs">
                           <Dot value={h.mentioned} label="Mention" />

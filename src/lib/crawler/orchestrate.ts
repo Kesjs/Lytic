@@ -163,6 +163,29 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
         }
       }
 
+      // Générer une opportunité moyenne priorité si le fichier llms.txt est manquant (#5)
+      if (!botResult.llmsTxtFound) {
+        const { data: existingLlms } = await admin.from('opportunities')
+          .select('id')
+          .eq('brand_id', brand.id)
+          .eq('status', 'open')
+          .ilike('title', '%llms.txt%')
+          .maybeSingle()
+
+        if (!existingLlms) {
+          await admin.from('opportunities').insert({
+            brand_id: brand.id,
+            title: `Fichier llms.txt manquant`,
+            priority: 'medium',
+            confidence: 90,
+            status: 'open',
+            observations_count: 0,
+            reason: `Votre site ne propose pas de fichier /llms.txt à sa racine. Ce standard émergent est utilisé par les IA pour comprendre la structure de votre site et extraire le contenu pertinent plus efficacement lors de leurs recherches.`,
+            proposed_direction: `Créez un fichier llms.txt à la racine de votre site (ex: /llms.txt) contenant un résumé Markdown de vos contenus principaux et des liens vers votre documentation clé, selon le standard llmstxt.org.`,
+          })
+        }
+      }
+
       // Notifier si au moins un bot majeur est bloqué
       const blockedMajorBots = MAJOR_BOTS.filter((b) => botResult.bots[b] === 'blocked')
       if (blockedMajorBots.length > 0) {
@@ -171,6 +194,21 @@ export const triggerSiteCrawl = createServerFn({ method: 'POST' })
           type: 'warning',
           title: 'Bots IA bloqués détectés',
           message: `${blockedMajorBots.length} bot(s) IA majeur(s) bloqué(s) dans votre robots.txt : ${blockedMajorBots.join(', ')}.`,
+          source_type: 'bot_access',
+          show_toast: false,
+          show_notification: true,
+          show_history: true,
+          read: false,
+        })
+      }
+
+      // Notifier si llms.txt est manquant
+      if (!botResult.llmsTxtFound) {
+        await admin.from('events').insert({
+          brand_id: brand.id,
+          type: 'info',
+          title: 'Fichier llms.txt manquant',
+          message: 'Votre site ne propose pas de fichier /llms.txt. Ce standard émergent aide les IA à mieux comprendre la structure de votre site.',
           source_type: 'bot_access',
           show_toast: false,
           show_notification: true,
@@ -228,9 +266,63 @@ export const processNextPage = createServerFn({ method: 'POST' })
 
     try {
       const fetchRes = await fetchPage(page.url)
-      
+
       if (fetchRes.status >= 400) {
-        await admin.from('site_pages').update({ status: 'unavailable', last_checked_at: new Date().toISOString() }).eq('id', page.id)
+        // Garde-fou #13 : ne classer 'removed' qu'après plusieurs échecs consécutifs
+        // pour éviter les fausses alertes sur des pannes passagères (503, rate-limit, timeout)
+        const consecutiveFailures = (page.consecutive_failures || 0) + 1
+        const MAX_CONSECUTIVE_FAILURES = 3 // 3 échecs consécutifs avant de considérer la page supprimée
+
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES && page.status !== 'removed') {
+          // Page considérée comme supprimée/déplacée après échecs répétés
+          await admin.from('site_pages').update({
+            status: 'removed',
+            consecutive_failures: consecutiveFailures,
+            last_checked_at: new Date().toISOString()
+          }).eq('id', page.id)
+
+          // Générer une opportunité haute priorité (#13)
+          const { data: existingRemoved } = await admin.from('opportunities')
+            .select('id')
+            .eq('brand_id', run.brand_id)
+            .eq('status', 'open')
+            .ilike('title', `%${page.url}%`)
+            .ilike('title', '%supprimée%')
+            .maybeSingle()
+
+          if (!existingRemoved) {
+            await admin.from('opportunities').insert({
+              brand_id: run.brand_id,
+              title: `Page supprimée ou déplacée : ${page.url}`,
+              priority: 'high',
+              confidence: 85,
+              status: 'open',
+              observations_count: 0,
+              reason: `La page ${page.url} n'a pas pu être atteinte après ${consecutiveFailures} tentatives consécutives (codes HTTP 4xx/5xx). Elle a probablement été supprimée, déplacée ou renommée.`,
+              proposed_direction: `Vérifiez si cette page existe toujours. Si elle a été déplacée, mettez à jour les liens internes. Si elle a été supprimée, créez une redirection 301 vers la nouvelle page équivalente.`,
+            })
+
+            // Notifier la page supprimée
+            await admin.from('events').insert({
+              brand_id: run.brand_id,
+              type: 'warning',
+              title: 'Page supprimée détectée',
+              message: `La page ${page.url} n'a pas pu être atteinte après ${consecutiveFailures} tentatives consécutives.`,
+              source_type: 'site_change',
+              show_toast: false,
+              show_notification: true,
+              show_history: true,
+              read: false,
+            })
+          }
+        } else {
+          // Échec temporaire, incrémenter le compteur mais rester en 'unavailable'
+          await admin.from('site_pages').update({
+            status: 'unavailable',
+            consecutive_failures: consecutiveFailures,
+            last_checked_at: new Date().toISOString()
+          }).eq('id', page.id)
+        }
       } else {
         const $ = sanitizeHtml(fetchRes.html)
         const newContent = extractContent($)
@@ -246,6 +338,7 @@ export const processNextPage = createServerFn({ method: 'POST' })
           extracted_content: newContent as any,
           is_spa: fetchRes.isSPA,
           status: 'ok',
+          consecutive_failures: 0, // Reset le compteur d'échecs consécutifs
           last_checked_at: new Date().toISOString(),
         }).eq('id', page.id)
 

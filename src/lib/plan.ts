@@ -6,8 +6,18 @@ import { MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 
 export const FREE_MAX_QUESTIONS = 1
 export const FREE_SAMPLES_PER_QUESTION = 1 // vs PRO_SAMPLES_PER_QUESTION (measure.ts)
-export const FREE_MAX_MEASUREMENTS = 1 // jamais de remesure
-export const FREE_MAX_COMPETITORS_VISIBLE = 1
+
+// Quota de mesures Free : 3 par période de 7 jours glissants, à vie récurrent.
+// Décision produit #7 — remplace l'ancien FREE_MAX_MEASUREMENTS = 1 (one-shot).
+// Fenêtre glissante : on compte les runs 'success'|'partial' des 7 derniers jours.
+export const FREE_MEASUREMENTS_PER_WEEK = 3
+export const FREE_MEASUREMENT_WINDOW_DAYS = 7
+
+// Un changement de site significatif (importance != 'low') débloque un slot
+// BONUS au-delà du quota hebdomadaire — slot additif, pas remplaçant (#12).
+// Voir getFreeRemeasureUnlock dans reliability.ts.
+
+export const FREE_MAX_COMPETITORS_VISIBLE = 2 // décision #8 : 1 → 2
 
 export const PRO_MAX_QUESTIONS = MAX_TRACKED_QUESTIONS // déjà existant dans utils.ts
 export const PRO_SAMPLES_PER_QUESTION = 3 // déjà existant dans measure.ts
