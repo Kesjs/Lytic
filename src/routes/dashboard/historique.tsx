@@ -5,7 +5,12 @@ import { Activity, FileEdit, Bell, Loader2 } from 'lucide-react'
 import { fetchHistory, type TimelineEntry, type HistoryFilters } from '~/lib/queries/history'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import { DatePickerField } from '~/components/ui/date-picker'
-import { diffWords, countWords, DIFF_MAX_WORDS, type DiffToken } from '~/lib/text-diff'
+import { diffWords, windowTokens, countWords, DIFF_MAX_WORDS, type DiffToken } from '~/lib/text-diff'
+
+// Nombre de mots de contexte conservés de chaque côté d'un changement dans
+// le diff mot-à-mot — au-delà, le texte inchangé est réduit à "…" pour que
+// l'œil aille droit au changement plutôt que de le chercher dans un pavé.
+const DIFF_CONTEXT_WORDS = 6
 
 export const Route = createFileRoute('/dashboard/historique')({
   component: HistoriquePage,
@@ -494,8 +499,10 @@ function TextFieldDiff({ oldValue, newValue }: { oldValue: string; newValue: str
     )
   }
 
-  // Sinon, diff mot-à-mot intelligent avec surlignage
-  const tokens = diffWords(oldValue, newValue)
+  // Sinon, diff mot-à-mot intelligent avec surlignage, recadré sur les
+  // changements (le texte identique entre deux changements éloignés est
+  // réduit à "…" plutôt qu'affiché en entier)
+  const tokens = windowTokens(diffWords(oldValue, newValue), DIFF_CONTEXT_WORDS)
 
   return (
     <div className="rounded-md border border-border bg-canvas px-3 py-2.5">
