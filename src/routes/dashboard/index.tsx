@@ -173,18 +173,23 @@ function AccueilPage() {
 
                       {/* Badge optimisation IA (Section 4.3) */}
                       {(() => {
-                        const auditScore = pages.length > 0 
-                          ? computeAuditMetrics(pages, botAccess).score 
-                          : null
-                        if (auditScore === null) return null
+                        // Bug corrigé (22/09) : computeAuditMetrics(botAccess, pages) — les
+                        // deux arguments étaient inversés, ce qui faisait planter tout
+                        // /dashboard dès que pages.length > 0 (accès à `.bots` sur le
+                        // tableau pages au lieu de l'objet botAccess). `hasRobotsTxt` et
+                        // `hasLlmsTxt` n'existent pas non plus sur l'objet retourné par
+                        // computeAuditMetrics (voir src/lib/audit-metrics.ts) — remplacés
+                        // par les champs réels (botsScore, botAccess.llmsTxtFound).
+                        const metrics = pages.length > 0 ? computeAuditMetrics(botAccess ?? null, pages) : null
+                        if (!metrics) return null
+                        const auditScore = metrics.score
 
                         const level = auditScore >= 80 ? 'good' : auditScore >= 50 ? 'warning' : 'danger'
                         const issues: string[] = []
-                        
+
                         // Construire la liste des problèmes principaux
-                        const metrics = computeAuditMetrics(pages, botAccess)
-                        if (!metrics.hasRobotsTxt) issues.push('Robots.txt manquant')
-                        if (!metrics.hasLlmsTxt) issues.push('llms.txt manquant')
+                        if (metrics.botsScore < 30) issues.push('Bots IA bloqués dans robots.txt')
+                        if (!botAccess?.llmsTxtFound) issues.push('llms.txt manquant')
                         if (!metrics.hasJsonLd) issues.push('JSON-LD absent')
                         if (!metrics.hasUniqueH1) issues.push('H1 manquant/dupliqué')
                         if (metrics.imagesWithoutAlt > 0) issues.push(`${metrics.imagesWithoutAlt} images sans alt`)
