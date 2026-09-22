@@ -67,7 +67,8 @@ const FIELD_LABELS: Record<string, string> = {
   title: 'Titre',
   meta: 'Méta-données',
   headings: 'En-têtes',
-  body: 'Contenu principal',
+  sections: 'Contenu principal',
+  mainContent: 'Contenu principal',
   pricing: 'Prix',
   cta: 'Appel à l\'action',
   links: 'Liens',
@@ -372,7 +373,7 @@ function ChangeEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: '
                 <span className="text-[11px] font-medium text-ink-muted uppercase tracking-wide">
                   {FIELD_LABELS[field] || field}
                 </span>
-                <FieldDiff oldValue={oldVal} newValue={newVal} />
+                <FieldDiff field={field} oldValue={oldVal} newValue={newVal} />
               </div>
             )
           })}
@@ -409,7 +410,18 @@ function isDiffableString(value: any): value is string | null | undefined {
   return value === null || value === undefined || typeof value === 'string'
 }
 
-function FieldDiff({ oldValue, newValue }: { oldValue: any; newValue: any }) {
+// Une "section" (extract.ts) a la forme { heading, level, content } — on la
+// distingue d'un simple tableau de chaînes (liens, thèmes, etc.) pour lui
+// donner un rendu structuré (§A2.5) au lieu du diff élément-par-élément brut.
+function isSectionsArray(value: any): value is Array<{ heading: string; level: number; content: string }> {
+  return Array.isArray(value) && (value.length === 0 || typeof value[0]?.heading === 'string')
+}
+
+function FieldDiff({ field, oldValue, newValue }: { field: string; oldValue: any; newValue: any }) {
+  if (field === 'sections' && (isSectionsArray(oldValue) || isSectionsArray(newValue))) {
+    return <SectionsFieldDiff oldValue={oldValue ?? []} newValue={newValue ?? []} />
+  }
+
   if (isDiffableString(oldValue) && isDiffableString(newValue)) {
     return <TextFieldDiff oldValue={oldValue ?? ''} newValue={newValue ?? ''} />
   }
@@ -459,6 +471,64 @@ function ArrayFieldDiff({ oldValue, newValue }: { oldValue: any; newValue: any }
         <div key={`add-${i}`} className="flex items-start gap-2 px-3 py-1.5 bg-success/5 border-b border-success/10 last:border-b-0">
           <span className="text-success font-bold shrink-0">+</span>
           <span className="text-success break-words">{String(item)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Diff structuré par section (heading + contenu) — remplace l'ancien diff
+// sur `body` (texte aplati de toute la page) qui mélangeait nav/header/
+// footer et contenu éditorial dans un seul bloc illisible (§A2.5).
+function SectionsFieldDiff({
+  oldValue,
+  newValue,
+}: {
+  oldValue: Array<{ heading: string; level: number; content: string }>
+  newValue: Array<{ heading: string; level: number; content: string }>
+}) {
+  const oldByHeading = new Map(oldValue.map((s) => [s.heading, s]))
+  const newByHeading = new Map(newValue.map((s) => [s.heading, s]))
+
+  const orderedHeadings = [
+    ...newValue.map((s) => s.heading),
+    ...oldValue.map((s) => s.heading).filter((h) => !newByHeading.has(h)),
+  ]
+
+  const rows = orderedHeadings
+    .filter((h, i) => orderedHeadings.indexOf(h) === i) // dédupliquer si heading répété
+    .map((heading) => {
+      const before = oldByHeading.get(heading)
+      const after = newByHeading.get(heading)
+      if (before && after && before.content === after.content) return null // section inchangée
+      return { heading, before, after }
+    })
+    .filter((row): row is { heading: string; before: typeof oldValue[number] | undefined; after: typeof newValue[number] | undefined } => row !== null)
+
+  if (rows.length === 0) {
+    return <p className="text-xs text-ink-muted italic">Aucun changement</p>
+  }
+
+  return (
+    <div className="space-y-3">
+      {rows.map((row) => (
+        <div key={row.heading} className="rounded-md border border-border overflow-hidden">
+          <div className="px-3 py-1.5 bg-canvas border-b border-border flex items-center gap-1.5">
+            <span className="text-xs font-medium text-ink">{row.heading}</span>
+            {!row.before && (
+              <span className="rounded-sm border border-success/20 bg-success/5 px-1.5 py-0.5 text-[10px] font-medium text-success">
+                Ajoutée
+              </span>
+            )}
+            {!row.after && (
+              <span className="rounded-sm border border-danger/20 bg-danger/5 px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                Supprimée
+              </span>
+            )}
+          </div>
+          <div className="p-2">
+            <TextFieldDiff oldValue={row.before?.content ?? ''} newValue={row.after?.content ?? ''} />
+          </div>
         </div>
       ))}
     </div>

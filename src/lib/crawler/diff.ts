@@ -1,11 +1,12 @@
 import { isEqual } from 'lodash-es'
-import type { ExtractedContent } from './extract'
+import type { ExtractedContent, ContentSection } from './extract'
 
 export type DiffField =
   | 'title'
   | 'meta'
   | 'headings'
-  | 'body'
+  | 'sections'
+  | 'mainContent'
   | 'pricing'
   | 'cta'
   | 'links'
@@ -29,7 +30,8 @@ const ALL_FIELDS: DiffField[] = [
   'title',
   'meta',
   'headings',
-  'body',
+  'sections',
+  'mainContent',
   'pricing',
   'cta',
   'links',
@@ -44,7 +46,16 @@ const IMMEDIATE_FIELDS: DiffField[] = ['title', 'pricing', 'meta']
 // Déclenchement conditionnel : ne comptent comme changement significatif que
 // si le delta dépasse le seuil de similarité ci-dessous — sinon traités comme
 // du bruit (reformulation mineure, paragraphe reformulé, etc.).
-const CONDITIONAL_FIELDS: DiffField[] = ['body', 'headings']
+// NB (A2.5) : `body` (texte brut aplati de toute la page) n'est plus comparé
+// ici — il produisait des diffs illisibles mélangeant nav/header/footer et
+// contenu éditorial. On compare désormais `sections` (contenu structuré par
+// heading), qui reflète le vrai contenu éditorial de la page. `body` reste
+// disponible dans ExtractedContent pour debug uniquement.
+// `mainContent` (texte aplati mais limité à <main>/<article>, sans nav/footer)
+// ne sert que de filet de sécurité pour les pages sans heading détectable
+// (donc sections = []) — voir le garde-fou dans computeDiff ci-dessous, pour
+// ne pas dupliquer/bruiter le diff des pages qui ont déjà des sections.
+const CONDITIONAL_FIELDS: DiffField[] = ['sections', 'headings', 'mainContent']
 
 // Purement informatif : toujours listés dans `changedFields` pour contexte/
 // debug, mais ne font jamais basculer `importance` à 'watch' à eux seuls.
@@ -58,8 +69,15 @@ const INFORMATIVE_FIELDS: DiffField[] = ['links', 'cta', 'structure']
 // bruit (réordonnancement, contenu injecté ailleurs sur la page, etc.).
 const SIMILARITY_THRESHOLD = 0.85
 
-function toComparableText(value: string | string[] | null): string {
+function isSections(value: unknown): value is ContentSection[] {
+  return Array.isArray(value) && (value.length === 0 || typeof (value[0] as any)?.heading === 'string')
+}
+
+function toComparableText(value: string | string[] | ContentSection[] | null): string {
   if (value === null) return ''
+  if (isSections(value)) {
+    return value.map((s) => `${s.heading} ${s.content}`).join(' ')
+  }
   return Array.isArray(value) ? value.join(' ') : value
 }
 
@@ -99,7 +117,15 @@ export function computeDiff(
   const changedFields: DiffField[] = []
   let hasSignificantChange = false
 
+  // Pages avec sections structurées détectées : `mainContent` ferait double
+  // emploi avec `sections` (même contenu, mais aplati et donc de nouveau
+  // illisible en diff) — on ne le compare que comme filet de sécurité pour
+  // les pages sans heading détectable dans <main>/<article>.
+  const hasSections = oldContent.sections.length > 0 || newContent.sections.length > 0
+
   for (const field of ALL_FIELDS) {
+    if (field === 'mainContent' && hasSections) continue
+
     const oldValue = oldContent[field]
     const newValue = newContent[field]
     if (isEqual(oldValue, newValue)) continue
