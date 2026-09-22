@@ -50,17 +50,31 @@ async function checkSiteScanCooldown(
 export const triggerSiteCrawl = createServerFn({ method: 'POST' })
   .validator((data: { brandId: string; cronSecret?: string }) => data)
   .handler(async ({ data }): Promise<{ runId: string }> => {
-    const supabaseClient = getSupabaseServerClient()
-      const adminSupabase = getSupabaseAdminClient()
-      const supabase = (data.cronSecret && data.cronSecret === process.env.CRON_SECRET) ? adminSupabase : supabaseClient
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) throw new Error('Non authentifié')
-
     const admin = getSupabaseAdminClient() as any
+    const isCronCall = Boolean(data.cronSecret && data.cronSecret === process.env.CRON_SECRET)
 
-    // Vérifie accès
-    const { data: brand } = await admin.from('brands').select('*').eq('id', data.brandId).eq('owner_id', auth.user.id).single()
-    if (!brand) throw new Error('Marque introuvable')
+    // Bug corrigé (22/09) : avant, même avec un cronSecret valide, le code
+    // appelait `adminSupabase.auth.getUser()` pour vérifier l'accès — mais
+    // le client admin (clé service_role) n'a jamais de session utilisateur,
+    // donc `auth.user` était toujours null et le crawl échouait
+    // systématiquement en contexte cron, avant même de créer un run. Le
+    // secret est déjà vérifié en amont dans la route /api/cron/site-check
+    // (Authorization: Bearer CRON_SECRET) : pas besoin de re-vérifier une
+    // session qui n'existe pas dans ce contexte.
+    let brand: any
+    if (isCronCall) {
+      const { data: cronBrand } = await admin.from('brands').select('*').eq('id', data.brandId).maybeSingle()
+      if (!cronBrand) throw new Error('Marque introuvable')
+      brand = cronBrand
+    } else {
+      const supabaseClient = getSupabaseServerClient()
+      const { data: auth } = await supabaseClient.auth.getUser()
+      if (!auth.user) throw new Error('Non authentifié')
+
+      const { data: userBrand } = await admin.from('brands').select('*').eq('id', data.brandId).eq('owner_id', auth.user.id).single()
+      if (!userBrand) throw new Error('Marque introuvable')
+      brand = userBrand
+    }
 
     // Cooldown de scan manuel — Free uniquement (§5)
     if (isFreePlan(brand.plan)) {
