@@ -71,6 +71,18 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     $main.find('nav, header, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"], [role="complementary"]').remove()
   }
 
+  // Insérer des espaces entre blocs AVANT d'extraire le moindre texte de
+  // $main (sections incluses juste après). Sans ça, `$next.text()` dans la
+  // boucle de sections colle le texte de deux éléments voisins sans espace
+  // (ex: prix "70 000 FCFA" + "7 place(s) restante(s)" → "70 000 FCFA7
+  // place(s) restante(s)"), ce qui casse à la fois la lisibilité et
+  // l'extraction de pricing basée sur regex.
+  const BLOCK_SELECTOR =
+    'p, div, li, td, th, h1, h2, h3, h4, h5, h6, br, section, article, header, footer, nav, ul, ol, table, tr'
+  $main.find(BLOCK_SELECTOR).each((_, el) => {
+    $(el).after(' ')
+  })
+
   // === NOUVEAU : Extraction des sections structurées (heading + contenu) ===
   const sections: ContentSection[] = []
   $main.find('h1, h2, h3').each((_, headingEl) => {
@@ -158,12 +170,7 @@ export function extractContent($: CheerioAPI): ExtractedContent {
   }
 
   // === Body principal (pour compatibilité avec l'existant) ===
-  // Insérer des espaces entre blocs avant d'extraire le texte
-  const BLOCK_SELECTOR =
-    'p, div, li, td, th, h1, h2, h3, h4, h5, h6, br, section, article, header, footer, nav, ul, ol, table, tr'
-  $main.find(BLOCK_SELECTOR).each((_, el) => {
-    $(el).after(' ')
-  })
+  // (espacement des blocs déjà fait plus haut, avant l'extraction des sections)
   const mainContent = $main.text().replace(/\s+/g, ' ').trim() || null
   
   // Body complet (pour compatibilité, mais moins utile maintenant)
