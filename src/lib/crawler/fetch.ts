@@ -8,6 +8,14 @@ export interface FetchResult {
   html: string
   status: number
   isSPA: boolean
+  // true uniquement si isSPA=true ET le rendu headless a échoué : le HTML
+  // renvoyé est alors la coquille vide d'origine, pas le contenu réellement
+  // affiché aux visiteurs. Avant ce fix, cet échec était juste loggé en
+  // console puis oublié — l'appelant traitait ce HTML vide comme un succès
+  // normal, ce qui aurait reproduit le même type de faux "Aucun H1/JSON-LD
+  // détecté" qu'on vient de corriger, mais cette fois sur un vrai contenu
+  // existant simplement jamais rendu (cf. #26).
+  spaRenderFailed: boolean
 }
 
 export async function fetchPage(url: string): Promise<FetchResult> {
@@ -24,6 +32,7 @@ export async function fetchPage(url: string): Promise<FetchResult> {
   const hasSsrState = $('#__NEXT_DATA__').length > 0 || html.includes('window.__NUXT__')
   
   const isSPA = bodyText.length < 500 && hasRoot && !hasSsrState
+  let spaRenderFailed = false
 
   if (isSPA) {
     try {
@@ -41,7 +50,9 @@ export async function fetchPage(url: string): Promise<FetchResult> {
       await browser.close()
     } catch (e) {
       console.error(`Erreur SPA headless pour ${url}:`, e)
-      // On fallback silencieusement sur le HTML d'origine
+      // Fallback sur le HTML d'origine (coquille vide) — mais on le signale
+      // désormais à l'appelant au lieu de rester silencieux.
+      spaRenderFailed = true
     }
   }
 
@@ -50,5 +61,6 @@ export async function fetchPage(url: string): Promise<FetchResult> {
     html,
     status: result.status,
     isSPA,
+    spaRenderFailed,
   }
 }
