@@ -9,6 +9,7 @@ import { checkBotAccess } from './robots'
 import type { IaBotId } from './constants'
 import { isFreePlan, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
 import { insertEvent } from '~/lib/events'
+import { computeAuditMetrics } from '~/lib/audit-metrics'
 
 // Délai par défaut entre deux fetches de pages si le robots.txt ne spécifie
 // pas de Crawl-delay. 800 ms offre un compromis correct : on n'inonde pas
@@ -254,6 +255,34 @@ export const processNextPage = createServerFn({ method: 'POST' })
     if (!page) {
       // Clôture transactionnelle via fonction SQL
       await admin.rpc('close_crawl_run', { p_run_id: run.id, p_brand_id: run.brand_id })
+
+      // Instantané du score Audit Technique IA sur ce run (§27) — on
+      // réutilise la même logique que la carte UI (computeAuditMetrics),
+      // mais avec l'état frais juste après ce crawl plutôt qu'un
+      // recalcul à la volée jamais stocké. Best-effort : une erreur ici
+      // ne doit pas faire échouer la clôture du run déjà actée ci-dessus.
+      try {
+        const [{ data: botAccessRow }, { data: pagesForScore }] = await Promise.all([
+          admin.from('brand_bot_access').select('*').eq('brand_id', run.brand_id).maybeSingle(),
+          admin.from('site_pages').select('*').eq('brand_id', run.brand_id).neq('status', 'removed'),
+        ])
+
+        const botAccessData = botAccessRow
+          ? {
+              checkedAt: botAccessRow.checked_at,
+              llmsTxtFound: botAccessRow.llms_txt_found,
+              bots: botAccessRow.bot_rules,
+            }
+          : null
+
+        const metrics = computeAuditMetrics(botAccessData, pagesForScore ?? [])
+        if (metrics) {
+          await admin.from('site_crawl_runs').update({ audit_score: metrics.score }).eq('id', run.id)
+        }
+      } catch (err) {
+        console.error(`[crawler] Échec calcul audit_score pour le run ${run.id} :`, err)
+      }
+
       return { done: true, runId: run.id }
     }
 
@@ -329,6 +358,15 @@ export const processNextPage = createServerFn({ method: 'POST' })
         const $ = sanitizeHtml(fetchRes.html)
         const newContent = extractContent($)
 
+        // Rendu SPA échoué (cf. #26) : le HTML analysé est la coquille vide
+        // d'origine, pas le vrai contenu — on le marque dans le JSON stocké
+        // (pas de migration nécessaire) pour que l'Audit Technique IA
+        // affiche "non vérifiable" plutôt qu'un faux "Aucun H1 détecté" sur
+        // une page qui a en réalité un contenu réel jamais rendu.
+        if (fetchRes.spaRenderFailed) {
+          ;(newContent as any).renderIncomplete = true
+        }
+
         const oldContent = page.extracted_content as any || null
 
         // On considère isBaseline si on n'a jamais extrait de titre ni de body (ou pas d'ancien contenu JSON)
@@ -343,6 +381,23 @@ export const processNextPage = createServerFn({ method: 'POST' })
           consecutive_failures: 0, // Reset le compteur d'échecs consécutifs
           last_checked_at: new Date().toISOString(),
         }).eq('id', page.id)
+
+        // Un seul event par page tant que le rendu échoue, pour ne pas
+        // spammer l'historique à chaque run (même logique que #24).
+        if (fetchRes.spaRenderFailed && !(oldContent as any)?.renderIncomplete) {
+          await insertEvent(admin, {
+            brand_id: run.brand_id,
+            type: 'warning',
+            title: 'Rendu de page incomplet',
+            message: `${page.url} est une application JavaScript (SPA) dont le rendu headless a échoué — le contenu analysé peut être incomplet. Reflet réessaiera au prochain crawl.`,
+            source_type: 'site_change',
+            source_id: page.id,
+            show_toast: false,
+            show_notification: true,
+            show_history: true,
+            read: false,
+          })
+        }
 
         // Enregistrer le changement — importance pondérée par champ (§3.A) :
         // 'watch' seulement si un champ pertinent (title/pricing/meta) a

@@ -6,6 +6,10 @@ import { cn } from '~/lib/utils'
 import type { BotAccessData } from '~/lib/queries/bot-access'
 import { IA_BOTS } from '~/lib/crawler/constants'
 import { useTechnicalAuditCheck } from '~/lib/hooks/useTechnicalAuditCheck'
+// Logique de score extraite dans un fichier pur (§27), réutilisable côté
+// serveur (orchestrate.ts) pour historiser le score sans dépendre de React.
+import { computeAuditMetrics, ITEM_POINTS } from '~/lib/audit-metrics'
+export { computeAuditMetrics, ITEM_POINTS }
 
 interface Props {
   botAccess: BotAccessData | null
@@ -13,156 +17,115 @@ interface Props {
   brandId: string
 }
 
-export function computeAuditMetrics(botAccess: BotAccessData | null, pages: any[]) {
-  if (!botAccess) return null
+export type AuditRowKey = keyof typeof ITEM_POINTS
+export type AuditRow = { key: AuditRowKey; passed: boolean; label: string; why: string; detail?: string }
 
-  // 1. Bot Access (30 points)
-  const botsToCheck = ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'Google-Extended']
-  let allowedBots = 0
-  let blockedBots = 0
-  botsToCheck.forEach(b => {
-    if (botAccess.bots[b] === 'allowed') allowedBots++
-    if (botAccess.bots[b] === 'blocked') blockedBots++
-  })
-  const botsScore = blockedBots === 0 ? 30 : Math.max(0, 30 - blockedBots * 10)
-
-  // 2. llms.txt (20 points)
-  const llmsScore = botAccess.llmsTxtFound ? 20 : 0
-
-  // 3. Extraction Homepage SEO / IA
-  const homepage = pages.find((p) => p.status === 'ok')
-  const extracted = homepage?.extracted_content
-
-  // 4. JSON-LD (15 points)
-  const hasJsonLd = extracted?.jsonLd ?? false
-  const schemaTypes = extracted?.schemaTypes ?? []
-  const hasOrganization = schemaTypes.includes('Organization') || schemaTypes.includes('Product')
-  const jsonLdScore = hasJsonLd && hasOrganization ? 15 : hasJsonLd ? 8 : 0
-
-  // 5. H1 Unique (10 points)
-  const h1Count = extracted?.h1Count ?? 0
-  const hasUniqueH1 = extracted?.hasUniqueH1 ?? false
-  const h1Score = hasUniqueH1 ? 10 : h1Count === 0 ? 0 : 3
-
-  // 6. Title / Meta Desc (10 points)
-  const titleLength = extracted?.titleLength ?? 0
-  const hasDesc = extracted?.hasMetaDescription ?? false
-  const hasGoodTitle = titleLength >= 30 && titleLength <= 65
-  const hasGoodDesc = extracted?.metaDescriptionLength >= 120 && extracted?.metaDescriptionLength <= 160
-  let titleMetaScore = 0
-  if (hasGoodTitle && hasGoodDesc) titleMetaScore = 10
-  else if (hasGoodTitle || hasDesc) titleMetaScore = 5
-
-  // 7. Canonical (5 points)
-  const hasCanonical = extracted?.hasCanonical ?? false
-  const canonicalScore = hasCanonical ? 5 : 0
-
-  // 8. Images Alt (10 points)
-  const imagesWithoutAlt = extracted?.imagesWithoutAlt ?? 0
-  const totalImages = extracted?.totalImages ?? 0
-  const altScore = totalImages > 0 && imagesWithoutAlt === 0 ? 10 : Math.max(0, 10 - imagesWithoutAlt * 2)
-
-  const totalScore = botsScore + llmsScore + jsonLdScore + h1Score + titleMetaScore + canonicalScore + altScore
-
-  return {
-    score: totalScore,
-    botsScore,
-    hasJsonLd,
-    hasOrganization,
-    h1Count,
-    hasUniqueH1,
-    hasGoodTitle,
-    hasDesc,
-    hasGoodDesc,
-    hasCanonical,
-    imagesWithoutAlt,
-    totalImages,
-    schemaTypes,
+// Déduit un domaine affichable (ex. "tylafrica.com") depuis l'URL réelle de
+// la page auditée, pour personnaliser les correctifs. `null` si l'URL est
+// absente ou invalide — les correctifs retombent alors sur le placeholder
+// générique "votresite.com" plutôt que de planter.
+function siteOriginFrom(pageUrl: string | null): { origin: string; host: string } | null {
+  if (!pageUrl) return null
+  try {
+    const u = new URL(pageUrl)
+    return { origin: u.origin, host: u.host }
+  } catch {
+    return null
   }
 }
 
-// Points de chaque item (doit rester synchro avec computeAuditMetrics), pour
-// hiérarchiser la synthèse "quels correctifs rapportent le plus de points".
-export const ITEM_POINTS = { bots: 30, llms: 20, jsonld: 15, altImages: 10, h1: 10, titleMeta: 10, canonical: 5 } as const
-
-export type AuditRowKey = keyof typeof ITEM_POINTS
-export type AuditRow = { key: AuditRowKey; passed: boolean; label: string; why: string }
-
 // Le correctif concret pour chaque point manqué — utilisé par la page
-// /dashboard/audit-technique. Statique (n'a pas besoin des metrics) car le
-// correctif générique ne dépend pas du résultat, seul le label ci-dessus en
-// dépend.
-export const AUDIT_FIXES: Record<AuditRowKey, { steps: string[]; snippet?: string; snippetLabel?: string }> = {
-  llms: {
-    steps: [
-      "Créez un fichier texte nommé llms.txt à la racine de votre site (accessible sur votresite.com/llms.txt).",
-      "Décrivez-y en Markdown simple qui vous êtes, ce que vous proposez, et pointez vers vos pages clés.",
-      "Redéployez, puis relancez l'audit pour vérifier qu'il est bien détecté.",
-    ],
-    snippetLabel: 'Exemple de contenu pour llms.txt',
-    snippet: `# Nom de votre marque\n\n> Une phrase claire décrivant votre activité.\n\n## Pages clés\n- [Accueil](https://votresite.com/)\n- [Produits/Services](https://votresite.com/produits)\n- [Contact](https://votresite.com/contact)`,
-  },
-  jsonld: {
-    steps: [
-      "Ajoutez un bloc JSON-LD dans le <head> de votre page d'accueil.",
-      "Utilisez le type Organization (ou Product si vous vendez un produit précis) avec au minimum name, url et description.",
-      "Validez avec le Rich Results Test de Google avant de redéployer.",
-    ],
-    snippetLabel: 'Exemple de balisage Organization',
-    snippet: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Votre marque",\n  "url": "https://votresite.com",\n  "description": "Ce que vous proposez en une phrase."\n}\n</script>`,
-  },
-  h1: {
-    steps: [
-      "Assurez-vous qu'il n'y a qu'un seul <h1> par page.",
-      "Le H1 doit résumer clairement le sujet principal de la page (pas le nom de la marque seul).",
-      "Les autres titres de section utilisent <h2>, <h3>, etc.",
-    ],
-  },
-  titleMeta: {
-    steps: [
-      "Titre de page (<title>) : entre 30 et 65 caractères, spécifique à la page.",
-      "Méta-description : entre 120 et 160 caractères, résume la page et donne envie de cliquer.",
-      "Évitez de dupliquer le même titre/description sur plusieurs pages.",
-    ],
-  },
-  canonical: {
-    steps: [
-      "Ajoutez une balise canonique dans le <head> de chaque page, pointant vers son URL de référence.",
-      "Sur la page elle-même, elle pointe généralement vers sa propre URL (auto-référencée).",
-    ],
-    snippetLabel: 'Balise à ajouter',
-    snippet: `<link rel="canonical" href="https://votresite.com/votre-page" />`,
-  },
-  altImages: {
-    steps: [
-      "Ajoutez un attribut alt descriptif à chaque balise <img> qui porte du sens (pas les images purement décoratives).",
-      "Décrivez ce que montre l'image en quelques mots, sans commencer par \"image de\".",
-    ],
-    snippetLabel: 'Exemple',
-    snippet: `<img src="/produit.jpg" alt="Vue de face du produit en coloris bleu" />`,
-  },
-  bots: {
-    steps: [
-      "Ouvrez votre fichier robots.txt (votresite.com/robots.txt).",
-      "Retirez toute règle Disallow qui bloque les robots IA, ou ajoutez des règles explicites d'autorisation pour chacun.",
-      "Redéployez puis relancez l'audit.",
-    ],
-    snippetLabel: 'Règles à ajouter dans robots.txt',
-    snippet: `User-agent: GPTBot\nAllow: /\n\nUser-agent: ChatGPT-User\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\nUser-agent: Google-Extended\nAllow: /`,
-  },
+// /dashboard/audit-technique. Fonction (et non plus un objet statique) car
+// les snippets pointent maintenant vers le vrai domaine du site audité quand
+// on le connaît, au lieu d'un placeholder "votresite.com" générique que rien
+// ne relie visiblement au site réel de l'utilisateur.
+export function getAuditFixes(
+  pageUrl: string | null,
+): Record<AuditRowKey, { steps: string[]; snippet?: string; snippetLabel?: string }> {
+  const site = siteOriginFrom(pageUrl)
+  const origin = site?.origin ?? 'https://votresite.com'
+  const host = site?.host ?? 'votresite.com'
+
+  return {
+    llms: {
+      steps: [
+        `Créez un fichier texte nommé llms.txt à la racine de votre site (accessible sur ${host}/llms.txt).`,
+        "Décrivez-y en Markdown simple qui vous êtes, ce que vous proposez, et pointez vers vos pages clés.",
+        "Redéployez, puis relancez l'audit pour vérifier qu'il est bien détecté.",
+      ],
+      snippetLabel: 'Exemple de contenu pour llms.txt',
+      snippet: `# Nom de votre marque\n\n> Une phrase claire décrivant votre activité.\n\n## Pages clés\n- [Accueil](${origin}/)\n- [Produits/Services](${origin}/produits)\n- [Contact](${origin}/contact)`,
+    },
+    jsonld: {
+      steps: [
+        "Ajoutez un bloc JSON-LD dans le <head> de votre page d'accueil.",
+        "Utilisez le type Organization (ou Product si vous vendez un produit précis) avec au minimum name, url et description.",
+        "Validez avec le Rich Results Test de Google avant de redéployer.",
+      ],
+      snippetLabel: 'Exemple de balisage Organization',
+      snippet: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Votre marque",\n  "url": "${origin}",\n  "description": "Ce que vous proposez en une phrase."\n}\n</script>`,
+    },
+    h1: {
+      steps: [
+        "Assurez-vous qu'il n'y a qu'un seul <h1> par page.",
+        "Le H1 doit résumer clairement le sujet principal de la page (pas le nom de la marque seul).",
+        "Les autres titres de section utilisent <h2>, <h3>, etc.",
+      ],
+    },
+    titleMeta: {
+      steps: [
+        "Titre de page (<title>) : entre 30 et 65 caractères, spécifique à la page.",
+        "Méta-description : entre 120 et 160 caractères, résume la page et donne envie de cliquer.",
+        "Évitez de dupliquer le même titre/description sur plusieurs pages.",
+      ],
+    },
+    canonical: {
+      steps: [
+        "Ajoutez une balise canonique dans le <head> de chaque page, pointant vers son URL de référence.",
+        "Sur la page elle-même, elle pointe généralement vers sa propre URL (auto-référencée).",
+      ],
+      snippetLabel: 'Balise à ajouter',
+      snippet: `<link rel="canonical" href="${pageUrl ?? `${origin}/votre-page`}" />`,
+    },
+    altImages: {
+      steps: [
+        "Ajoutez un attribut alt descriptif à chaque balise <img> qui porte du sens (pas les images purement décoratives).",
+        "Décrivez ce que montre l'image en quelques mots, sans commencer par \"image de\".",
+      ],
+      snippetLabel: 'Exemple',
+      snippet: `<img src="/produit.jpg" alt="Vue de face du produit en coloris bleu" />`,
+    },
+    bots: {
+      steps: [
+        `Ouvrez votre fichier robots.txt (${host}/robots.txt).`,
+        "Retirez toute règle Disallow qui bloque les robots IA, ou ajoutez des règles explicites d'autorisation pour chacun.",
+        "Redéployez puis relancez l'audit.",
+      ],
+      snippetLabel: 'Règles à ajouter dans robots.txt',
+      snippet: `User-agent: GPTBot\nAllow: /\n\nUser-agent: ChatGPT-User\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\nUser-agent: Google-Extended\nAllow: /`,
+    },
+  }
 }
+
+// Alias conservé pour compatibilité : version générique (sans URL réelle),
+// équivalente au comportement précédent. Préférez getAuditFixes(pageUrl).
+export const AUDIT_FIXES = getAuditFixes(null)
 
 // Construit les lignes de l'audit (label + statut + explication) à partir des
 // metrics — extrait pour être partagé entre la carte compacte de l'Accueil et
 // la page /dashboard/audit-technique, plutôt que dupliqué.
 export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAuditMetrics>>, llmsTxtFound: boolean): AuditRow[] {
-  const { hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt } = metrics
+  const {
+    hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt,
+    pageUrl, rawTitle, rawFirstHeading,
+  } = metrics
   return [
     {
       key: 'llms',
       passed: llmsTxtFound,
       label: llmsTxtFound ? 'Fichier llms.txt présent' : "Aucun fichier llms.txt",
       why: "Donne aux IA un résumé structuré de votre site, plus fiable qu'un crawl classique.",
+      detail: pageUrl ? `Vérifié sur ${pageUrl}` : undefined,
     },
     {
       key: 'jsonld',
@@ -184,6 +147,7 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
           ? 'Aucun titre principal (H1) détecté'
           : `Plusieurs titres H1 sur la page (${h1Count})`,
       why: 'Un H1 unique et clair indique aux IA le sujet principal de la page.',
+      detail: rawFirstHeading ? `H1 détecté : « ${rawFirstHeading} »` : undefined,
     },
     {
       key: 'titleMeta',
@@ -193,12 +157,14 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
           ? 'Titre et description bien dimensionnés'
           : 'Titre ou description de page à retravailler',
       why: 'Un titre et une méta-description bien calibrés sont souvent repris tels quels par les IA.',
+      detail: rawTitle ? `Titre détecté (${rawTitle.length} car.) : « ${rawTitle} »` : undefined,
     },
     {
       key: 'canonical',
       passed: hasCanonical,
       label: hasCanonical ? 'URL de référence définie' : 'URL de référence par page manquante',
       why: 'Sans URL canonique, une IA peut hésiter entre plusieurs versions de la même page.',
+      detail: pageUrl ? `Page vérifiée : ${pageUrl}` : undefined,
     },
     {
       key: 'altImages',
@@ -240,15 +206,18 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
     )
   }
 
-  // ── Crawl jamais réussi : le score serait calculé sur des données vides,
-  // pas sur une vraie absence de H1/JSON-LD/etc. On l'affiche honnêtement
-  // comme "non vérifiable" plutôt que comme un score chiffré (cf. #24) —
-  // cohérent avec la carte "Surveillance du site" qui montre déjà ces
-  // pages en Inaccessible.
-  const hasSuccessfulPage = pages.some((p: any) => p.status === 'ok')
+  // ── Crawl jamais réussi, OU seule(s) page(s) 'ok' avec rendu SPA
+  // incomplet (§26) : dans les deux cas le score serait calculé sur des
+  // données vides/tronquées, pas sur une vraie absence de H1/JSON-LD/etc.
+  // On l'affiche honnêtement comme "non vérifiable" plutôt que comme un
+  // score chiffré — cohérent avec la carte "Surveillance du site".
+  const hasFullyRenderedPage = pages.some(
+    (p: any) => p.status === 'ok' && !(p.extracted_content as any)?.renderIncomplete,
+  )
   const hasAttemptedPages = pages.length > 0
 
-  if (hasAttemptedPages && !hasSuccessfulPage) {
+  if (hasAttemptedPages && !hasFullyRenderedPage) {
+    const isSpaCase = metrics.homepageRenderIncomplete
     return (
       <div className="rounded-lg border border-border bg-surface p-5">
         <div className="flex items-center justify-between">
@@ -261,9 +230,10 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
           <XCircle className="size-3.5 shrink-0 mt-0.5 text-danger" />
           <p className="text-xs text-ink-secondary">
             <span className="font-medium text-ink-primary">Non vérifiable — </span>
-            Reflet n'a pas réussi à charger votre site lors du dernier crawl (voir "Surveillance du
-            site" ci-contre). Le score technique reprendra dès qu'une page sera de nouveau
-            accessible.
+            {isSpaCase
+              ? 'Votre site est une application JavaScript (SPA) et son rendu complet a échoué lors du dernier crawl. Le contenu analysé peut être incomplet.'
+              : 'Reflet n\'a pas réussi à charger votre site lors du dernier crawl (voir "Surveillance du site" ci-contre).'}{' '}
+            Le score technique reprendra dès qu'une page sera correctement analysée.
           </p>
         </div>
         <button
@@ -371,16 +341,21 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
             {rows.map((r) => (
               <li key={r.key} className="flex items-center gap-1.5">
                 <StatusIcon status={r.passed ? 'allowed' : 'blocked'} />
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <span className="text-xs text-ink-primary cursor-help" title={r.key === 'jsonld' ? schemaTypes.join(', ') : undefined}>
-                      {r.label}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                    {r.why}
-                  </TooltipContent>
-                </Tooltip>
+                <div className="min-w-0 flex-1">
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <span className="text-xs text-ink-primary cursor-help" title={r.key === 'jsonld' ? schemaTypes.join(', ') : undefined}>
+                        {r.label}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                      {r.why}
+                    </TooltipContent>
+                  </Tooltip>
+                  {r.detail && (
+                    <p className="truncate text-[10.5px] text-ink-muted" title={r.detail}>{r.detail}</p>
+                  )}
+                </div>
                 {!r.passed && (
                   <Link
                     to="/dashboard/audit-technique"

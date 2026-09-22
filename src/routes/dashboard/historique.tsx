@@ -1,20 +1,29 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { Activity, FileEdit, Bell } from 'lucide-react'
-import { fetchHistory, type TimelineEntry } from '~/lib/queries/history'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { Activity, FileEdit, Bell, Loader2 } from 'lucide-react'
+import { fetchHistory, type TimelineEntry, type HistoryFilters } from '~/lib/queries/history'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 
 export const Route = createFileRoute('/dashboard/historique')({
   component: HistoriquePage,
 })
 
-type FilterValue = 'all' | 'run' | 'change'
+type KindFilterValue = 'all' | 'run' | 'change'
+type ImportanceFilterValue = 'all' | 'low' | 'watch' | 'high' | 'critical'
 
-const FILTERS: { value: FilterValue; label: string }[] = [
+const KIND_FILTERS: { value: KindFilterValue; label: string }[] = [
   { value: 'all', label: 'Tout' },
   { value: 'run', label: 'Mesures' },
   { value: 'change', label: 'Modifications' },
+]
+
+const IMPORTANCE_FILTER_OPTIONS: { value: ImportanceFilterValue; label: string }[] = [
+  { value: 'all', label: 'Toutes les importances' },
+  { value: 'critical', label: 'Critique' },
+  { value: 'high', label: 'Haute' },
+  { value: 'watch', label: 'À surveiller' },
+  { value: 'low', label: 'Faible' },
 ]
 
 const RUN_STATUS_LABEL: Record<string, string> = {
@@ -64,13 +73,45 @@ const FIELD_LABELS: Record<string, string> = {
   structure: 'Structure',
 }
 
-function HistoriquePage() {
-  const [filter, setFilter] = useState<FilterValue>('all')
+const PAGE_SIZE = 20
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['history'],
-    queryFn: () => fetchHistory(),
+const SELECT_CLASS =
+  'rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-secondary outline-none focus:border-brand/40 disabled:cursor-not-allowed disabled:opacity-50'
+
+function HistoriquePage() {
+  const [kindFilter, setKindFilter] = useState<KindFilterValue>('all')
+  const [importanceFilter, setImportanceFilter] = useState<ImportanceFilterValue>('all')
+  const [pageFilter, setPageFilter] = useState<string>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
+  const [windowSize, setWindowSize] = useState(PAGE_SIZE)
+
+  // Un filtre par importance ou par page ne concerne que les modifications
+  // de site : forcer l'onglet "Modifications" pour éviter une combinaison
+  // vide (ex. "Mesures" + "Critique").
+  const restrictedToChanges = importanceFilter !== 'all' || pageFilter !== 'all'
+  const effectiveKindFilter: KindFilterValue = restrictedToChanges ? 'change' : kindFilter
+
+  const filters: Partial<HistoryFilters> = {
+    importance: importanceFilter === 'all' ? null : importanceFilter,
+    pageId: pageFilter === 'all' ? null : pageFilter,
+    dateFrom: dateFrom || null,
+    dateTo: dateTo || null,
+  }
+
+  const { data, isLoading, isFetching, isError } = useQuery({
+    queryKey: ['history', windowSize, filters],
+    queryFn: () => fetchHistory({ data: { windowSize, filters } }),
+    placeholderData: keepPreviousData,
   })
+
+  function updateFilters(next: Partial<{ importance: ImportanceFilterValue; pageId: string; from: string; to: string }>) {
+    if (next.importance !== undefined) setImportanceFilter(next.importance)
+    if (next.pageId !== undefined) setPageFilter(next.pageId)
+    if (next.from !== undefined) setDateFrom(next.from)
+    if (next.to !== undefined) setDateTo(next.to)
+    setWindowSize(PAGE_SIZE)
+  }
 
   if (isLoading) {
     return <DashboardStateView state="loading" />
@@ -87,31 +128,36 @@ function HistoriquePage() {
   }
 
   if (!data?.brand) {
-    return <DashboardStateView state="no_data" title="Aucune marque configurée" description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA." />
+    return (
+      <DashboardStateView
+        state="no_data"
+        title="Aucune marque configurée"
+        description="Ajoutez votre marque dans Paramètres pour commencer à suivre votre visibilité IA."
+      />
+    )
   }
 
   const entries = data.entries
-
-  if (entries.length === 0) {
-    return <DashboardStateView state="no_data" title="Aucun historique pour l'instant" description="Les mesures et les modifications de site détectées apparaîtront ici au fil du temps." />
-  }
+  const pages = data.pages ?? []
+  const hasActiveFilters = restrictedToChanges || Boolean(dateFrom) || Boolean(dateTo)
 
   const filtered = entries.filter((e: any) => {
-    if (filter === 'all') return true
-    if (filter === 'run') return e.kind === 'run'
+    if (effectiveKindFilter === 'all') return true
+    if (effectiveKindFilter === 'run') return e.kind === 'run'
     return e.kind === 'change'
   })
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {KIND_FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
-            onClick={() => setFilter(f.value)}
-            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f.value
+            disabled={restrictedToChanges && f.value !== 'change'}
+            onClick={() => setKindFilter(f.value)}
+            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              effectiveKindFilter === f.value
                 ? 'border-brand/40 bg-brand/10 text-brand-text'
                 : 'border-border bg-surface text-ink-muted hover:text-ink-secondary'
             }`}
@@ -119,6 +165,70 @@ function HistoriquePage() {
             {f.label}
           </button>
         ))}
+
+        <span className="mx-1 h-4 w-px bg-border" aria-hidden="true" />
+
+        <select
+          className={SELECT_CLASS}
+          value={importanceFilter}
+          onChange={(e) => updateFilters({ importance: e.target.value as ImportanceFilterValue })}
+        >
+          {IMPORTANCE_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {pages.length > 1 && (
+          <select
+            className={SELECT_CLASS}
+            value={pageFilter}
+            onChange={(e) => updateFilters({ pageId: e.target.value })}
+          >
+            <option value="all">Toutes les pages</option>
+            {pages.map((p: any) => (
+              <option key={p.id} value={p.id}>
+                {p.url}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <input
+          type="date"
+          className={SELECT_CLASS}
+          value={dateFrom}
+          max={dateTo || undefined}
+          onChange={(e) => updateFilters({ from: e.target.value })}
+          aria-label="Date de début"
+        />
+        <span className="text-xs text-ink-muted">à</span>
+        <input
+          type="date"
+          className={SELECT_CLASS}
+          value={dateTo}
+          min={dateFrom || undefined}
+          onChange={(e) => updateFilters({ to: e.target.value })}
+          aria-label="Date de fin"
+        />
+
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setImportanceFilter('all')
+              setPageFilter('all')
+              setDateFrom('')
+              setDateTo('')
+              setKindFilter('all')
+              setWindowSize(PAGE_SIZE)
+            }}
+            className="rounded-md px-2 py-1.5 text-xs font-medium text-ink-muted underline-offset-2 hover:text-ink-secondary hover:underline"
+          >
+            Réinitialiser
+          </button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -128,11 +238,27 @@ function HistoriquePage() {
           description="Changez de filtre pour voir les autres entrées de l'historique."
         />
       ) : (
-        <ol className="space-y-3">
-          {filtered.map((entry: any) => (
-            <TimelineItem key={`${entry.kind}-${entry.id}`} entry={entry} />
-          ))}
-        </ol>
+        <>
+          <ol className="space-y-3">
+            {filtered.map((entry: any) => (
+              <TimelineItem key={`${entry.kind}-${entry.id}`} entry={entry} />
+            ))}
+          </ol>
+
+          {data.hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                disabled={isFetching}
+                onClick={() => setWindowSize((w) => w + PAGE_SIZE)}
+                className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-ink-secondary transition-colors hover:text-ink-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isFetching && <Loader2 className="size-3.5 animate-spin" />}
+                Charger plus
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -297,7 +423,7 @@ function DiffValueRenderer({ value }: { value: any }) {
   if (value === null || value === undefined || value === '') {
     return <span className="italic text-ink-muted opacity-60">(Vide)</span>
   }
-  
+
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return <span className="italic text-ink-muted opacity-60">(Aucun)</span>
@@ -333,5 +459,3 @@ function EventEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: 'e
     </>
   )
 }
-
-

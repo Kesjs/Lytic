@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { fetchBotAccess } from '~/lib/queries/bot-access'
+import { AuditScoreHistory } from '~/components/dashboard/AuditScoreHistory'
 import { IA_BOTS } from '~/lib/crawler/constants'
 import { useTechnicalAuditCheck } from '~/lib/hooks/useTechnicalAuditCheck'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
@@ -21,7 +22,7 @@ import { cn } from '~/lib/utils'
 import {
   computeAuditMetrics,
   buildAuditRows,
-  AUDIT_FIXES,
+  getAuditFixes,
   ITEM_POINTS,
   type AuditRow,
   type AuditRowKey,
@@ -113,6 +114,9 @@ function AuditTechniquePage() {
 
   const rows = buildAuditRows(metrics, botAccess.llmsTxtFound)
   const rowByKey = Object.fromEntries(rows.map((r) => [r.key, r])) as Record<AuditRowKey, AuditRow>
+  // Correctifs personnalisés avec la vraie URL de la page auditée (plutôt que
+  // le placeholder générique "votresite.com") quand elle est disponible.
+  const fixes = getAuditFixes(metrics.pageUrl)
   const { score } = metrics
   const scoreColor = score >= 80 ? 'text-success' : score >= 50 ? 'text-warning' : 'text-danger'
 
@@ -158,6 +162,11 @@ function AuditTechniquePage() {
         </div>
       </header>
 
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <h2 className="mb-3 text-sm font-semibold text-ink-primary">Évolution du score technique</h2>
+        <AuditScoreHistory />
+      </div>
+
       {/* Robots IA — traité à part car c'est un groupe de bots, pas un item unique */}
       <AuditGroup title="Découvrabilité par les IA">
         <AuditItemCard
@@ -165,6 +174,8 @@ function AuditTechniquePage() {
           passed={botsPassed}
           label={`Robots IA : ${allowedBotsCount}/${IA_BOTS.length} autorisés`}
           why="Un robot IA bloqué ne peut simplement pas lire votre site — c'est la base avant tout le reste."
+          detail={metrics.pageUrl ? `Vérifié sur ${metrics.pageUrl}` : undefined}
+          fixes={fixes}
           isOpen={openKey === 'bots'}
           onToggle={() => setOpenKey((k) => (k === 'bots' ? null : 'bots'))}
           setRef={(el) => (itemRefs.current.bots = el)}
@@ -187,6 +198,8 @@ function AuditTechniquePage() {
           passed={rowByKey.llms.passed}
           label={rowByKey.llms.label}
           why={rowByKey.llms.why}
+          detail={rowByKey.llms.detail}
+          fixes={fixes}
           isOpen={openKey === 'llms'}
           onToggle={() => setOpenKey((k) => (k === 'llms' ? null : 'llms'))}
           setRef={(el) => (itemRefs.current.llms = el)}
@@ -201,6 +214,8 @@ function AuditTechniquePage() {
             passed={rowByKey[key].passed}
             label={rowByKey[key].label}
             why={rowByKey[key].why}
+            detail={rowByKey[key].detail}
+            fixes={fixes}
             isOpen={openKey === key}
             onToggle={() => setOpenKey((k) => (k === key ? null : key))}
             setRef={(el) => (itemRefs.current[key] = el)}
@@ -214,6 +229,8 @@ function AuditTechniquePage() {
           passed={rowByKey.altImages.passed}
           label={rowByKey.altImages.label}
           why={rowByKey.altImages.why}
+          detail={rowByKey.altImages.detail}
+          fixes={fixes}
           isOpen={openKey === 'altImages'}
           onToggle={() => setOpenKey((k) => (k === 'altImages' ? null : 'altImages'))}
           setRef={(el) => (itemRefs.current.altImages = el)}
@@ -237,6 +254,8 @@ function AuditItemCard({
   passed,
   label,
   why,
+  detail,
+  fixes,
   isOpen,
   onToggle,
   setRef,
@@ -246,12 +265,14 @@ function AuditItemCard({
   passed: boolean
   label: string
   why: string
+  detail?: string
+  fixes: ReturnType<typeof getAuditFixes>
   isOpen: boolean
   onToggle: () => void
   setRef: (el: HTMLDivElement | null) => void
   extra?: React.ReactNode
 }) {
-  const fix = AUDIT_FIXES[itemKey]
+  const fix = fixes[itemKey]
 
   return (
     <div
@@ -275,6 +296,9 @@ function AuditItemCard({
       {isOpen && (
         <div className="mt-3 space-y-3 pl-6">
           <p className="text-xs text-ink-secondary">{why}</p>
+          {detail && (
+            <p className="rounded bg-elevated/60 px-2 py-1 text-[11px] text-ink-muted break-words">{detail}</p>
+          )}
           {extra}
           {!passed && fix && (
             <div className="space-y-2 rounded-md bg-elevated/60 p-3">
