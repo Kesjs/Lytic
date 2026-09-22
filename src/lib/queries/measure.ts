@@ -354,7 +354,7 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
       // Calcule le score global à partir de toutes les observations du run
       const { data: allObs } = await adminSupabase
         .from('observations')
-        .select('brand_mentioned, brand_recommended, brand_position, raw_answer')
+        .select('brand_mentioned, brand_recommended, brand_position, raw_answer, engine')
         .eq('run_id', run.id)
 
       const score = computeRunScore(allObs ?? [])
@@ -390,6 +390,25 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         finalStatus = 'success'
       }
 
+      // Message de l'événement d'échec/partiel — jusqu'ici `null` sur un
+      // échec total ("La mesure a échoué" sans aucun détail), ce qui ne
+      // permettait pas de savoir si le problème venait d'un moteur précis,
+      // de tous, etc. On ne stocke pas la raison technique brute par
+      // observation (pas de migration nécessaire) : on déduit un résumé
+      // lisible à partir de ce qui est déjà en base (raw_answer null =
+      // appel échoué pour ce moteur sur cette question).
+      const ENGINE_LABEL: Record<string, string> = { openai: 'ChatGPT', perplexity: 'Perplexity' }
+      const failuresByEngine = new Map<string, number>()
+      const totalByEngine = new Map<string, number>()
+      for (const o of allObs ?? []) {
+        totalByEngine.set(o.engine, (totalByEngine.get(o.engine) ?? 0) + 1)
+        if (o.raw_answer === null) failuresByEngine.set(o.engine, (failuresByEngine.get(o.engine) ?? 0) + 1)
+      }
+      const failureDetail = Array.from(totalByEngine.entries())
+        .filter(([engine]) => (failuresByEngine.get(engine) ?? 0) > 0)
+        .map(([engine, total]) => `${ENGINE_LABEL[engine] ?? engine} (${failuresByEngine.get(engine)}/${total} appels en échec)`)
+        .join(', ')
+
       const completedAt = new Date().toISOString()
 
       await adminSupabase
@@ -416,7 +435,9 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
         message:
           finalStatus !== 'failed'
             ? `Score de visibilité IA : ${score}/100${scoreDelta != null ? ` (${scoreDelta >= 0 ? '+' : ''}${scoreDelta} depuis la dernière mesure)` : ''}`
-            : null,
+            : failureDetail
+              ? `Aucune réponse obtenue — ${failureDetail}. Réessayez dans quelques minutes ; si le problème persiste, contactez le support.`
+              : 'Aucune réponse obtenue des moteurs interrogés. Réessayez dans quelques minutes.',
         source_type: 'measurement_run',
         source_id: run.id,
         show_toast: true,
