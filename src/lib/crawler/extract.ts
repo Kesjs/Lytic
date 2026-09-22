@@ -28,6 +28,14 @@ export interface ExtractedContent {
   hasMetaDescription: boolean
   // Nouveaux checks techniques (#15)
   schemaTypes: string[]
+  // Nouveau B2 : détails profondeur JSON-LD
+  schemaDetails: {
+    hasOrganization: boolean
+    organizationComplete: boolean
+    hasFAQPage: boolean
+    hasProduct: boolean
+    hasArticle: boolean
+  }
   hasUniqueH1: boolean
   metaDescriptionLength: number
   hasCanonical: boolean
@@ -225,13 +233,51 @@ export function extractContent($: CheerioAPI): ExtractedContent {
 
   // Nouveaux checks techniques (#15)
   const schemaTypes: string[] = []
+  const schemaDetails: {
+    hasOrganization: boolean
+    organizationComplete: boolean
+    hasFAQPage: boolean
+    hasProduct: boolean
+    hasArticle: boolean
+  } = {
+    hasOrganization: false,
+    organizationComplete: false,
+    hasFAQPage: false,
+    hasProduct: false,
+    hasArticle: false,
+  }
+
   $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const content = $(el).text()
       const parsed = JSON.parse(content)
+      
+      // Extraire les types
       if (parsed['@type']) {
         const types = Array.isArray(parsed['@type']) ? parsed['@type'] : [parsed['@type']]
         schemaTypes.push(...types)
+        
+        // Vérifier Organization en profondeur (B2)
+        if (types.includes('Organization')) {
+          schemaDetails.hasOrganization = true
+          // Champs clés pour qu'une Organization soit exploitable par une IA
+          const hasName = !!parsed.name
+          const hasUrl = !!parsed.url
+          const hasDescription = !!parsed.description
+          const hasLogo = !!parsed.logo
+          schemaDetails.organizationComplete = hasName && hasUrl && (hasDescription || hasLogo)
+        }
+        
+        // Détecter les autres types pertinents (B2)
+        if (types.includes('FAQPage')) {
+          schemaDetails.hasFAQPage = true
+        }
+        if (types.includes('Product')) {
+          schemaDetails.hasProduct = true
+        }
+        if (types.includes('Article') || types.includes('NewsArticle') || types.includes('BlogPosting')) {
+          schemaDetails.hasArticle = true
+        }
       }
     } catch (e) {
       // JSON invalide, ignorer
@@ -266,6 +312,7 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     titleLength,
     hasMetaDescription,
     schemaTypes: uniqueSchemaTypes,
+    schemaDetails,
     hasUniqueH1,
     metaDescriptionLength,
     hasCanonical,

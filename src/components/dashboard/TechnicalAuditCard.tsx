@@ -116,7 +116,7 @@ export const AUDIT_FIXES = getAuditFixes(null)
 // la page /dashboard/audit-technique, plutôt que dupliqué.
 export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAuditMetrics>>, llmsTxtFound: boolean): AuditRow[] {
   const {
-    hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt,
+    hasJsonLd, hasOrganization, organizationComplete, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt,
     pageUrl, rawTitle, rawFirstHeading,
   } = metrics
   return [
@@ -129,14 +129,16 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
     },
     {
       key: 'jsonld',
-      passed: hasJsonLd && hasOrganization,
+      passed: hasJsonLd && hasOrganization && organizationComplete,
       label:
-        hasJsonLd && hasOrganization
+        hasJsonLd && hasOrganization && organizationComplete
           ? 'Votre entreprise est clairement identifiée'
-          : hasJsonLd
-            ? "Les IA ne savent pas quel type d'entreprise vous êtes"
-            : "Les IA ne peuvent pas identifier votre entreprise",
-      why: "Le balisage structuré (JSON-LD) aide les IA à comprendre qui vous êtes et ce que vous proposez.",
+          : hasJsonLd && hasOrganization
+            ? "Informations d'entreprise incomplètes (nom, URL, description ou logo manquant)"
+            : hasJsonLd
+              ? "Les IA ne savent pas quel type d'entreprise vous êtes"
+              : "Les IA ne peuvent pas identifier votre entreprise",
+      why: "Le balisage structuré (JSON-LD Organization) avec nom, URL, description et logo aide les IA à comprendre qui vous êtes et ce que vous proposez.",
     },
     {
       key: 'h1',
