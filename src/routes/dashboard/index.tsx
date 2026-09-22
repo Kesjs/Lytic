@@ -171,6 +171,67 @@ function AccueilPage() {
                         </div>
                       )}
 
+                      {/* Badge optimisation IA (Section 4.3) */}
+                      {(() => {
+                        const auditScore = pages.length > 0 
+                          ? computeAuditMetrics(pages, botAccess).score 
+                          : null
+                        if (auditScore === null) return null
+
+                        const level = auditScore >= 80 ? 'good' : auditScore >= 50 ? 'warning' : 'danger'
+                        const issues: string[] = []
+                        
+                        // Construire la liste des problèmes principaux
+                        const metrics = computeAuditMetrics(pages, botAccess)
+                        if (!metrics.hasRobotsTxt) issues.push('Robots.txt manquant')
+                        if (!metrics.hasLlmsTxt) issues.push('llms.txt manquant')
+                        if (!metrics.hasJsonLd) issues.push('JSON-LD absent')
+                        if (!metrics.hasUniqueH1) issues.push('H1 manquant/dupliqué')
+                        if (metrics.imagesWithoutAlt > 0) issues.push(`${metrics.imagesWithoutAlt} images sans alt`)
+                        
+                        return (
+                          <div className={cn(
+                            "mt-4 p-3 rounded-lg border",
+                            level === 'good' && "bg-success/5 border-success/20",
+                            level === 'warning' && "bg-warning/5 border-warning/20",
+                            level === 'danger' && "bg-danger/5 border-danger/20"
+                          )}>
+                            <div className="flex items-start gap-2">
+                              {level === 'good' && <div className="text-success">✓</div>}
+                              {level === 'warning' && <AlertCircle className="size-4 text-warning mt-0.5" />}
+                              {level === 'danger' && <AlertCircle className="size-4 text-danger mt-0.5" />}
+                              <div className="flex-1">
+                                <p className={cn(
+                                  "text-xs font-semibold",
+                                  level === 'good' && "text-success",
+                                  level === 'warning' && "text-warning",
+                                  level === 'danger' && "text-danger"
+                                )}>
+                                  {level === 'good' && 'Site bien optimisé pour les IA'}
+                                  {level === 'warning' && 'Optimisation partielle'}
+                                  {level === 'danger' && 'Problèmes critiques détectés'}
+                                </p>
+                                {issues.length > 0 && (
+                                  <ul className="mt-1.5 space-y-0.5">
+                                    {issues.slice(0, 3).map((issue, i) => (
+                                      <li key={i} className="text-[10px] text-ink-muted">• {issue}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                                {level !== 'good' && (
+                                  <Link 
+                                    to="/dashboard/audit-technique" 
+                                    className="text-[10px] text-brand hover:underline mt-1 inline-block"
+                                  >
+                                    Voir les recommandations →
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+
                       <div className="mt-5 pt-5 border-t border-border/50 flex flex-col gap-1.5">
                         <p className="text-[11px] text-ink-muted flex justify-between">
                           <span>Dernière mise à jour</span>
