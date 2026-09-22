@@ -361,13 +361,22 @@ function FreeOpportunitiesLockedCard({ wellRecommended }: { wellRecommended: boo
               L'IA vous recommande sur votre question suivie — c'est un bon départ.{' '}
               Testez une autre question pour avoir une vue plus complète de votre visibilité.
             </p>
+            {/* Nouveau : Quantifier l'inconnu */}
+            <div className="mt-3 rounded-md border border-warning/30 bg-warning/5 p-3">
+              <p className="text-xs font-medium text-warning">
+                ⚠️ Vous ne suivez qu'<strong>1 question</strong> sur les dizaines que vos clients posent réellement aux IA
+              </p>
+              <p className="mt-1 text-xs text-ink-muted">
+                Chaque question non suivie est une opportunité invisible de vous faire connaître.
+              </p>
+            </div>
           </div>
         </div>
         <a
           href="/dashboard/parametres"
           className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
         >
-          Passer Pro pour suivre d'autres questions
+          Passer Pro pour suivre jusqu'à 30 questions
           <ArrowRight className="size-3.5" />
         </a>
       </div>
@@ -386,13 +395,31 @@ function FreeOpportunitiesLockedCard({ wellRecommended }: { wellRecommended: boo
             Les opportunités se détectent en croisant plusieurs mesures dans le temps —
             fonctionnalité réservée au plan Pro.
           </p>
+          {/* Nouveau : Quantifier l'inconnu */}
+          <div className="mt-3 rounded-md border border-warning/30 bg-warning/5 p-3">
+            <p className="text-xs font-medium text-warning">
+              ⚠️ Vous ne suivez qu'<strong>1 question</strong> sur les dizaines que vos clients posent réellement aux IA
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Sans surveillance multi-questions, vous êtes aveugle sur 95% de votre visibilité IA.
+            </p>
+          </div>
+          {/* Nouveau : Vendre l'Historique comme argument Pro */}
+          <div className="mt-3 rounded-md border border-info/30 bg-info/5 p-3">
+            <p className="text-xs font-medium text-info">
+              📊 En Pro : Surveillance continue de votre site
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Détection automatique des changements de contenu + historique complet + alertes instantanées quand votre site change.
+            </p>
+          </div>
         </div>
       </div>
       <a
         href="/dashboard/parametres"
         className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-black hover:bg-brand-hover"
       >
-        Passer Pro pour détecter vos opportunités
+        Passer Pro : 30 questions + surveillance continue
         <ArrowRight className="size-3.5" />
       </a>
     </div>

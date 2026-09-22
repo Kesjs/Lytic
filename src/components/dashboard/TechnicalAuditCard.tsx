@@ -123,8 +123,8 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
     {
       key: 'llms',
       passed: llmsTxtFound,
-      label: llmsTxtFound ? 'Fichier llms.txt présent' : "Aucun fichier llms.txt",
-      why: "Donne aux IA un résumé structuré de votre site, plus fiable qu'un crawl classique.",
+      label: llmsTxtFound ? 'Les IA savent qui vous êtes' : "Les IA manquent d'informations sur votre site",
+      why: "Le fichier llms.txt donne aux IA un résumé structuré de votre site, plus fiable qu'un crawl classique.",
       detail: pageUrl ? `Vérifié sur ${pageUrl}` : undefined,
     },
     {
@@ -132,38 +132,38 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
       passed: hasJsonLd && hasOrganization,
       label:
         hasJsonLd && hasOrganization
-          ? 'Organisation/Produit balisée (JSON-LD)'
+          ? 'Votre entreprise est clairement identifiée'
           : hasJsonLd
-            ? "Le type d'organisation n'est pas précisé"
-            : 'Aucun balisage JSON-LD',
-      why: 'Le balisage structuré aide les IA à identifier qui vous êtes et ce que vous vendez.',
+            ? "Les IA ne savent pas quel type d'entreprise vous êtes"
+            : "Les IA ne peuvent pas identifier votre entreprise",
+      why: "Le balisage structuré (JSON-LD) aide les IA à comprendre qui vous êtes et ce que vous proposez.",
     },
     {
       key: 'h1',
       passed: hasUniqueH1,
       label: hasUniqueH1
-        ? 'Titre principal (H1) unique'
+        ? 'Le sujet de votre page est clair'
         : h1Count === 0
-          ? 'Aucun titre principal (H1) détecté'
-          : `Plusieurs titres H1 sur la page (${h1Count})`,
-      why: 'Un H1 unique et clair indique aux IA le sujet principal de la page.',
-      detail: rawFirstHeading ? `H1 détecté : « ${rawFirstHeading} »` : undefined,
+          ? 'Les IA ne voient pas le sujet principal de votre page'
+          : 'Plusieurs titres principaux créent de la confusion',
+      why: "Un seul titre principal (H1) aide les IA à comprendre immédiatement de quoi parle votre page.",
+      detail: rawFirstHeading ? `Titre détecté : « ${rawFirstHeading} »` : undefined,
     },
     {
       key: 'titleMeta',
       passed: hasGoodTitle && hasGoodDesc,
       label:
         hasGoodTitle && hasGoodDesc
-          ? 'Titre et description bien dimensionnés'
-          : 'Titre ou description de page à retravailler',
-      why: 'Un titre et une méta-description bien calibrés sont souvent repris tels quels par les IA.',
-      detail: rawTitle ? `Titre détecté (${rawTitle.length} car.) : « ${rawTitle} »` : undefined,
+          ? 'Votre page a un titre et une description efficaces'
+          : 'Le titre ou la description de votre page est à retravailler',
+      why: "Un titre (50-60 caractères) et une description (150-160 caractères) bien calibrés sont repris directement par les IA dans leurs réponses.",
+      detail: rawTitle ? `Titre actuel (${rawTitle.length} car.) : « ${rawTitle} »` : undefined,
     },
     {
       key: 'canonical',
       passed: hasCanonical,
-      label: hasCanonical ? 'URL de référence définie' : 'URL de référence par page manquante',
-      why: 'Sans URL canonique, une IA peut hésiter entre plusieurs versions de la même page.',
+      label: hasCanonical ? "Votre page a une adresse de référence claire" : "Les IA peuvent confondre plusieurs versions de votre page",
+      why: "Sans URL canonique, les IA hésitent entre plusieurs versions de votre page (www/non-www, http/https, avec/sans slash final).",
       detail: pageUrl ? `Page vérifiée : ${pageUrl}` : undefined,
     },
     {
@@ -171,9 +171,9 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
       passed: imagesWithoutAlt === 0,
       label:
         imagesWithoutAlt === 0
-          ? 'Toutes les images ont un texte alternatif'
-          : `${imagesWithoutAlt} image${imagesWithoutAlt > 1 ? 's' : ''} sans texte alternatif`,
-      why: 'Le texte alternatif est la seule façon pour une IA de "voir" le contenu de vos images.',
+          ? 'Les IA comprennent vos images'
+          : `${imagesWithoutAlt} image${imagesWithoutAlt > 1 ? 's' : ''} invisible${imagesWithoutAlt > 1 ? 's' : ''} pour les IA`,
+      why: "Le texte alternatif (attribut alt) est la seule façon pour une IA de comprendre ce que montrent vos images.",
     },
   ]
 }

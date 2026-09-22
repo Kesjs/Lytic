@@ -416,6 +416,15 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     { isFree: isFreePlan(brand.plan) },
   )
 
+  // Nouveau : Récupérer les changements de site de la semaine pour l'Accueil
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: siteChanges } = await supabase
+    .from('site_change_events')
+    .select('id, detected_at')
+    .eq('brand_id', brand.id)
+    .gte('detected_at', oneWeekAgo)
+    .order('detected_at', { ascending: false })
+
   if (latestRun && actualStatus && latestRun.id === dataRun?.id && latestRun.status !== actualStatus) {
     latestRun = { ...latestRun, status: actualStatus }
   }
@@ -501,6 +510,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     opportunities: opportunities ?? [],
     events: events ?? [],
     pages: pages ?? [],
+    siteChanges: siteChanges ?? [],
     kpis,
     kpiTrends,
     aiInsight,

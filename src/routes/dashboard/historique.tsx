@@ -5,12 +5,6 @@ import { Activity, FileEdit, Bell, Loader2 } from 'lucide-react'
 import { fetchHistory, type TimelineEntry, type HistoryFilters } from '~/lib/queries/history'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import { DatePickerField } from '~/components/ui/date-picker'
-import { diffWords, windowTokens, countWords, DIFF_MAX_WORDS, type DiffToken } from '~/lib/text-diff'
-
-// Nombre de mots de contexte conservés de chaque côté d'un changement dans
-// le diff mot-à-mot — au-delà, le texte inchangé est réduit à "…" pour que
-// l'œil aille droit au changement plutôt que de le chercher dans un pavé.
-const DIFF_CONTEXT_WORDS = 6
 
 export const Route = createFileRoute('/dashboard/historique')({
   component: HistoriquePage,
@@ -476,61 +470,37 @@ function TextFieldDiff({ oldValue, newValue }: { oldValue: string; newValue: str
     return <p className="text-xs text-ink-muted italic">Aucun changement</p>
   }
 
-  // Si le texte est trop long, on retombe sur le style Git diff simple
-  if (countWords(oldValue) > DIFF_MAX_WORDS || countWords(newValue) > DIFF_MAX_WORDS) {
-    const oldTruncated = oldValue.length > 200 ? oldValue.slice(0, 200) + '...' : oldValue
-    const newTruncated = newValue.length > 200 ? newValue.slice(0, 200) + '...' : newValue
-
-    return (
-      <div className="rounded-md border border-border bg-canvas font-mono text-[11px] overflow-x-auto">
-        {oldValue && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-danger/5 border-b border-danger/20">
-            <span className="text-danger font-bold shrink-0">−</span>
-            <span className="text-danger break-words leading-relaxed">{oldTruncated}</span>
-          </div>
-        )}
-        {newValue && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-success/5">
-            <span className="text-success font-bold shrink-0">+</span>
-            <span className="text-success break-words leading-relaxed">{newTruncated}</span>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // Sinon, diff mot-à-mot intelligent avec surlignage, recadré sur les
-  // changements (le texte identique entre deux changements éloignés est
-  // réduit à "…" plutôt qu'affiché en entier)
-  const tokens = windowTokens(diffWords(oldValue, newValue), DIFF_CONTEXT_WORDS)
+  // Style deux colonnes côte-à-côte pour faciliter la comparaison
+  const oldTruncated = oldValue.length > 300 ? oldValue.slice(0, 300) + '...' : oldValue
+  const newTruncated = newValue.length > 300 ? newValue.slice(0, 300) + '...' : newValue
 
   return (
-    <div className="rounded-md border border-border bg-canvas px-3 py-2.5">
-      <p className="text-xs leading-relaxed break-words">
-        {tokens.map((token, i) => (
-          <DiffTokenSpan key={i} token={token} />
-        ))}
-      </p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {/* Colonne AVANT */}
+      <div className="rounded-md border border-danger/20 bg-danger/5">
+        <div className="border-b border-danger/20 px-3 py-1.5 bg-danger/10">
+          <span className="text-[10px] font-bold text-danger uppercase tracking-wide">Avant</span>
+        </div>
+        <div className="px-3 py-2">
+          <p className="text-xs leading-relaxed text-ink-secondary break-words whitespace-pre-wrap">
+            {oldTruncated || <span className="italic text-ink-muted opacity-60">(Vide)</span>}
+          </p>
+        </div>
+      </div>
+
+      {/* Colonne APRÈS */}
+      <div className="rounded-md border border-success/20 bg-success/5">
+        <div className="border-b border-success/20 px-3 py-1.5 bg-success/10">
+          <span className="text-[10px] font-bold text-success uppercase tracking-wide">Après</span>
+        </div>
+        <div className="px-3 py-2">
+          <p className="text-xs leading-relaxed text-ink-secondary break-words whitespace-pre-wrap">
+            {newTruncated || <span className="italic text-ink-muted opacity-60">(Vide)</span>}
+          </p>
+        </div>
+      </div>
     </div>
   )
-}
-
-function DiffTokenSpan({ token }: { token: DiffToken }) {
-  if (token.type === 'remove') {
-    return (
-      <span className="bg-danger/15 text-danger px-0.5 rounded-sm line-through decoration-danger/60">
-        {token.text}
-      </span>
-    )
-  }
-  if (token.type === 'add') {
-    return (
-      <span className="bg-success/15 text-success px-0.5 rounded-sm font-medium">
-        {token.text}
-      </span>
-    )
-  }
-  return <span className="text-ink-secondary">{token.text}</span>
 }
 
 function DiffValueRenderer({ value }: { value: any }) {

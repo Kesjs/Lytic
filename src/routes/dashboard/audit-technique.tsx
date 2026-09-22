@@ -272,6 +272,7 @@ function AuditItemCard({
   setRef: (el: HTMLDivElement | null) => void
   extra?: React.ReactNode
 }) {
+  const [showCode, setShowCode] = useState(false)
   const fix = fixes[itemKey]
 
   return (
@@ -308,7 +309,16 @@ function AuditItemCard({
                   <li key={i}>{step}</li>
                 ))}
               </ol>
-              {fix.snippet && <CodeSnippet label={fix.snippetLabel} code={fix.snippet} />}
+              {fix.snippet && !showCode && (
+                <button
+                  type="button"
+                  onClick={() => setShowCode(true)}
+                  className="mt-2 text-xs text-brand-text hover:underline font-medium flex items-center gap-1"
+                >
+                  Voir le code à envoyer à votre développeur →
+                </button>
+              )}
+              {fix.snippet && showCode && <CodeSnippet label={fix.snippetLabel} code={fix.snippet} />}
             </div>
           )}
         </div>

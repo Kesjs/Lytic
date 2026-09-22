@@ -450,6 +450,23 @@ function AccueilPage() {
                     })()}
                   </span>
                 </div>
+                {/* Nouveau : Nombre de changements récents cette semaine */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-ink-muted">Changements cette semaine</span>
+                  <Link 
+                    to="/dashboard/historique" 
+                    className="text-xs font-medium text-brand-text hover:underline"
+                  >
+                    {(() => {
+                      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                      // Compter les changements de site (kind='change') de la semaine
+                      const recentChanges = (data.siteChanges || []).filter((c: any) => 
+                        new Date(c.detected_at).getTime() > oneWeekAgo
+                      ).length;
+                      return recentChanges > 0 ? `${recentChanges} détecté${recentChanges > 1 ? 's' : ''} →` : 'Aucun →';
+                    })()}
+                  </Link>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-ink-muted">Audit Technique IA</span>
                   <span className="text-xs font-medium text-ink-primary">
