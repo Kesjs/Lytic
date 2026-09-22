@@ -39,7 +39,16 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     if (text) headings.push(text)
   })
   
-  // Body (après sanitize, le body contient juste le texte utile)
+  // Body (après sanitize, le body contient juste le texte utile).
+  // Cheerio .text() concatène les nœuds texte sans séparateur entre
+  // éléments de bloc adjacents (ex. deux <a> collés dans le HTML source
+  // donnent "ContactParlons-en" au lieu de "Contact Parlons-en") : on
+  // force donc un espace entre chaque élément de bloc avant de joindre.
+  const BLOCK_SELECTOR =
+    'p, div, li, td, th, h1, h2, h3, h4, h5, h6, br, section, article, header, footer, nav, ul, ol, table, tr'
+  $('body').find(BLOCK_SELECTOR).each((_, el) => {
+    $(el).after(' ')
+  })
   const body = $('body').text().replace(/\s+/g, ' ').trim() || null
   
   // Pricing (détection basique € $ £ FCFA /mois /an)
