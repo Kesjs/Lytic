@@ -1,3 +1,5 @@
+// src/lib/plan.ts
+
 import { MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 
 // Limites par plan, centralisées ici pour ne pas les disperser dans chaque
@@ -30,7 +32,7 @@ export const MEASUREMENT_DELAY_DAYS = 1
 // Cooldown entre deux scans manuels de site ("Vérifier mon site") pour le
 // plan Free uniquement — refonte Free §5. Les plans payants ne sont pas
 // soumis à ce délai (monitoring quotidien adaptatif déjà en place).
-export const FREE_SITE_SCAN_COOLDOWN_DAYS = 1
+export const FREE_SITE_SCAN_COOLDOWN_DAYS = 7
 
 export type BrandPlan = 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
 
