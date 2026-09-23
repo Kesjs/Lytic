@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:journey": "playwright test tests/e2e/user-journey-*.spec.ts tests/e2e/payment-flow.spec.ts"
   },
   "dependencies": {
     "@paper-design/shaders-react": "^0.0.80",
