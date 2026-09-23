@@ -1,3 +1,5 @@
+// src/lib/plan.ts
+
 import { MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 
 // Limites par plan, centralisées ici pour ne pas les disperser dans chaque
@@ -31,16 +33,16 @@ export const MEASUREMENT_DELAY_DAYS = 1
 // uniquement — refonte Free §5. Les plans payants ne sont pas soumis à ce
 // délai (monitoring quotidien adaptatif déjà en place).
 //
-// Baissé de 7 à 2 jours (23/09) : le scan technique n'appelle aucune IA
+// Baissé de 7 à 1 jour (plan Reflet §7) : le scan technique n'appelle aucune IA
 // (juste crawl HTTP + lecture robots.txt), donc 7 jours ne protégeait
 // aucune ressource coûteuse — seulement de la friction gratuite pour
 // l'utilisateur Free. Le cron (`/api/cron/site-check`) tente déjà un scan
 // chaque jour pour toutes les marques ; ce cooldown est ce qui détermine à
 // quelle fréquence ce scan automatique réussit réellement pour un Free (le
 // bouton manuel n'est qu'un déclenchement anticipé une fois le délai
-// écoulé). 2 jours garde une vraie différenciation avec le monitoring
-// quotidien Pro, sans pénaliser l'utilisateur Free au-delà du nécessaire.
-export const FREE_SITE_SCAN_COOLDOWN_DAYS = 2
+// écoulé). 1 jour garde une différenciation avec le monitoring Pro continu,
+// sans pénaliser l'utilisateur Free.
+export const FREE_SITE_SCAN_COOLDOWN_DAYS = 1
 
 export type BrandPlan = 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
 
