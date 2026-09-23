@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: 'Puis-je essayer Reflet gratuitement ?',
-    a: 'Oui, le plan Free est gratuit (0€) et permet de mesurer une question avec 3 mesures par semaine, sans carte bancaire.',
+    a: 'Oui, le plan Free est gratuit (0€) et permet de mesurer jusqu\'à 3 questions avec 3 mesures par semaine, sans carte bancaire.',
   },
   {
     q: 'Reflet garantit-il une position dans ChatGPT ?',

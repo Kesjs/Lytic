@@ -112,7 +112,7 @@ export const en = {
         { label: '1 tracked question' },
         { label: '3 measurements per week' },
         { label: 'Score + 2 competitors visible' },
-        { label: 'Site scan every 7 days' },
+        { label: 'Site scan every 2 days' },
         { label: 'AI Bots Access', detail: 'Crawl authorization for GPTBot, ClaudeBot, and PerplexityBot on your indexable content.' }
       ]
     },

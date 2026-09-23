@@ -14,6 +14,20 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
       throw new Error('Non authentifié')
     }
 
+    // Vérifie que la marque appartient bien à l'appelant — sans ça, n'importe
+    // quel compte authentifié pouvait passer le brandId d'une autre marque
+    // et faire activer le plan Pro de quelqu'un d'autre avec son propre
+    // paiement, puisque c'est ce brandId qui est renvoyé tel quel au webhook.
+    const { data: ownedBrand } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('id', brandId)
+      .eq('owner_id', user.id)
+      .maybeSingle()
+    if (!ownedBrand) {
+      throw new Error('Marque introuvable ou accès refusé')
+    }
+
     const { data: profile } = await (supabase
       .from('profiles')
       .select('email, full_name')

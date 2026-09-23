@@ -64,19 +64,44 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     return data as { brandId: string; cronSecret?: string }
   })
   .handler(async ({ data }): Promise<any> => {
-    const supabase = getSupabaseServerClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) throw new Error('Non authentifié')
+    const admin = getSupabaseAdminClient() as any
+    const isCronCall = Boolean(data.cronSecret && data.cronSecret === process.env.CRON_SECRET)
 
-    // Vérifie que la marque appartient à l'utilisateur (RLS)
-    const { data: brand, error: brandError } = await supabase
-      .from('brands')
-      .select('id, name, website_url, plan')
-      .eq('id', data.brandId)
-      .eq('owner_id', auth.user.id)
-      .maybeSingle()
+    // Bug corrigé (23/09, même classe que le fix triggerSiteCrawl du 22/09) :
+    // le client `getSupabaseServerClient()` (clé anon + cookies) n'a jamais
+    // de session en contexte cron, donc `auth.getUser()` renvoyait toujours
+    // null et la fonction échouait en "Non authentifié" avant même de créer
+    // un run — et ce, alors même que checkMeasurementDelay plus bas était
+    // déjà cron-aware (cf. commentaire bug #17). Correctif : appel admin
+    // pour tout le pipeline en contexte cron, session utilisateur sinon.
+    let brand: { id: string; name: string; website_url: string | null; plan: string | null }
+    let db: ReturnType<typeof getSupabaseServerClient> | any
 
-    if (brandError || !brand) throw new Error('Marque introuvable ou accès refusé')
+    if (isCronCall) {
+      const { data: cronBrand, error: cronBrandError } = await admin
+        .from('brands')
+        .select('id, name, website_url, plan')
+        .eq('id', data.brandId)
+        .maybeSingle()
+      if (cronBrandError || !cronBrand) throw new Error('Marque introuvable')
+      brand = cronBrand
+      db = admin
+    } else {
+      const supabase = getSupabaseServerClient()
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth.user) throw new Error('Non authentifié')
+
+      const { data: userBrand, error: brandError } = await supabase
+        .from('brands')
+        .select('id, name, website_url, plan')
+        .eq('id', data.brandId)
+        .eq('owner_id', auth.user.id)
+        .maybeSingle()
+
+      if (brandError || !userBrand) throw new Error('Marque introuvable ou accès refusé')
+      brand = userBrand
+      db = supabase
+    }
 
     let freeUnlockChangeId: string | null = null
 
@@ -89,7 +114,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
         Date.now() - FREE_MEASUREMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000,
       ).toISOString()
 
-      const { count: runsThisWeek } = await supabase
+      const { count: runsThisWeek } = await db
         .from('measurement_runs')
         .select('id', { count: 'exact', head: true })
         .eq('brand_id', brand.id)
@@ -101,7 +126,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       if (weeklyQuotaReached) {
         // Quota hebdo épuisé — seul un slot bonus (changement de site non consommé)
         // peut débloquer une remesure supplémentaire.
-        const { data: lastFreeRun } = await supabase
+        const { data: lastFreeRun } = await db
           .from('measurement_runs')
           .select('id, completed_at')
           .eq('brand_id', brand.id)
@@ -111,7 +136,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
           .maybeSingle()
 
         const unlock = await getFreeRemeasureUnlock(
-          supabase,
+          db,
           brand.id,
           lastFreeRun?.completed_at ?? null,
         )
@@ -127,17 +152,10 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
       }
       // Si quota non atteint : aucune restriction supplémentaire, mesure autorisée.
     } else {
-      // Vérifie le délai entre deux mesures (plans payants uniquement)
-      // Bug réel révélé en levant @ts-nocheck (#17) : `adminSupabase` n'était
-      // jamais déclaré dans ce fichier — le chemin cron (cronSecret) aurait
-      // levé une ReferenceError au premier appel programmé. On utilise le
-      // getter déjà importé en haut du fichier.
-      const { allowed, daysRemaining } = await checkMeasurementDelay(
-        data.cronSecret && data.cronSecret === process.env.CRON_SECRET
-          ? getSupabaseAdminClient()
-          : supabase,
-        brand.id,
-      )
+      // Vérifie le délai entre deux mesures (plans payants uniquement).
+      // `db` est déjà le bon client (admin en cron, session sinon) — plus
+      // besoin de re-détecter isCronCall ici.
+      const { allowed, daysRemaining } = await checkMeasurementDelay(db, brand.id)
       if (!allowed) {
         throw new Error(
           `Prochaine mesure manuelle disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}.`,
@@ -146,7 +164,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     }
 
     // Compte les questions actives
-    const { count: questionsTotal } = await supabase
+    const { count: questionsTotal } = await db
       .from('questions')
       .select('id', { count: 'exact', head: true })
       .eq('brand_id', brand.id)
@@ -163,12 +181,12 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     let linkedChangeId: string | null = freeUnlockChangeId
     if (!isFreePlan(brand.plan)) {
       const { getChangeReliabilityStatus } = await import('~/lib/reliability')
-      const reliability = await getChangeReliabilityStatus(supabase, brand.id)
+      const reliability = await getChangeReliabilityStatus(db, brand.id)
       linkedChangeId = reliability && !reliability.reliable ? reliability.changeId : null
     }
 
     // Crée le run
-    const { data: run, error: runError } = await supabase
+    const { data: run, error: runError } = await db
       .from('measurement_runs')
       .insert({
         brand_id: brand.id,
@@ -186,7 +204,7 @@ export const triggerMeasurementRun = createServerFn({ method: 'POST' })
     // Marque le changement de site comme consommé pour ce déblocage Free,
     // pour qu'il ne puisse pas débloquer une deuxième remesure.
     if (freeUnlockChangeId) {
-      await supabase
+      await db
         .from('site_changes')
         .update({ linked_run_id: run.id })
         .eq('id', freeUnlockChangeId)
@@ -265,17 +283,12 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
     if (typeof data !== 'object' || data === null || typeof (data as Record<string, unknown>).runId !== 'string') {
       throw new Error('runId manquant')
     }
-    return data as { runId: string }
+    return data as { runId: string; cronSecret?: string }
   })
   .handler(async ({ data }): Promise<ProcessNextResult> => {
     // Client admin pour les opérations du pipeline (insert observations, etc.)
-    // La vérification d'appartenance est faite ci-dessous via userSupabase.
     const adminSupabase = getSupabaseAdminClient()
-    const userSupabase = getSupabaseServerClient()
-
-    // Vérifie que l'utilisateur courant est authentifié
-    const { data: auth } = await userSupabase.auth.getUser()
-    if (!auth.user) throw new Error('Non authentifié')
+    const isCronCall = Boolean(data.cronSecret && data.cronSecret === process.env.CRON_SECRET)
 
     // Charge le run (sans jointure — la jointure brands!inner casse l'inférence TS)
     const { data: run, error: runError } = await adminSupabase
@@ -295,8 +308,18 @@ export const processNextQuestion = createServerFn({ method: 'POST' })
 
     if (brandError || !brand) throw new Error('Marque introuvable')
 
-    // Vérifie l'appartenance
-    if (brand.owner_id !== auth.user.id) throw new Error('Accès refusé')
+    // Bug corrigé (23/09, même classe que triggerMeasurementRun ci-dessus) :
+    // en contexte cron il n'y a pas de session, donc `userSupabase.auth.getUser()`
+    // renvoyait toujours null et la fonction échouait en "Non authentifié" —
+    // avant même de traiter la question. Le secret cron est déjà vérifié en
+    // amont dans /api/cron/site-check ; pas besoin de re-vérifier une session
+    // qui n'existe pas dans ce contexte. Hors cron, on vérifie l'appartenance.
+    if (!isCronCall) {
+      const userSupabase = getSupabaseServerClient()
+      const { data: auth } = await userSupabase.auth.getUser()
+      if (!auth.user) throw new Error('Non authentifié')
+      if (brand.owner_id !== auth.user.id) throw new Error('Accès refusé')
+    }
 
     // Run déjà terminé → retourne done immédiatement (idempotent)
     if (run.status === 'success' || run.status === 'failed' || run.status === 'partial') {

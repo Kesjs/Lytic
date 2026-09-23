@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { SectionCard } from '~/components/ui/section-card'
 import { toast } from 'sonner'
-import { Pencil, Plus, Check, X as XIcon, Globe, Trash2, Clock } from 'lucide-react'
+import { Pencil, Plus, Check, X as XIcon, Globe, Trash2, Clock, Sparkles } from 'lucide-react'
 import { BrandSetupDrawer } from '~/components/dashboard/BrandSetupDrawer'
 import { cn, isValidWebsiteUrl, normalizeWebsiteUrl, QUESTION_MAX_LENGTH, MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
@@ -21,11 +21,12 @@ import {
   toggleQuestionActive,
   deleteQuestion,
   deleteBrand,
+  generateQuestionsWithAI,
   updateNotificationPreferences,
   type SettingsData,
 } from '~/lib/queries/settings'
 import { triggerSiteCrawl, processNextPage } from '~/lib/crawler/orchestrate'
-import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE, FREE_SITE_SCAN_COOLDOWN_DAYS, FREE_MEASUREMENTS_PER_WEEK } from '~/lib/plan'
+import { isFreePlan, FREE_MAX_QUESTIONS, FREE_MAX_COMPETITORS_VISIBLE, FREE_SITE_SCAN_COOLDOWN_DAYS, FREE_MEASUREMENTS_PER_WEEK, daysRemainingForScan } from '~/lib/plan'
 
 export const Route = createFileRoute('/dashboard/parametres')({
   component: ParametresPage,
@@ -380,6 +381,7 @@ function QuestionsSection({
   const [newText, setNewText] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
+  const [suggestions, setSuggestions] = useState<string[]>([])
 
   const addMutation = useMutation({
     mutationFn: () => addQuestion({ data: { brandId: brand!.id, text: newText } }),
@@ -389,6 +391,29 @@ function QuestionsSection({
       onSaved()
     },
     onError: (err: Error) => toast.error(err.message || "Impossible d'ajouter cette question."),
+  })
+
+  // Ajout direct d'une suggestion IA (texte passé explicitement, pas depuis
+  // newText) — même endpoint que l'ajout manuel, la limite de plan est donc
+  // déjà appliquée côté serveur (addQuestion vérifie maxQuestions).
+  const quickAddMutation = useMutation({
+    mutationFn: (text: string) => addQuestion({ data: { brandId: brand!.id, text } }),
+    onSuccess: (_data, text) => {
+      setSuggestions((s) => s.filter((q) => q !== text))
+      toast.success('Question ajoutée.')
+      onSaved()
+    },
+    onError: (err: Error) => toast.error(err.message || "Impossible d'ajouter cette question."),
+  })
+
+  // Génération IA disponible pour tous les plans — seul le nombre de
+  // questions ajoutables reste limité (maxQuestions ci-dessous), pas la
+  // génération elle-même.
+  const generateMutation = useMutation({
+    mutationFn: () =>
+      generateQuestionsWithAI({ data: { name: brand!.name, websiteUrl: brand!.websiteUrl ?? '' } }),
+    onSuccess: (result) => setSuggestions(result),
+    onError: (err: Error) => toast.error(err.message || 'Impossible de générer des suggestions.'),
   })
 
   const editMutation = useMutation({
@@ -549,6 +574,32 @@ function QuestionsSection({
       </div>
 
       <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => generateMutation.mutate()}
+          disabled={generateMutation.isPending || questions.length >= maxQuestions || !brand.websiteUrl}
+          className="mb-2 flex items-center gap-1.5 text-xs font-medium text-brand-text hover:underline disabled:cursor-not-allowed disabled:text-ink-muted disabled:no-underline"
+        >
+          <Sparkles className="size-3.5" />
+          {generateMutation.isPending ? 'Génération…' : "Générer des suggestions avec l'IA"}
+        </button>
+
+        {suggestions.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => quickAddMutation.mutate(s)}
+                disabled={quickAddMutation.isPending || questions.length >= maxQuestions}
+                className="rounded-full border border-border bg-elevated px-2.5 py-1 text-[11px] text-ink-secondary hover:border-brand/50 hover:text-ink-primary disabled:opacity-50"
+              >
+                + « {s} »
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <input
             value={newText}
@@ -786,13 +837,6 @@ function SecuritySection() {
 }
 
 // --- Crawl (Change Detection) ---
-
-function daysRemainingForScan(lastCompletedAt: string | null): number {
-  if (!lastCompletedAt) return 0
-  const elapsedMs = Date.now() - new Date(lastCompletedAt).getTime()
-  const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24)
-  return Math.max(0, Math.ceil(FREE_SITE_SCAN_COOLDOWN_DAYS - elapsedDays))
-}
 
 function CrawlSection({ brand }: { brand: SettingsData['brand'] }) {
   const [isCrawling, setIsCrawling] = useState(false)

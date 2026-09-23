@@ -8,9 +8,6 @@ describe('computeDiff', () => {
     meta: 'def',
     headings: ['ghi'],
     body: 'jkl',
-    sections: [{ heading: 'ghi', level: 2, content: 'jkl' }],
-    mainContent: 'jkl',
-    faq: null,
     pricing: ['mno'],
     cta: ['pqr'],
     links: ['stu'],
@@ -20,13 +17,6 @@ describe('computeDiff', () => {
     titleLength: 3,
     hasMetaDescription: true,
     schemaTypes: [],
-    schemaDetails: {
-      hasOrganization: false,
-      organizationComplete: false,
-      hasFAQPage: false,
-      hasProduct: false,
-      hasArticle: false,
-    },
     hasUniqueH1: true,
     metaDescriptionLength: 3,
     hasCanonical: true,
@@ -61,18 +51,17 @@ describe('computeDiff', () => {
     expect(res.importance).toBe('watch')
   })
 
-  it('plusieurs champs différents (pricing + sections réécrites) → détectés correctement, importance=watch', () => {
+  it('plusieurs champs différents (pricing + body réécrit) → détectés correctement, importance=watch', () => {
     const newContent: ExtractedContent = {
       ...filledContent,
       pricing: ['mno', 'changed'],
-      sections: [{ heading: 'ghi', level: 2, content: 'un tout autre paragraphe complètement différent du précédent' }],
+      body: 'un tout autre paragraphe complètement différent du précédent',
     }
     const res = computeDiff(filledContent, newContent)
 
     expect(res.hasChanged).toBe(true)
     expect(res.changedFields).toContain('pricing')
-    expect(res.changedFields).toContain('sections')
-    // `mainContent` inchangé et non comparé (des sections existent déjà) → seulement 2 champs
+    expect(res.changedFields).toContain('body')
     expect(res.changedFields.length).toBe(2)
     // pricing (IMMEDIATE_FIELDS) suffit à lui seul à déclencher 'watch'
     expect(res.importance).toBe('watch')
@@ -105,10 +94,10 @@ describe('computeDiff', () => {
     expect(res.importance).toBe('low')
   })
 
-  it('reformulation mineure des sections (< 15% de mots différents) → importance=watch (seuil actuel)', () => {
+  it('reformulation mineure du body (< 15% de mots différents) → importance=low', () => {
     const oldContent: ExtractedContent = {
       ...filledContent,
-      sections: [{ heading: 'ghi', level: 2, content: 'Nous accompagnons les artisans et commerçants africains dans leur facturation au quotidien' }],
+      body: 'Nous accompagnons les artisans et commerçants africains dans leur facturation au quotidien',
     }
     const newContent: ExtractedContent = {
       ...filledContent,
@@ -117,12 +106,12 @@ describe('computeDiff', () => {
       // Note: avec SIMILARITY_THRESHOLD=0.85, ce changement est considéré comme "watch"
       // car la similarité Jaccard est inférieure au seuil. Le test est ajusté pour refléter
       // le comportement réel du code.
-      sections: [{ heading: 'ghi', level: 2, content: 'Nous aidons les artisans et commerçants africains dans leur facturation au quotidien' }],
+      body: 'Nous aidons les artisans et commerçants africains dans leur facturation au quotidien',
     }
     const res = computeDiff(oldContent, newContent)
 
     expect(res.hasChanged).toBe(true)
-    expect(res.changedFields).toEqual(['sections'])
+    expect(res.changedFields).toEqual(['body'])
     // Le seuil actuel (0.85) considère cette reformulation comme significative
     expect(res.importance).toBe('watch')
   })
@@ -137,50 +126,19 @@ describe('computeDiff', () => {
     expect(res.importance).toBe('watch')
   })
 
-  it('sections totalement réécrites (delta > seuil) → importance=watch', () => {
+  it('body totalement réécrit (delta > seuil) → importance=watch', () => {
     const oldContent: ExtractedContent = {
       ...filledContent,
-      sections: [{ heading: 'ghi', level: 2, content: 'Nous accompagnons les artisans et commerçants africains dans leur facturation au quotidien' }],
+      body: 'Nous accompagnons les artisans et commerçants africains dans leur facturation au quotidien',
     }
     const newContent: ExtractedContent = {
       ...filledContent,
-      sections: [{ heading: 'ghi', level: 2, content: 'Découvrez notre nouvelle plateforme de gestion locative pour propriétaires en Afrique' }],
+      body: 'Découvrez notre nouvelle plateforme de gestion locative pour propriétaires en Afrique',
     }
     const res = computeDiff(oldContent, newContent)
 
     expect(res.hasChanged).toBe(true)
     expect(res.importance).toBe('watch')
-  })
-
-  it('page sans heading (sections=[] des deux côtés) → fallback sur mainContent', () => {
-    const oldContent: ExtractedContent = {
-      ...filledContent,
-      sections: [],
-      mainContent: 'Un simple paragraphe sans aucun titre structurant sur cette page.',
-    }
-    const newContent: ExtractedContent = {
-      ...filledContent,
-      sections: [],
-      mainContent: 'Un tout autre contenu complètement réécrit qui remplace le paragraphe précédent.',
-    }
-    const res = computeDiff(oldContent, newContent)
-
-    expect(res.hasChanged).toBe(true)
-    expect(res.changedFields).toEqual(['mainContent'])
-    expect(res.importance).toBe('watch')
-  })
-
-  it('page avec sections : mainContent seul ignoré (pas de doublon avec sections)', () => {
-    // sections inchangées, mais mainContent (le texte aplati équivalent)
-    // diffère légèrement (ex: espace superflu) → ne doit pas apparaître,
-    // car sections fait déjà foi pour les pages qui en ont.
-    const newContent: ExtractedContent = {
-      ...filledContent,
-      mainContent: 'jkl ',
-    }
-    const res = computeDiff(filledContent, newContent)
-
-    expect(res.changedFields).not.toContain('mainContent')
   })
 })
 

@@ -30,19 +30,11 @@ export function computeAuditMetrics(botAccess: BotAccessData | null, pages: any[
   const extracted = homepage?.extracted_content
   const homepageRenderIncomplete = !!(extracted as any)?.renderIncomplete
 
-  // 4. JSON-LD (15 points) - Nouveau B2 : vérifier la profondeur
+  // 4. JSON-LD (15 points)
   const hasJsonLd = extracted?.jsonLd ?? false
   const schemaTypes = extracted?.schemaTypes ?? []
-  const schemaDetails = extracted?.schemaDetails ?? {
-    hasOrganization: false,
-    organizationComplete: false,
-    hasFAQPage: false,
-    hasProduct: false,
-    hasArticle: false,
-  }
-  const hasOrganization = schemaDetails.hasOrganization || schemaTypes.includes('Product')
-  const organizationComplete = schemaDetails.organizationComplete
-  const jsonLdScore = hasJsonLd && hasOrganization && organizationComplete ? 15 : hasJsonLd && hasOrganization ? 10 : hasJsonLd ? 5 : 0
+  const hasOrganization = schemaTypes.includes('Organization') || schemaTypes.includes('Product')
+  const jsonLdScore = hasJsonLd && hasOrganization ? 15 : hasJsonLd ? 8 : 0
 
   // 5. H1 Unique (10 points)
   const h1Count = extracted?.h1Count ?? 0
@@ -82,7 +74,6 @@ export function computeAuditMetrics(botAccess: BotAccessData | null, pages: any[
     botsScore,
     hasJsonLd,
     hasOrganization,
-    organizationComplete,
     h1Count,
     hasUniqueH1,
     hasGoodTitle,
@@ -92,7 +83,6 @@ export function computeAuditMetrics(botAccess: BotAccessData | null, pages: any[
     imagesWithoutAlt,
     totalImages,
     schemaTypes,
-    schemaDetails,
     homepageRenderIncomplete,
     pageUrl,
     rawTitle,

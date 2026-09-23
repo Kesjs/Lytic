@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { CheckCircle2, XCircle, HelpCircle, Loader2, Gauge, ChevronDown, Lightbulb } from 'lucide-react'
+import { CheckCircle2, XCircle, HelpCircle, Loader2, Gauge, ChevronDown, Lightbulb, Clock } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { cn } from '~/lib/utils'
 import type { BotAccessData } from '~/lib/queries/bot-access'
 import { IA_BOTS } from '~/lib/crawler/constants'
 import { useTechnicalAuditCheck } from '~/lib/hooks/useTechnicalAuditCheck'
+import { isFreePlan, daysRemainingForScan } from '~/lib/plan'
 // Logique de score extraite dans un fichier pur (§27), réutilisable côté
 // serveur (orchestrate.ts) pour historiser le score sans dépendre de React.
 import { computeAuditMetrics, ITEM_POINTS } from '~/lib/audit-metrics'
@@ -15,6 +16,8 @@ interface Props {
   botAccess: BotAccessData | null
   pages: any[]
   brandId: string
+  plan?: string | null
+  lastCrawlCompletedAt?: string | null
 }
 
 export type AuditRowKey = keyof typeof ITEM_POINTS
@@ -116,56 +119,54 @@ export const AUDIT_FIXES = getAuditFixes(null)
 // la page /dashboard/audit-technique, plutôt que dupliqué.
 export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAuditMetrics>>, llmsTxtFound: boolean): AuditRow[] {
   const {
-    hasJsonLd, hasOrganization, organizationComplete, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt,
+    hasJsonLd, hasOrganization, h1Count, hasUniqueH1, hasGoodTitle, hasGoodDesc, hasCanonical, imagesWithoutAlt,
     pageUrl, rawTitle, rawFirstHeading,
   } = metrics
   return [
     {
       key: 'llms',
       passed: llmsTxtFound,
-      label: llmsTxtFound ? 'Les IA savent qui vous êtes' : "Les IA manquent d'informations sur votre site",
-      why: "Le fichier llms.txt donne aux IA un résumé structuré de votre site, plus fiable qu'un crawl classique.",
+      label: llmsTxtFound ? 'Fichier llms.txt présent' : "Aucun fichier llms.txt",
+      why: "Donne aux IA un résumé structuré de votre site, plus fiable qu'un crawl classique.",
       detail: pageUrl ? `Vérifié sur ${pageUrl}` : undefined,
     },
     {
       key: 'jsonld',
-      passed: hasJsonLd && hasOrganization && organizationComplete,
+      passed: hasJsonLd && hasOrganization,
       label:
-        hasJsonLd && hasOrganization && organizationComplete
-          ? 'Votre entreprise est clairement identifiée'
-          : hasJsonLd && hasOrganization
-            ? "Informations d'entreprise incomplètes (nom, URL, description ou logo manquant)"
-            : hasJsonLd
-              ? "Les IA ne savent pas quel type d'entreprise vous êtes"
-              : "Les IA ne peuvent pas identifier votre entreprise",
-      why: "Le balisage structuré (JSON-LD Organization) avec nom, URL, description et logo aide les IA à comprendre qui vous êtes et ce que vous proposez.",
+        hasJsonLd && hasOrganization
+          ? 'Organisation/Produit balisée (JSON-LD)'
+          : hasJsonLd
+            ? "Le type d'organisation n'est pas précisé"
+            : 'Aucun balisage JSON-LD',
+      why: 'Le balisage structuré aide les IA à identifier qui vous êtes et ce que vous vendez.',
     },
     {
       key: 'h1',
       passed: hasUniqueH1,
       label: hasUniqueH1
-        ? 'Le sujet de votre page est clair'
+        ? 'Titre principal (H1) unique'
         : h1Count === 0
-          ? 'Les IA ne voient pas le sujet principal de votre page'
-          : 'Plusieurs titres principaux créent de la confusion',
-      why: "Un seul titre principal (H1) aide les IA à comprendre immédiatement de quoi parle votre page.",
-      detail: rawFirstHeading ? `Titre détecté : « ${rawFirstHeading} »` : undefined,
+          ? 'Aucun titre principal (H1) détecté'
+          : `Plusieurs titres H1 sur la page (${h1Count})`,
+      why: 'Un H1 unique et clair indique aux IA le sujet principal de la page.',
+      detail: rawFirstHeading ? `H1 détecté : « ${rawFirstHeading} »` : undefined,
     },
     {
       key: 'titleMeta',
       passed: hasGoodTitle && hasGoodDesc,
       label:
         hasGoodTitle && hasGoodDesc
-          ? 'Votre page a un titre et une description efficaces'
-          : 'Le titre ou la description de votre page est à retravailler',
-      why: "Un titre (50-60 caractères) et une description (150-160 caractères) bien calibrés sont repris directement par les IA dans leurs réponses.",
-      detail: rawTitle ? `Titre actuel (${rawTitle.length} car.) : « ${rawTitle} »` : undefined,
+          ? 'Titre et description bien dimensionnés'
+          : 'Titre ou description de page à retravailler',
+      why: 'Un titre et une méta-description bien calibrés sont souvent repris tels quels par les IA.',
+      detail: rawTitle ? `Titre détecté (${rawTitle.length} car.) : « ${rawTitle} »` : undefined,
     },
     {
       key: 'canonical',
       passed: hasCanonical,
-      label: hasCanonical ? "Votre page a une adresse de référence claire" : "Les IA peuvent confondre plusieurs versions de votre page",
-      why: "Sans URL canonique, les IA hésitent entre plusieurs versions de votre page (www/non-www, http/https, avec/sans slash final).",
+      label: hasCanonical ? 'URL de référence définie' : 'URL de référence par page manquante',
+      why: 'Sans URL canonique, une IA peut hésiter entre plusieurs versions de la même page.',
       detail: pageUrl ? `Page vérifiée : ${pageUrl}` : undefined,
     },
     {
@@ -173,16 +174,26 @@ export function buildAuditRows(metrics: NonNullable<ReturnType<typeof computeAud
       passed: imagesWithoutAlt === 0,
       label:
         imagesWithoutAlt === 0
-          ? 'Les IA comprennent vos images'
-          : `${imagesWithoutAlt} image${imagesWithoutAlt > 1 ? 's' : ''} invisible${imagesWithoutAlt > 1 ? 's' : ''} pour les IA`,
-      why: "Le texte alternatif (attribut alt) est la seule façon pour une IA de comprendre ce que montrent vos images.",
+          ? 'Toutes les images ont un texte alternatif'
+          : `${imagesWithoutAlt} image${imagesWithoutAlt > 1 ? 's' : ''} sans texte alternatif`,
+      why: 'Le texte alternatif est la seule façon pour une IA de "voir" le contenu de vos images.',
     },
   ]
 }
 
-export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
+export function TechnicalAuditCard({ botAccess, pages, brandId, plan, lastCrawlCompletedAt }: Props) {
   const { runAudit, isRunning } = useTechnicalAuditCheck(brandId)
   const [botsExpanded, setBotsExpanded] = useState(false)
+
+  // Cooldown Free affiché AVANT le clic — même donnée que celle vérifiée
+  // côté serveur dans triggerSiteCrawl, pour ne pas laisser l'utilisateur
+  // cliquer dans le vide et découvrir le blocage seulement via un toast
+  // d'erreur (cf. incohérence relevée vs. la page Paramètres).
+  const cooldownDays = isFreePlan(plan) ? daysRemainingForScan(lastCrawlCompletedAt) : 0
+  const cooldownActive = cooldownDays > 0
+  const retestDisabled = isRunning || cooldownActive
+  const retestLabel = (running: string, idle: string) =>
+    isRunning ? running : cooldownActive ? `Disponible dans ${cooldownDays} j` : idle
 
   // ── Calcul du score et des métriques ───────────────────────────────────────
   const metrics = useMemo(() => computeAuditMetrics(botAccess, pages), [botAccess, pages])
@@ -198,12 +209,18 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
         <button
           type="button"
           onClick={runAudit}
-          disabled={isRunning}
+          disabled={retestDisabled}
           className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
         >
           {isRunning && <Loader2 className="size-3.5 animate-spin" />}
-          {isRunning ? 'Audit en cours…' : "Lancer l'audit"}
+          {cooldownActive && !isRunning && <Clock className="size-3.5" />}
+          {retestLabel('Audit en cours…', "Lancer l'audit")}
         </button>
+        {cooldownActive && !isRunning && (
+          <p className="mt-1.5 text-[11px] text-ink-muted">
+            Prochain scan manuel disponible dans {cooldownDays} jour{cooldownDays > 1 ? 's' : ''}.
+          </p>
+        )}
       </div>
     )
   }
@@ -241,12 +258,18 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
         <button
           type="button"
           onClick={runAudit}
-          disabled={isRunning}
+          disabled={retestDisabled}
           className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
         >
           {isRunning && <Loader2 className="size-3.5 animate-spin" />}
-          {isRunning ? 'Nouvelle tentative…' : 'Retester le crawl'}
+          {cooldownActive && !isRunning && <Clock className="size-3.5" />}
+          {retestLabel('Nouvelle tentative…', 'Retester le crawl')}
         </button>
+        {cooldownActive && !isRunning && (
+          <p className="mt-1.5 text-[11px] text-ink-muted">
+            Prochain scan manuel disponible dans {cooldownDays} jour{cooldownDays > 1 ? 's' : ''}.
+          </p>
+        )}
       </div>
     )
   }
@@ -375,25 +398,29 @@ export function TechnicalAuditCard({ botAccess, pages, brandId }: Props) {
 
       <div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
         <p className="text-[11px] text-ink-muted">
-          Dernier audit : {new Date(checkedAt).toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: 'long',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
+          {cooldownActive
+            ? `Prochain scan dans ${cooldownDays} j`
+            : <>Dernier audit : {new Date(checkedAt).toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</>}
         </p>
         <button
           type="button"
           onClick={runAudit}
-          disabled={isRunning}
+          disabled={retestDisabled}
           className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-2 py-1 text-[11px] font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50 border border-border"
         >
           {isRunning ? (
             <Loader2 className="size-3 animate-spin" />
+          ) : cooldownActive ? (
+            <Clock className="size-3" />
           ) : (
             <Gauge className="size-3" />
           )}
-          Re-tester
+          {retestLabel('Re-tester', 'Re-tester')}
         </button>
       </div>
     </div>

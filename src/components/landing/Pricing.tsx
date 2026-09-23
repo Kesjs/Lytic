@@ -8,10 +8,10 @@ type Feature = { label: string; detail?: string }
 
 const featuresFree: Feature[] = [
   { label: '1 site suivi' },
-  { label: '1 question suivie' },
+  { label: '3 questions suivies' },
   { label: '3 mesures par semaine' },
   { label: 'Score + 2 concurrents visibles' },
-  { label: 'Scan de site tous les 7 jours' },
+  { label: 'Scan de site tous les 2 jours' },
   {
     label: 'Accès Bots IA',
     detail: 'Autorisation de crawl pour GPTBot, ClaudeBot et PerplexityBot sur votre contenu indexable.',

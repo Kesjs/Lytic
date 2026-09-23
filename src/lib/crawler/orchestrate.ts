@@ -7,7 +7,7 @@ import { extractContent } from './extract'
 import { computeDiff } from './diff'
 import { checkBotAccess } from './robots'
 import type { IaBotId } from './constants'
-import { isFreePlan, FREE_SITE_SCAN_COOLDOWN_DAYS } from '~/lib/plan'
+import { isFreePlan, daysRemainingForScan } from '~/lib/plan'
 import { insertEvent } from '~/lib/events'
 import { computeAuditMetrics } from '~/lib/audit-metrics'
 
@@ -21,9 +21,14 @@ const DEFAULT_CRAWL_DELAY_MS = 800
 // directement liés à la visibilité dans ChatGPT/Claude).
 const MAJOR_BOTS: IaBotId[] = ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'Google-Extended']
 
-/** Vérifie le cooldown entre deux scans manuels de site — Free uniquement
- *  (§5 refonte Free), même mécanique que checkMeasurementDelay dans
- *  measure.ts. Basé sur le dernier site_crawl_runs 'completed' de la marque. */
+/** Vérifie le cooldown entre deux scans de site — Free uniquement (§5
+ *  refonte Free), même mécanique que checkMeasurementDelay dans measure.ts.
+ *  Basé sur le dernier site_crawl_runs 'completed' de la marque.
+ *
+ *  Réutilise daysRemainingForScan (plan.ts) — anciennement une formule
+ *  dupliquée ici et dans plan.ts (utilisée côté UI). Une seule
+ *  implémentation du calcul maintenant, la constante FREE_SITE_SCAN_COOLDOWN_DAYS
+ *  restant elle aussi centralisée dans plan.ts. */
 async function checkSiteScanCooldown(
   admin: ReturnType<typeof getSupabaseAdminClient>,
   brandId: string,
@@ -37,11 +42,7 @@ async function checkSiteScanCooldown(
     .limit(1)
     .maybeSingle()
 
-  if (!lastCompleted?.completed_at) return { allowed: true, daysRemaining: 0 }
-
-  const elapsedDays =
-    (Date.now() - new Date(lastCompleted.completed_at).getTime()) / (1000 * 60 * 60 * 24)
-  const daysRemaining = Math.max(0, Math.ceil(FREE_SITE_SCAN_COOLDOWN_DAYS - elapsedDays))
+  const daysRemaining = daysRemainingForScan(lastCompleted?.completed_at ?? null)
 
   return { allowed: daysRemaining === 0, daysRemaining }
 }

@@ -5,6 +5,12 @@ import { Activity, FileEdit, Bell, Loader2 } from 'lucide-react'
 import { fetchHistory, type TimelineEntry, type HistoryFilters } from '~/lib/queries/history'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import { DatePickerField } from '~/components/ui/date-picker'
+import { diffWords, windowTokens, countWords, DIFF_MAX_WORDS, type DiffToken } from '~/lib/text-diff'
+
+// Nombre de mots de contexte conservés de chaque côté d'un changement dans
+// le diff mot-à-mot — au-delà, le texte inchangé est réduit à "…" pour que
+// l'œil aille droit au changement plutôt que de le chercher dans un pavé.
+const DIFF_CONTEXT_WORDS = 6
 
 export const Route = createFileRoute('/dashboard/historique')({
   component: HistoriquePage,
@@ -67,8 +73,7 @@ const FIELD_LABELS: Record<string, string> = {
   title: 'Titre',
   meta: 'Méta-données',
   headings: 'En-têtes',
-  sections: 'Contenu principal',
-  mainContent: 'Contenu principal',
+  body: 'Contenu principal',
   pricing: 'Prix',
   cta: 'Appel à l\'action',
   links: 'Liens',
@@ -373,7 +378,7 @@ function ChangeEntryContent({ entry }: { entry: Extract<TimelineEntry, { kind: '
                 <span className="text-[11px] font-medium text-ink-muted uppercase tracking-wide">
                   {FIELD_LABELS[field] || field}
                 </span>
-                <FieldDiff field={field} oldValue={oldVal} newValue={newVal} />
+                <FieldDiff oldValue={oldVal} newValue={newVal} />
               </div>
             )
           })}
@@ -410,18 +415,7 @@ function isDiffableString(value: any): value is string | null | undefined {
   return value === null || value === undefined || typeof value === 'string'
 }
 
-// Une "section" (extract.ts) a la forme { heading, level, content } — on la
-// distingue d'un simple tableau de chaînes (liens, thèmes, etc.) pour lui
-// donner un rendu structuré (§A2.5) au lieu du diff élément-par-élément brut.
-function isSectionsArray(value: any): value is Array<{ heading: string; level: number; content: string }> {
-  return Array.isArray(value) && (value.length === 0 || typeof value[0]?.heading === 'string')
-}
-
-function FieldDiff({ field, oldValue, newValue }: { field: string; oldValue: any; newValue: any }) {
-  if (field === 'sections' && (isSectionsArray(oldValue) || isSectionsArray(newValue))) {
-    return <SectionsFieldDiff oldValue={oldValue ?? []} newValue={newValue ?? []} />
-  }
-
+function FieldDiff({ oldValue, newValue }: { oldValue: any; newValue: any }) {
   if (isDiffableString(oldValue) && isDiffableString(newValue)) {
     return <TextFieldDiff oldValue={oldValue ?? ''} newValue={newValue ?? ''} />
   }
@@ -477,100 +471,66 @@ function ArrayFieldDiff({ oldValue, newValue }: { oldValue: any; newValue: any }
   )
 }
 
-// Diff structuré par section (heading + contenu) — remplace l'ancien diff
-// sur `body` (texte aplati de toute la page) qui mélangeait nav/header/
-// footer et contenu éditorial dans un seul bloc illisible (§A2.5).
-function SectionsFieldDiff({
-  oldValue,
-  newValue,
-}: {
-  oldValue: Array<{ heading: string; level: number; content: string }>
-  newValue: Array<{ heading: string; level: number; content: string }>
-}) {
-  const oldByHeading = new Map(oldValue.map((s) => [s.heading, s]))
-  const newByHeading = new Map(newValue.map((s) => [s.heading, s]))
-
-  const orderedHeadings = [
-    ...newValue.map((s) => s.heading),
-    ...oldValue.map((s) => s.heading).filter((h) => !newByHeading.has(h)),
-  ]
-
-  const rows = orderedHeadings
-    .filter((h, i) => orderedHeadings.indexOf(h) === i) // dédupliquer si heading répété
-    .map((heading) => {
-      const before = oldByHeading.get(heading)
-      const after = newByHeading.get(heading)
-      if (before && after && before.content === after.content) return null // section inchangée
-      return { heading, before, after }
-    })
-    .filter((row): row is { heading: string; before: typeof oldValue[number] | undefined; after: typeof newValue[number] | undefined } => row !== null)
-
-  if (rows.length === 0) {
-    return <p className="text-xs text-ink-muted italic">Aucun changement</p>
-  }
-
-  return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.heading} className="rounded-md border border-border overflow-hidden">
-          <div className="px-3 py-1.5 bg-canvas border-b border-border flex items-center gap-1.5">
-            <span className="text-xs font-medium text-ink">{row.heading}</span>
-            {!row.before && (
-              <span className="rounded-sm border border-success/20 bg-success/5 px-1.5 py-0.5 text-[10px] font-medium text-success">
-                Ajoutée
-              </span>
-            )}
-            {!row.after && (
-              <span className="rounded-sm border border-danger/20 bg-danger/5 px-1.5 py-0.5 text-[10px] font-medium text-danger">
-                Supprimée
-              </span>
-            )}
-          </div>
-          <div className="p-2">
-            <TextFieldDiff oldValue={row.before?.content ?? ''} newValue={row.after?.content ?? ''} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function TextFieldDiff({ oldValue, newValue }: { oldValue: string; newValue: string }) {
   if (oldValue === newValue) {
     return <p className="text-xs text-ink-muted italic">Aucun changement</p>
   }
 
-  // Style deux colonnes côte-à-côte pour faciliter la comparaison
-  const oldTruncated = oldValue.length > 300 ? oldValue.slice(0, 300) + '...' : oldValue
-  const newTruncated = newValue.length > 300 ? newValue.slice(0, 300) + '...' : newValue
+  // Si le texte est trop long, on retombe sur le style Git diff simple
+  if (countWords(oldValue) > DIFF_MAX_WORDS || countWords(newValue) > DIFF_MAX_WORDS) {
+    const oldTruncated = oldValue.length > 200 ? oldValue.slice(0, 200) + '...' : oldValue
+    const newTruncated = newValue.length > 200 ? newValue.slice(0, 200) + '...' : newValue
+
+    return (
+      <div className="rounded-md border border-border bg-canvas font-mono text-[11px] overflow-x-auto">
+        {oldValue && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-danger/5 border-b border-danger/20">
+            <span className="text-danger font-bold shrink-0">−</span>
+            <span className="text-danger break-words leading-relaxed">{oldTruncated}</span>
+          </div>
+        )}
+        {newValue && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-success/5">
+            <span className="text-success font-bold shrink-0">+</span>
+            <span className="text-success break-words leading-relaxed">{newTruncated}</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Sinon, diff mot-à-mot intelligent avec surlignage, recadré sur les
+  // changements (le texte identique entre deux changements éloignés est
+  // réduit à "…" plutôt qu'affiché en entier)
+  const tokens = windowTokens(diffWords(oldValue, newValue), DIFF_CONTEXT_WORDS)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {/* Colonne AVANT */}
-      <div className="rounded-md border border-danger/20 bg-danger/5">
-        <div className="border-b border-danger/20 px-3 py-1.5 bg-danger/10">
-          <span className="text-[10px] font-bold text-danger uppercase tracking-wide">Avant</span>
-        </div>
-        <div className="px-3 py-2">
-          <p className="text-xs leading-relaxed text-ink-secondary break-words whitespace-pre-wrap">
-            {oldTruncated || <span className="italic text-ink-muted opacity-60">(Vide)</span>}
-          </p>
-        </div>
-      </div>
-
-      {/* Colonne APRÈS */}
-      <div className="rounded-md border border-success/20 bg-success/5">
-        <div className="border-b border-success/20 px-3 py-1.5 bg-success/10">
-          <span className="text-[10px] font-bold text-success uppercase tracking-wide">Après</span>
-        </div>
-        <div className="px-3 py-2">
-          <p className="text-xs leading-relaxed text-ink-secondary break-words whitespace-pre-wrap">
-            {newTruncated || <span className="italic text-ink-muted opacity-60">(Vide)</span>}
-          </p>
-        </div>
-      </div>
+    <div className="rounded-md border border-border bg-canvas px-3 py-2.5">
+      <p className="text-xs leading-relaxed break-words">
+        {tokens.map((token, i) => (
+          <DiffTokenSpan key={i} token={token} />
+        ))}
+      </p>
     </div>
   )
+}
+
+function DiffTokenSpan({ token }: { token: DiffToken }) {
+  if (token.type === 'remove') {
+    return (
+      <span className="bg-danger/15 text-danger px-0.5 rounded-sm line-through decoration-danger/60">
+        {token.text}
+      </span>
+    )
+  }
+  if (token.type === 'add') {
+    return (
+      <span className="bg-success/15 text-success px-0.5 rounded-sm font-medium">
+        {token.text}
+      </span>
+    )
+  }
+  return <span className="text-ink-secondary">{token.text}</span>
 }
 
 function DiffValueRenderer({ value }: { value: any }) {

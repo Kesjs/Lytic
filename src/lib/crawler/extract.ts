@@ -1,23 +1,10 @@
 import type { CheerioAPI } from 'cheerio'
 
-// Section structurée du contenu (heading + contenu associé)
-export interface ContentSection {
-  heading: string
-  level: number // 1, 2, 3 pour h1, h2, h3
-  content: string
-}
-
 export interface ExtractedContent {
   title: string | null
   meta: string | null
   headings: string[]
   body: string | null
-  // Nouveau : contenu structuré par sections (heading + contenu)
-  sections: ContentSection[]
-  // Nouveau : contenu principal isolé (sans nav/footer/sidebar)
-  mainContent: string | null
-  // Nouveau : FAQ détectée et structurée
-  faq: Array<{ question: string; answer: string }> | null
   pricing: string[]
   cta: string[]
   links: string[]
@@ -28,14 +15,6 @@ export interface ExtractedContent {
   hasMetaDescription: boolean
   // Nouveaux checks techniques (#15)
   schemaTypes: string[]
-  // Nouveau B2 : détails profondeur JSON-LD
-  schemaDetails: {
-    hasOrganization: boolean
-    organizationComplete: boolean
-    hasFAQPage: boolean
-    hasProduct: boolean
-    hasArticle: boolean
-  }
   hasUniqueH1: boolean
   metaDescriptionLength: number
   hasCanonical: boolean
@@ -60,152 +39,29 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     if (text) headings.push(text)
   })
   
-  // === NOUVEAU : Extraction du contenu principal (main, article, ou body sans nav/footer/aside) ===
-  let $main = $('main')
-  if ($main.length === 0) {
-    $main = $('article')
-  }
-  if ($main.length === 0) {
-    // Fallback : body sans nav, header, footer, aside
-    $main = $('body').clone()
-    $main.find('nav, header, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"], [role="complementary"]').remove()
-  }
-
-  // Insérer des espaces entre blocs AVANT d'extraire le moindre texte de
-  // $main (sections incluses juste après). Sans ça, `$next.text()` dans la
-  // boucle de sections colle le texte de deux éléments voisins sans espace
-  // (ex: prix "70 000 FCFA" + "7 place(s) restante(s)" → "70 000 FCFA7
-  // place(s) restante(s)"), ce qui casse à la fois la lisibilité et
-  // l'extraction de pricing basée sur regex.
+  // Body (après sanitize, le body contient juste le texte utile).
+  // Cheerio .text() concatène les nœuds texte sans séparateur entre
+  // éléments de bloc adjacents (ex. deux <a> collés dans le HTML source
+  // donnent "ContactParlons-en" au lieu de "Contact Parlons-en") : on
+  // force donc un espace entre chaque élément de bloc avant de joindre.
   const BLOCK_SELECTOR =
     'p, div, li, td, th, h1, h2, h3, h4, h5, h6, br, section, article, header, footer, nav, ul, ol, table, tr'
-  $main.find(BLOCK_SELECTOR).each((_, el) => {
-    $(el).after(' ')
-  })
-
-  // === NOUVEAU : Extraction des sections structurées (heading + contenu) ===
-  const sections: ContentSection[] = []
-  $main.find('h1, h2, h3').each((_, headingEl) => {
-    const heading = $(headingEl).text().replace(/\s+/g, ' ').trim()
-    if (!heading) return
-
-    const level = Number.parseInt(headingEl.tagName.toLowerCase().replace('h', ''))
-    
-    // Récupérer tout le contenu jusqu'au prochain heading de même niveau ou supérieur
-    const content: string[] = []
-    let $next = $(headingEl).next()
-    
-    while ($next.length > 0) {
-      const nextTag = $next.prop('tagName')?.toLowerCase()
-      
-      // Arrêter si on rencontre un heading de même niveau ou supérieur
-      if (nextTag && ['h1', 'h2', 'h3'].includes(nextTag)) {
-        const nextLevel = Number.parseInt(nextTag.replace('h', ''))
-        if (nextLevel <= level) break
-      }
-      
-      // Ajouter le texte de cet élément
-      const text = $next.text().replace(/\s+/g, ' ').trim()
-      if (text) content.push(text)
-      
-      $next = $next.next()
-    }
-    
-    sections.push({
-      heading,
-      level,
-      content: content.join(' ')
-    })
-  })
-
-  // === NOUVEAU : Détection et extraction FAQ ===
-  const faq: Array<{ question: string; answer: string }> = []
-  
-  // Méthode 1 : JSON-LD FAQPage
-  $('script[type="application/ld+json"]').each((_, el) => {
-    try {
-      const parsed = JSON.parse($(el).text())
-      if (parsed['@type'] === 'FAQPage' && Array.isArray(parsed.mainEntity)) {
-        parsed.mainEntity.forEach((item: any) => {
-          if (item['@type'] === 'Question' && item.name && item.acceptedAnswer?.text) {
-            faq.push({
-              question: item.name,
-              answer: item.acceptedAnswer.text
-            })
-          }
-        })
-      }
-    } catch (e) {
-      // JSON invalide, ignorer
-    }
-  })
-  
-  // Méthode 2 : Structure HTML FAQ (dt/dd, ou sections avec "?" dans le titre)
-  if (faq.length === 0) {
-    // Chercher des paires dt/dd
-    $('dl').each((_, dl) => {
-      $(dl).find('dt').each((_, dt) => {
-        const question = $(dt).text().replace(/\s+/g, ' ').trim()
-        const dd = $(dt).next('dd')
-        if (question && dd.length > 0) {
-          const answer = dd.text().replace(/\s+/g, ' ').trim()
-          if (answer) {
-            faq.push({ question, answer })
-          }
-        }
-      })
-    })
-  }
-  
-  // Méthode 3 : Sections avec headings contenant "?" ou "FAQ"
-  if (faq.length === 0) {
-    sections.forEach(section => {
-      if (section.heading.includes('?') || /faq|questions?|r[ée]ponses?/i.test(section.heading)) {
-        faq.push({
-          question: section.heading,
-          answer: section.content
-        })
-      }
-    })
-  }
-
-  // === Body principal (pour compatibilité avec l'existant) ===
-  // (espacement des blocs déjà fait plus haut, avant l'extraction des sections)
-  const mainContent = $main.text().replace(/\s+/g, ' ').trim() || null
-  
-  // Body complet (pour compatibilité, mais moins utile maintenant)
   $('body').find(BLOCK_SELECTOR).each((_, el) => {
     $(el).after(' ')
   })
   const body = $('body').text().replace(/\s+/g, ' ').trim() || null
   
-  // === Pricing amélioré : cibler plus précisément ===
+  // Pricing (détection basique € $ £ FCFA /mois /an)
   const pricing: string[] = []
-  
-  // Chercher dans les sections structurées d'abord
-  sections.forEach(section => {
-    if (/prix|tarif|pricing|abonnement|forfait|plan/i.test(section.heading)) {
-      // Extraire les prix de cette section
-      const priceMatches = section.content.match(/\d+(?:[,\.]\d+)?\s*(?:€|\$|£|FCFA|EUR|USD)\s*(?:\/\s*(?:mois|an|année|month|year))?/gi)
-      if (priceMatches) {
-        pricing.push(...priceMatches.map(p => p.replace(/\s+/g, ' ').trim()))
-      }
+  $('*:contains("€"), *:contains("$"), *:contains("£"), *:contains("FCFA"), *:contains("/mois"), *:contains("/an")').each((_, el) => {
+    // Éviter de récupérer tout le body si le symbole est tout en haut
+    // On ne garde que les éléments textes courts
+    const text = $(el).text().replace(/\s+/g, ' ').trim()
+    if (text && text.length < 150) {
+      pricing.push(text)
     }
   })
-  
-  // Fallback : méthode originale
-  if (pricing.length === 0) {
-    $('*:contains("€"), *:contains("$"), *:contains("£"), *:contains("FCFA"), *:contains("/mois"), *:contains("/an")').each((_, el) => {
-      const text = $(el).text().replace(/\s+/g, ' ').trim()
-      if (text && text.length < 150) {
-        // Essayer d'extraire un prix précis
-        const priceMatches = text.match(/\d+(?:[,\.]\d+)?\s*(?:€|\$|£|FCFA|EUR|USD)\s*(?:\/\s*(?:mois|an|année|month|year))?/gi)
-        if (priceMatches) {
-          pricing.push(...priceMatches.map(p => p.replace(/\s+/g, ' ').trim()))
-        }
-      }
-    })
-  }
+  // Déduplication basique
   const uniquePricing = [...new Set(pricing)]
   
   // CTA
@@ -240,51 +96,13 @@ export function extractContent($: CheerioAPI): ExtractedContent {
 
   // Nouveaux checks techniques (#15)
   const schemaTypes: string[] = []
-  const schemaDetails: {
-    hasOrganization: boolean
-    organizationComplete: boolean
-    hasFAQPage: boolean
-    hasProduct: boolean
-    hasArticle: boolean
-  } = {
-    hasOrganization: false,
-    organizationComplete: false,
-    hasFAQPage: false,
-    hasProduct: false,
-    hasArticle: false,
-  }
-
   $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const content = $(el).text()
       const parsed = JSON.parse(content)
-      
-      // Extraire les types
       if (parsed['@type']) {
         const types = Array.isArray(parsed['@type']) ? parsed['@type'] : [parsed['@type']]
         schemaTypes.push(...types)
-        
-        // Vérifier Organization en profondeur (B2)
-        if (types.includes('Organization')) {
-          schemaDetails.hasOrganization = true
-          // Champs clés pour qu'une Organization soit exploitable par une IA
-          const hasName = !!parsed.name
-          const hasUrl = !!parsed.url
-          const hasDescription = !!parsed.description
-          const hasLogo = !!parsed.logo
-          schemaDetails.organizationComplete = hasName && hasUrl && (hasDescription || hasLogo)
-        }
-        
-        // Détecter les autres types pertinents (B2)
-        if (types.includes('FAQPage')) {
-          schemaDetails.hasFAQPage = true
-        }
-        if (types.includes('Product')) {
-          schemaDetails.hasProduct = true
-        }
-        if (types.includes('Article') || types.includes('NewsArticle') || types.includes('BlogPosting')) {
-          schemaDetails.hasArticle = true
-        }
       }
     } catch (e) {
       // JSON invalide, ignorer
@@ -307,9 +125,6 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     meta,
     headings,
     body,
-    sections,
-    mainContent,
-    faq: faq.length > 0 ? faq : null,
     pricing: uniquePricing,
     cta: uniqueCta,
     links: uniqueLinks,
@@ -319,7 +134,6 @@ export function extractContent($: CheerioAPI): ExtractedContent {
     titleLength,
     hasMetaDescription,
     schemaTypes: uniqueSchemaTypes,
-    schemaDetails,
     hasUniqueH1,
     metaDescriptionLength,
     hasCanonical,

@@ -171,72 +171,6 @@ function AccueilPage() {
                         </div>
                       )}
 
-                      {/* Badge optimisation IA (Section 4.3) */}
-                      {(() => {
-                        // Bug corrigé (22/09) : computeAuditMetrics(botAccess, pages) — les
-                        // deux arguments étaient inversés, ce qui faisait planter tout
-                        // /dashboard dès que pages.length > 0 (accès à `.bots` sur le
-                        // tableau pages au lieu de l'objet botAccess). `hasRobotsTxt` et
-                        // `hasLlmsTxt` n'existent pas non plus sur l'objet retourné par
-                        // computeAuditMetrics (voir src/lib/audit-metrics.ts) — remplacés
-                        // par les champs réels (botsScore, botAccess.llmsTxtFound).
-                        const metrics = pages.length > 0 ? computeAuditMetrics(botAccess ?? null, pages) : null
-                        if (!metrics) return null
-                        const auditScore = metrics.score
-
-                        const level = auditScore >= 80 ? 'good' : auditScore >= 50 ? 'warning' : 'danger'
-                        const issues: string[] = []
-
-                        // Construire la liste des problèmes principaux
-                        if (metrics.botsScore < 30) issues.push('Bots IA bloqués dans robots.txt')
-                        if (!botAccess?.llmsTxtFound) issues.push('llms.txt manquant')
-                        if (!metrics.hasJsonLd) issues.push('JSON-LD absent')
-                        if (!metrics.hasUniqueH1) issues.push('H1 manquant/dupliqué')
-                        if (metrics.imagesWithoutAlt > 0) issues.push(`${metrics.imagesWithoutAlt} images sans alt`)
-                        
-                        return (
-                          <div className={cn(
-                            "mt-4 p-3 rounded-lg border",
-                            level === 'good' && "bg-success/5 border-success/20",
-                            level === 'warning' && "bg-warning/5 border-warning/20",
-                            level === 'danger' && "bg-danger/5 border-danger/20"
-                          )}>
-                            <div className="flex items-start gap-2">
-                              {level === 'good' && <div className="text-success">✓</div>}
-                              {level === 'warning' && <AlertCircle className="size-4 text-warning mt-0.5" />}
-                              {level === 'danger' && <AlertCircle className="size-4 text-danger mt-0.5" />}
-                              <div className="flex-1">
-                                <p className={cn(
-                                  "text-xs font-semibold",
-                                  level === 'good' && "text-success",
-                                  level === 'warning' && "text-warning",
-                                  level === 'danger' && "text-danger"
-                                )}>
-                                  {level === 'good' && 'Site bien optimisé pour les IA'}
-                                  {level === 'warning' && 'Optimisation partielle'}
-                                  {level === 'danger' && 'Problèmes critiques détectés'}
-                                </p>
-                                {issues.length > 0 && (
-                                  <ul className="mt-1.5 space-y-0.5">
-                                    {issues.slice(0, 3).map((issue, i) => (
-                                      <li key={i} className="text-[10px] text-ink-muted">• {issue}</li>
-                                    ))}
-                                  </ul>
-                                )}
-                                {level !== 'good' && (
-                                  <Link 
-                                    to="/dashboard/audit-technique" 
-                                    className="text-[10px] text-brand hover:underline mt-1 inline-block"
-                                  >
-                                    Voir les recommandations →
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })()}
-
                       <div className="mt-5 pt-5 border-t border-border/50 flex flex-col gap-1.5">
                         <p className="text-[11px] text-ink-muted flex justify-between">
                           <span>Dernière mise à jour</span>
@@ -444,7 +378,13 @@ function AccueilPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
       >
-        <TechnicalAuditCard botAccess={botAccess ?? null} pages={data.pages ?? []} brandId={brand.id} />
+        <TechnicalAuditCard
+          botAccess={botAccess ?? null}
+          pages={data.pages ?? []}
+          brandId={brand.id}
+          plan={brand.plan}
+          lastCrawlCompletedAt={data.lastCrawlCompletedAt ?? null}
+        />
       </motion.section>
 
       {displayRun && (
@@ -515,23 +455,6 @@ function AccueilPage() {
                       return `Il y a ${diffH}h`;
                     })()}
                   </span>
-                </div>
-                {/* Nouveau : Nombre de changements récents cette semaine */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-ink-muted">Changements cette semaine</span>
-                  <Link 
-                    to="/dashboard/historique" 
-                    className="text-xs font-medium text-brand-text hover:underline"
-                  >
-                    {(() => {
-                      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                      // Compter les changements de site (kind='change') de la semaine
-                      const recentChanges = (data.siteChanges || []).filter((c: any) => 
-                        new Date(c.detected_at).getTime() > oneWeekAgo
-                      ).length;
-                      return recentChanges > 0 ? `${recentChanges} détecté${recentChanges > 1 ? 's' : ''} →` : 'Aucun →';
-                    })()}
-                  </Link>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-ink-muted">Audit Technique IA</span>

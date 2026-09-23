@@ -4,7 +4,7 @@ import { MAX_TRACKED_QUESTIONS } from '~/lib/utils'
 // fichier (reflet-plan-free-spec.md §0). PRO_* référencent les constantes
 // déjà existantes plutôt que de les dupliquer avec une autre valeur.
 
-export const FREE_MAX_QUESTIONS = 1
+export const FREE_MAX_QUESTIONS = 3
 export const FREE_SAMPLES_PER_QUESTION = 1 // vs PRO_SAMPLES_PER_QUESTION (measure.ts)
 
 // Quota de mesures Free : 3 par période de 7 jours glissants, à vie récurrent.
@@ -27,15 +27,38 @@ export const PRO_SAMPLES_PER_QUESTION = 3 // déjà existant dans measure.ts
 // puisse plus diverger de la valeur réellement appliquée côté serveur.
 export const MEASUREMENT_DELAY_DAYS = 1
 
-// Cooldown entre deux scans manuels de site ("Vérifier mon site") pour le
-// plan Free uniquement — refonte Free §5. Les plans payants ne sont pas
-// soumis à ce délai (monitoring quotidien adaptatif déjà en place).
-export const FREE_SITE_SCAN_COOLDOWN_DAYS = 1
+// Cooldown entre deux scans de site ("Vérifier mon site") pour le plan Free
+// uniquement — refonte Free §5. Les plans payants ne sont pas soumis à ce
+// délai (monitoring quotidien adaptatif déjà en place).
+//
+// Baissé de 7 à 2 jours (23/09) : le scan technique n'appelle aucune IA
+// (juste crawl HTTP + lecture robots.txt), donc 7 jours ne protégeait
+// aucune ressource coûteuse — seulement de la friction gratuite pour
+// l'utilisateur Free. Le cron (`/api/cron/site-check`) tente déjà un scan
+// chaque jour pour toutes les marques ; ce cooldown est ce qui détermine à
+// quelle fréquence ce scan automatique réussit réellement pour un Free (le
+// bouton manuel n'est qu'un déclenchement anticipé une fois le délai
+// écoulé). 2 jours garde une vraie différenciation avec le monitoring
+// quotidien Pro, sans pénaliser l'utilisateur Free au-delà du nécessaire.
+export const FREE_SITE_SCAN_COOLDOWN_DAYS = 2
 
 export type BrandPlan = 'trial' | 'active' | 'past_due' | 'canceled' | 'free'
 
 export function isFreePlan(plan: string | null | undefined): boolean {
   return plan === 'free'
+}
+
+// Jours restants avant qu'un compte Free puisse relancer un scan manuel du
+// site. Centralisé ici (au lieu d'être dupliqué dans Paramètres, la page
+// Audit technique et la carte compacte Accueil) pour que l'avertissement de
+// cooldown soit affiché de façon cohérente PARTOUT où le bouton de
+// déclenchement existe, et pas seulement après avoir cliqué et reçu l'erreur
+// serveur de `triggerSiteCrawl`.
+export function daysRemainingForScan(lastCompletedAt: string | null | undefined): number {
+  if (!lastCompletedAt) return 0
+  const elapsedMs = Date.now() - new Date(lastCompletedAt).getTime()
+  const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24)
+  return Math.max(0, Math.ceil(FREE_SITE_SCAN_COOLDOWN_DAYS - elapsedDays))
 }
 
 // Multi-moteur (ajout Perplexity) — répartition du budget d'échantillons

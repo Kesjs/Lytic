@@ -365,7 +365,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
 
   if (!brand) return { brand: null } as const
 
-  const [{ data: runs }, { data: opportunities }, { data: events }, { data: pages }] =
+  const [{ data: runs }, { data: opportunities }, { data: events }, { data: pages }, { data: lastCrawl }] =
     await Promise.all([
       supabase
         .from('measurement_runs')
@@ -388,6 +388,17 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
         .order('created_at', { ascending: false })
         .limit(8),
       supabase.from('site_pages').select('*').eq('brand_id', brand.id),
+      // Dernier scan de site complété — même donnée que celle vérifiée
+      // côté serveur dans triggerSiteCrawl, pour afficher le cooldown Free
+      // AVANT le clic sur "Re-tester" (pas seulement après une erreur).
+      supabase
+        .from('site_crawl_runs')
+        .select('completed_at')
+        .eq('brand_id', brand.id)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ])
 
   // latestRun sert pour l'état du bouton "Mesurer" et la date "Dernière mesure"
@@ -415,15 +426,6 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     dataRun,
     { isFree: isFreePlan(brand.plan) },
   )
-
-  // Nouveau : Récupérer les changements de site de la semaine pour l'Accueil
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const { data: siteChanges } = await supabase
-    .from('site_change_events')
-    .select('id, detected_at')
-    .eq('brand_id', brand.id)
-    .gte('detected_at', oneWeekAgo)
-    .order('detected_at', { ascending: false })
 
   if (latestRun && actualStatus && latestRun.id === dataRun?.id && latestRun.status !== actualStatus) {
     latestRun = { ...latestRun, status: actualStatus }
@@ -510,7 +512,7 @@ export const fetchDashboardHome = createServerFn({ method: 'GET' }).handler(asyn
     opportunities: opportunities ?? [],
     events: events ?? [],
     pages: pages ?? [],
-    siteChanges: siteChanges ?? [],
+    lastCrawlCompletedAt: lastCrawl?.completed_at ?? null,
     kpis,
     kpiTrends,
     aiInsight,

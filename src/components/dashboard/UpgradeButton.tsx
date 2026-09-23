@@ -1,31 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createCheckoutSession, PRO_PLAN_PRICE_XOF } from '~/lib/billing'
-
-declare global {
-  interface Window {
-    FedaPay: any;
-  }
-}
+import { useFedaPayScript } from '~/lib/use-fedapay-script'
 
 export function UpgradeButton({ brandId, className }: { brandId: string; className?: string }) {
   const [loading, setLoading] = useState(false)
-  const [scriptLoaded, setScriptLoaded] = useState(false)
-
-  useEffect(() => {
-    if (document.getElementById('fedapay-checkout-script')) {
-      setScriptLoaded(true)
-      return
-    }
-
-    const script = document.createElement('script')
-    script.id = 'fedapay-checkout-script'
-    script.src = 'https://cdn.fedapay.com/checkout.js?v=1.1.7'
-    script.async = true
-    script.onload = () => setScriptLoaded(true)
-    document.body.appendChild(script)
-  }, [])
+  const scriptLoaded = useFedaPayScript()
 
   const handleUpgrade = async () => {
     if (!scriptLoaded || !window.FedaPay) {

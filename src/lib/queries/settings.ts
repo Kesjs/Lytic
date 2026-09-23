@@ -284,6 +284,108 @@ export const createBrandWithQuestions = createServerFn({ method: 'POST' })
     return { success: true, brandId: brand.id } as const
   })
 
+// ─── Création de marque en 2 temps (souscription Pro directe depuis les tarifs) ──
+//
+// createCheckoutSession (billing.ts) exige un brandId existant (FedaPay +
+// webhook en dépendent) : impossible de payer avant qu'une marque existe.
+// createBrandDraft crée donc la marque seule (plan 'free', 0 question),
+// le paiement est déclenché juste après avec ce brandId, puis
+// addInitialQuestions ajoute les questions une fois le plan confirmé —
+// voir BrandSetupDrawer.tsx pour l'orchestration complète du flux.
+
+export const createBrandDraft = createServerFn({ method: 'POST' })
+  .validator((data: { name: string; websiteUrl: string }) => data)
+  .handler(async ({ data }): Promise<{ brandId: string }> => {
+    const supabase = getSupabaseServerClient()
+    const user = await requireUser(supabase)
+
+    const { data: existing } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('owner_id', user.id)
+      .maybeSingle()
+    if (existing) throw new Error('Une marque est déjà configurée pour ce compte.')
+
+    const name = data.name.trim()
+    if (!name) throw new Error('Le nom de la marque est requis.')
+
+    const websiteUrl = data.websiteUrl.trim()
+    if (!websiteUrl) throw new Error('Le site web est requis.')
+    if (!isValidWebsiteUrl(websiteUrl)) {
+      throw new Error('URL invalide — utilisez un format du type https://votre-site.fr')
+    }
+
+    // Toute nouvelle marque démarre en Free, y compris ici : le paiement
+    // n'est confirmé que côté webhook, jamais côté client (cf. billing.ts).
+    const { data: brand, error: brandError } = await supabase
+      .from('brands')
+      .insert({ owner_id: user.id, name, website_url: websiteUrl, plan: 'free' })
+      .select('id')
+      .single()
+    if (brandError) throw new Error(brandError.message)
+
+    const { error: notifError } = await supabase
+      .from('notification_preferences')
+      .insert({ brand_id: brand.id })
+    if (notifError) throw new Error(notifError.message)
+
+    return { brandId: brand.id }
+  })
+
+// Lecture minimale pour le polling post-paiement côté client (UpgradeButton
+// se contentait d'un reload après un délai fixe — ici on veut la vraie
+// valeur en base avant de débloquer l'étape questions, le webhook FedaPay
+// étant asynchrone et pouvant arriver après le callback client).
+export const getBrandPlan = createServerFn({ method: 'GET' })
+  .validator((data: { brandId: string }) => data)
+  .handler(async ({ data }): Promise<{ plan: string }> => {
+    const supabase = getSupabaseServerClient()
+    const user = await requireUser(supabase)
+    const brand = await requireOwnedBrand(supabase, user.id, data.brandId)
+    return { plan: brand.plan as string }
+  })
+
+export const addInitialQuestions = createServerFn({ method: 'POST' })
+  .validator((data: { brandId: string; questions: string[] }) => data)
+  .handler(async ({ data }): Promise<{ success: true }> => {
+    const supabase = getSupabaseServerClient()
+    const user = await requireUser(supabase)
+    const brand = await requireOwnedBrand(supabase, user.id, data.brandId)
+
+    const { count: existingCount } = await supabase
+      .from('questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brand.id)
+    if ((existingCount ?? 0) > 0) {
+      throw new Error('Des questions sont déjà configurées pour cette marque.')
+    }
+
+    const questions = data.questions.map((q) => q.trim()).filter(Boolean)
+    if (questions.length === 0) {
+      throw new Error('Ajoutez au moins une question à suivre.')
+    }
+
+    // Le cap dépend du plan RÉEL de la marque en base à cet instant précis —
+    // jamais de ce que le client croit savoir (état de confirmation du
+    // paiement affiché côté UI). Une marque encore 'free' au moment de
+    // l'insert reste plafonnée à FREE_MAX_QUESTIONS même si le paiement a
+    // été initié : le webhook n'a peut-être pas encore confirmé.
+    const cap = isFreePlan(brand.plan) ? FREE_MAX_QUESTIONS : MAX_TRACKED_QUESTIONS
+    if (questions.length > cap) {
+      throw new Error(`Ce plan est limité à ${cap} question${cap > 1 ? 's' : ''} suivie${cap > 1 ? 's' : ''}.`)
+    }
+    if (questions.some((q) => q.length > QUESTION_MAX_LENGTH)) {
+      throw new Error(`Une question dépasse la limite de ${QUESTION_MAX_LENGTH} caractères.`)
+    }
+
+    const { error: questionsError } = await supabase.from('questions').insert(
+      questions.map((text, i) => ({ brand_id: brand.id, text, position: i })),
+    )
+    if (questionsError) throw new Error(questionsError.message)
+
+    return { success: true }
+  })
+
 // --- Réinitialisation (recommencer l'onboarding) ---
 
 // Aucune UI ne permettait jusqu'ici de revenir en arrière une fois une

@@ -10,12 +10,14 @@ import {
   Copy,
   Gauge,
   Loader2,
+  Clock,
 } from 'lucide-react'
 import { fetchDashboardHome } from '~/lib/queries/dashboard'
 import { fetchBotAccess } from '~/lib/queries/bot-access'
 import { AuditScoreHistory } from '~/components/dashboard/AuditScoreHistory'
 import { IA_BOTS } from '~/lib/crawler/constants'
 import { useTechnicalAuditCheck } from '~/lib/hooks/useTechnicalAuditCheck'
+import { isFreePlan, daysRemainingForScan } from '~/lib/plan'
 import { DashboardStateView } from '~/components/dashboard/DashboardState'
 import { Skeleton } from '~/components/ui/skeleton'
 import { cn } from '~/lib/utils'
@@ -52,6 +54,14 @@ function AuditTechniquePage() {
 
   const brandId = data?.brand?.id
   const { runAudit, isRunning } = useTechnicalAuditCheck(brandId ?? '')
+
+  // Même avertissement de cooldown Free que Paramètres, affiché AVANT le
+  // clic — cette page est ouverte en illimité au Free, mais le scan manuel
+  // qui alimente son score reste soumis au même cooldown que partout
+  // ailleurs (triggerSiteCrawl côté serveur fait foi dans tous les cas).
+  const cooldownDays = isFreePlan(data?.brand?.plan) ? daysRemainingForScan(data?.lastCrawlCompletedAt) : 0
+  const cooldownActive = cooldownDays > 0
+  const retestDisabled = isRunning || cooldownActive
 
   const metrics = useMemo(
     () => (botAccess ? computeAuditMetrics(botAccess, data?.pages ?? []) : null),
@@ -102,12 +112,18 @@ function AuditTechniquePage() {
         <button
           type="button"
           onClick={runAudit}
-          disabled={isRunning}
+          disabled={retestDisabled}
           className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50"
         >
           {isRunning && <Loader2 className="size-3.5 animate-spin" />}
-          {isRunning ? 'Audit en cours…' : "Lancer l'audit"}
+          {cooldownActive && !isRunning && <Clock className="size-3.5" />}
+          {isRunning ? 'Audit en cours…' : cooldownActive ? `Disponible dans ${cooldownDays} j` : "Lancer l'audit"}
         </button>
+        {cooldownActive && !isRunning && (
+          <p className="mt-1.5 text-[11px] text-ink-muted">
+            Prochain scan manuel disponible dans {cooldownDays} jour{cooldownDays > 1 ? 's' : ''}.
+          </p>
+        )}
       </div>
     )
   }
@@ -150,15 +166,26 @@ function AuditTechniquePage() {
             <Gauge className={cn('size-4', scoreColor)} />
             <span className={cn('text-lg font-bold', scoreColor)}>{score}/100</span>
           </div>
-          <button
-            type="button"
-            onClick={runAudit}
-            disabled={isRunning}
-            className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50 border border-border"
-          >
-            {isRunning ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />}
-            Re-tester
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={runAudit}
+              disabled={retestDisabled}
+              className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary disabled:opacity-50 border border-border"
+            >
+              {isRunning ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : cooldownActive ? (
+                <Clock className="size-3.5" />
+              ) : (
+                <Gauge className="size-3.5" />
+              )}
+              {isRunning ? 'Audit en cours…' : cooldownActive ? `Disponible dans ${cooldownDays} j` : 'Re-tester'}
+            </button>
+            {cooldownActive && !isRunning && (
+              <p className="text-[11px] text-ink-muted">Prochain scan dans {cooldownDays} j</p>
+            )}
+          </div>
         </div>
       </header>
 
@@ -272,7 +299,6 @@ function AuditItemCard({
   setRef: (el: HTMLDivElement | null) => void
   extra?: React.ReactNode
 }) {
-  const [showCode, setShowCode] = useState(false)
   const fix = fixes[itemKey]
 
   return (
@@ -309,16 +335,7 @@ function AuditItemCard({
                   <li key={i}>{step}</li>
                 ))}
               </ol>
-              {fix.snippet && !showCode && (
-                <button
-                  type="button"
-                  onClick={() => setShowCode(true)}
-                  className="mt-2 text-xs text-brand-text hover:underline font-medium flex items-center gap-1"
-                >
-                  Voir le code à envoyer à votre développeur →
-                </button>
-              )}
-              {fix.snippet && showCode && <CodeSnippet label={fix.snippetLabel} code={fix.snippet} />}
+              {fix.snippet && <CodeSnippet label={fix.snippetLabel} code={fix.snippet} />}
             </div>
           )}
         </div>
